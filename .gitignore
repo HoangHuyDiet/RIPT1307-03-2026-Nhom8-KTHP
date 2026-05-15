@@ -1,0 +1,48 @@
+# ==========================================
+# 1. BACKEND (Spring Boot / Maven)
+# ==========================================
+backend/target/
+backend/*.jar
+backend/*.war
+backend/*.log
+backend/logs/
+
+# File cấu hình chứa mật khẩu database cá nhân
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-dev.properties
+
+# ==========================================
+# 2. FRONTEND (React / UmiJS / Node)
+# ==========================================
+frontend/node_modules/
+frontend/.umi/
+frontend/.umi-production/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.eslintcache
+
+# ==========================================
+# 3. IDEs & SYSTEM RÁC (VS Code, IntelliJ, STS)
+# ==========================================
+.vscode/
+.idea/
+*.iws
+*.iml
+*.ipr
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+build/
+.DS_Store
+Thumbs.db
+HELP.md
