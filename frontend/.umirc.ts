@@ -18,7 +18,7 @@ export default defineConfig({
       component: '@/layouts/BasicLayout',
       routes: [
         { path: '/', redirect: '/dashboard' },
-        { path: '/dashboard', component: '@/pages/dashboard' }, 
+        { path: '/dashboard', component: '@/pages/dashboard' },
       ],
     },
   ],
