@@ -1,0 +1,20 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* Chèn ảnh nền full màn hình. Lớp gradient giúp làm tối ảnh để form trắng nổi bật hơn */
+  background: linear-gradient(rgba(10, 37, 64, 0.5), rgba(10, 37, 64, 0.7)), 
+              url('image-login.jpg') center/cover no-repeat;
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 460px; /* Độ rộng của form */
+  background: #ffffff;
+  padding: 48px;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2); /* Đổ bóng đậm hơn một chút vì nền tối */
+}

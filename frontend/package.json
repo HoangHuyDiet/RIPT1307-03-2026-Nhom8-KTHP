@@ -9,6 +9,8 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.3",
+    "antd": "^6.4.2",
     "umi": "^4.6.55"
   },
   "devDependencies": {
