@@ -1,4 +1,4 @@
-package com.smartfinance.smart_finance_hub;
+package com.smartfinance;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
