@@ -3,6 +3,9 @@ import { LockOutlined, MailOutlined, GoogleOutlined, AppleOutlined, SafetyCertif
 import { Link } from 'umi';
 import styles from './index.less';
 import { useState } from 'react';
+import { history } from 'umi';
+import api from '../../../utils/api';
+
 
 const { Title, Text } = Typography;
 
@@ -10,34 +13,29 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: any) => {
-    console.log('Received values of form: ', values);
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-        }),
+      // Gọi API đăng ký
+      await api.post('/auth/register', {
+        name: values.name,
+        email: values.email,
+        password: values.password,
       });
-      const data = await response.json();
-      if (response.ok) {
-        message.success('Đăng ký thành công, vui lòng đăng nhập!');
-        window.location.href = '/auth/login';
-      } else {
-        message.error(data.message || 'Đăng ký thất bại, vui lòng thử lại!');
-      }
-    } catch (error) {
+
+      message.success('Đăng ký thành công, vui lòng đăng nhập!');
+      
+      // Chuyển hướng sang trang đăng nhập
+      history.push('/auth/login');
+      
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      message.error('Đăng ký thất bại, vui lòng thử lại!');
+      const errorMsg = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!';
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className={styles.registerContainer}>

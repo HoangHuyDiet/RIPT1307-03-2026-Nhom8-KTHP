@@ -15,7 +15,7 @@ backend/src/main/resources/application-dev.properties
 # 2. FRONTEND (React / UmiJS / Node)
 # ==========================================
 frontend/node_modules/
-frontend/.umi/
+frontend/src/.umi/
 frontend/.umi-production/
 frontend/dist/
 frontend/.env

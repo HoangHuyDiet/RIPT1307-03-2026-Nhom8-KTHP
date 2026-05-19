@@ -11,7 +11,9 @@
   "dependencies": {
     "@ant-design/icons": "^6.2.3",
     "antd": "^6.4.2",
-    "umi": "^4.6.55"
+    "axios": "^1.16.1",
+    "umi": "^4.6.55",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/react": "^18.0.33",

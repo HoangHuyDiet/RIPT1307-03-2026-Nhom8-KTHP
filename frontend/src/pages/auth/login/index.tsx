@@ -3,40 +3,45 @@ import { LockOutlined, MailOutlined, GoogleOutlined, AppleOutlined, SafetyCertif
 import { Link } from 'umi';
 import styles from './index.less';
 import { useState } from 'react';
+import { history } from 'umi';
+import api from '../../../utils/api';
+import { useAuthStore } from '../../../store/useAuthStore';
+
 
 const { Title, Text } = Typography;
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const onFinish = async (values: any) => {
-    console.log('Received values of form: ', values);
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
+      // Gọi API bằng instance đã cấu hình (không cần ghi localhost:8080 nữa)
+      const response = await api.post('/auth/login', {
+        email: values.email,
+        password: values.password,
       });
-      const data = await response.json();
-      if (response.ok) {
-        message.success('Đăng nhập thành công');
-        localStorage.setItem('token', data.token);
-        window.location.href = '/';
-      } else {
-        message.error(data.message ||'Đăng nhập thất bại, vui lòng thử lại!');
-      }
-    } catch (error) {
+
+      // Lấy token từ dữ liệu trả về
+      const data = response.data;
+      
+      message.success('Đăng nhập thành công');
+      
+      // Gọi action của Zustand store để lưu token
+      useAuthStore.getState().setAuth(data.token);
+      
+      // Chuyển hướng về trang chủ một cách mượt mà (không load lại trang)
+      history.push('/');
+      
+    } catch (error: any) {
       console.error('Login failed:', error);
-      message.error('Đăng nhập thất bại, vui lòng thử lại!');
+      // Lấy thông báo lỗi từ Backend trả về, hoặc dùng câu mặc định
+      const errorMsg = error.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className={styles.loginContainer}>
