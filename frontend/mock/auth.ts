@@ -1,9 +1,7 @@
 export default {
-  // Mock API Đăng nhập
   'POST /api/auth/login': (req: any, res: any) => {
     const { email, password } = req.body;
 
-    // Giả lập kiểm tra email và password
     if (email === 'admin@gmail.com' && password === '123456') {
       res.send({
         status: 'success',
@@ -23,7 +21,6 @@ export default {
     }
   },
 
-  // Mock API Đăng ký
   'POST /api/auth/register': (req: any, res: any) => {
     const { email } = req.body;
 

@@ -24,6 +24,7 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.eslintcache
+frontend/note.md
 
 # ==========================================
 # 3. IDEs & SYSTEM RÁC (VS Code, IntelliJ, STS)

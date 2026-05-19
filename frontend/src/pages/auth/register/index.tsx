@@ -15,7 +15,6 @@ export default function Register() {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // Gọi API đăng ký
       await api.post('/auth/register', {
         name: values.name,
         email: values.email,
@@ -24,7 +23,6 @@ export default function Register() {
 
       message.success('Đăng ký thành công, vui lòng đăng nhập!');
       
-      // Chuyển hướng sang trang đăng nhập
       history.push('/auth/login');
       
     } catch (error: any) {

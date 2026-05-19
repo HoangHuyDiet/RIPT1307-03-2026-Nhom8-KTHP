@@ -2,7 +2,6 @@ import { defineConfig } from "umi";
 
 export default defineConfig({
   routes: [
-    // NHÁNH 1: Các trang Xác thực (Sử dụng AuthLayout)
     {
       path: '/auth',
       component: '@/layouts/AuthLayout',
@@ -12,7 +11,6 @@ export default defineConfig({
       ],
     },
 
-    // NHÁNH 2: Các trang Chính của ứng dụng (Sử dụng BasicLayout)
     {
       path: '/',
       component: '@/layouts/BasicLayout',

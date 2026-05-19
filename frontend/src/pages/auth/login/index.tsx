@@ -15,26 +15,21 @@ export default function Login() {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // Gọi API bằng instance đã cấu hình (không cần ghi localhost:8080 nữa)
       const response = await api.post('/auth/login', {
         email: values.email,
         password: values.password,
       });
 
-      // Lấy token từ dữ liệu trả về
       const data = response.data;
       
       message.success('Đăng nhập thành công');
       
-      // Gọi action của Zustand store để lưu token
       useAuthStore.getState().setAuth(data.token);
       
-      // Chuyển hướng về trang chủ một cách mượt mà (không load lại trang)
       history.push('/');
       
     } catch (error: any) {
       console.error('Login failed:', error);
-      // Lấy thông báo lỗi từ Backend trả về, hoặc dùng câu mặc định
       const errorMsg = error.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
       message.error(errorMsg);
     } finally {
@@ -60,7 +55,7 @@ export default function Login() {
         className={styles.loginForm}
         initialValues={{ remember: true }}
         onFinish={onFinish}
-        layout="vertical" /* Hiển thị Label ở trên Input */
+        layout="vertical" 
         size="large"
       >
         <Form.Item
