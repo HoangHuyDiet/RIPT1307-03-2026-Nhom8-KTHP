@@ -1,6 +1,6 @@
 -- ============================================================
 -- SMART FINANCE HUB - DATABASE SCHEMA
--- 15 bảng | 5 module | MySQL 8.0+
+-- 16 bảng | 6 module | MySQL 8.0+
 -- ============================================================
 -- Chạy: mysql -u root -p smart_finance_hub < database/schema.sql
 -- ============================================================
@@ -264,3 +264,18 @@ CREATE TABLE IF NOT EXISTS external_integrations (
     INDEX idx_integrations_user (user_id),
     INDEX idx_integrations_provider (provider_name)
 ) ENGINE=InnoDB COMMENT='Tích hợp dịch vụ bên ngoài';
+
+-- ============================================================
+-- MODULE 6: XÁC THỰC 2 LỚP - 2FA (1 bảng)
+-- ============================================================
+
+-- 16. Bảng lưu trữ mã OTP tạm thời
+CREATE TABLE IF NOT EXISTS otp_tokens (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    email           VARCHAR(255)    NOT NULL COMMENT 'Email nhận mã',
+    otp_code        VARCHAR(6)      NOT NULL COMMENT 'Mã OTP 6 số',
+    expiration_time DATETIME        NOT NULL COMMENT 'Thời điểm hết hạn',
+    is_used         BOOLEAN         NOT NULL DEFAULT FALSE COMMENT 'Trạng thái sử dụng',
+
+    INDEX idx_otp_email_code (email, otp_code)
+) ENGINE=InnoDB COMMENT='Bảng lưu trữ mã OTP tạm thời';

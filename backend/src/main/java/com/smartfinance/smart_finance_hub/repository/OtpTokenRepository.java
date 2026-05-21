@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface OtpTokenRepository extends JpaRepository<OtpToken, Long> {
   Optional<OtpToken> findByEmailAndOtpCodeAndIsUsedFalse(String email, String otpCode);
+
+  Optional<OtpToken> findTopByEmailAndIsUsedFalseOrderByIdDesc(String email);
 }
