@@ -1,5 +1,7 @@
 package com.smartfinance.smart_finance_hub.controller;
 
+import com.smartfinance.smart_finance_hub.dto.LoginRequest;
+import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
 import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
@@ -43,4 +45,18 @@ public class AuthController {
           "message", "Xác thực tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
       ));
     }
-}
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
+      log.info("login request: {}", request.getEmail());
+
+      LoginResponse loginResponse = authService.login(request);
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Đăng nhập thành công");
+      response.put("data", loginResponse);
+
+      return ResponseEntity.ok(response);
+    }
+}
