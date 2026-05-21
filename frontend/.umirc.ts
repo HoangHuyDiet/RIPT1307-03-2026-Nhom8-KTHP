@@ -8,6 +8,7 @@ export default defineConfig({
       routes: [
         { path: '/auth/login', component: '@/pages/auth/login' },
         { path: '/auth/register', component: '@/pages/auth/register' },
+        { path: '/auth/forgot-password', component: '@/pages/auth/forgot-password' },
       ],
     },
 

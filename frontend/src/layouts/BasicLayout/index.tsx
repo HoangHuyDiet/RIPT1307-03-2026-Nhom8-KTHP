@@ -50,9 +50,9 @@ export default function BasicLayout() {
 
   return (
     <Layout className={styles.layout}>
-      <Sider 
-        collapsible 
-        collapsed={collapsed} 
+      <Sider
+        collapsible
+        collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         theme="light"
         width={260}
@@ -64,8 +64,7 @@ export default function BasicLayout() {
           </div>
           {!collapsed && (
             <div className={styles.logoText}>
-              <div className={styles.brandTitle}>SmartFinance <span className={styles.brandAi}>AI</span></div>
-              <div className={styles.brandSubtitle}>Precision Intelligence</div>
+              <div className={styles.brandTitle}>Smart Finance</div>
             </div>
           )}
         </div>
@@ -83,14 +82,14 @@ export default function BasicLayout() {
         <Header className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.searchWrapper}>
-              <Input 
-                prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />} 
-                placeholder="Tìm kiếm giao dịch, mục tiêu hoặc gợi ý..." 
+              <Input
+                prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
+                placeholder="Tìm kiếm giao dịch, mục tiêu hoặc gợi ý..."
                 className={styles.searchBar}
               />
             </div>
           </div>
-          
+
           <Space size="large" align="center" className={styles.rightActions}>
             <BellOutlined className={styles.bellIcon} />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
