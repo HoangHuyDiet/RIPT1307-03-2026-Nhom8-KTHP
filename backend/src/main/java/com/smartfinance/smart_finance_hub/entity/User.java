@@ -1,5 +1,6 @@
 package com.smartfinance.smart_finance_hub.entity;
 
+import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -35,12 +36,9 @@ public class User {
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
-    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private String status = "ACTIVE";
-
-    @Column(name = "two_fa_secret")
-    private String twoFaSecret;
+    private UserStatus status = UserStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
