@@ -15,6 +15,27 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  thymeleaf:
+    check-template-location: true
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
 
 server:
   port: 8080
@@ -24,3 +45,10 @@ server:
 jwt:
   secret: ${JWT_SECRET:DayLaKhoaBaoMatMacDinhChiDungChoMoiTruongLocalDeTest123456789}
   expiration: 86400000
+
+app:
+  mail:
+    from-name: Smart Finance Hub
+  2fa:
+    otp-length: 6
+    otp-expiry-seconds: 300
