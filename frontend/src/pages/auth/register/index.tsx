@@ -5,12 +5,37 @@ import styles from './index.less';
 import { useState } from 'react';
 import { history } from 'umi';
 import api from '../../../utils/api';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 
 const { Title, Text } = Typography;
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await api.post('/auth/google', {
+          token: tokenResponse.access_token,
+        });
+        
+        const data = response.data;
+        message.success('Đăng nhập bằng Google thành công!');
+        
+        useAuthStore.getState().setAuth(data.token, data.user);
+        history.push('/dashboard');
+      } catch (error: any) {
+        message.error('Đăng nhập bằng Google thất bại!');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      message.error('Không thể kết nối với tài khoản Google');
+    }
+  });
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -21,10 +46,10 @@ export default function Register() {
         password: values.password,
       });
 
-      message.success('Đăng ký thành công, vui lòng đăng nhập!');
-      
-      history.push('/auth/login');
-      
+      message.success('Đã gửi mã xác nhận qua email của bạn!');
+
+      history.push('/auth/otp', { email: values.email, type: 'register' });
+
     } catch (error: any) {
       console.error('Registration failed:', error);
       const errorMsg = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!';
@@ -55,30 +80,30 @@ export default function Register() {
         size="large"
       >
         <Form.Item
-          label={<span className={styles.inputLabel}>Full Name</span>}
+          label={<span className={styles.inputLabel}>Họ và tên</span>}
           name="name"
           rules={[
-            { required: true, message: 'Please enter your name!' }
+            { required: true, message: 'Vui lòng nhập họ và tên của bạn!' }
           ]}
         >
-          <Input prefix={<UserOutlined className={styles.inputIcon} />} placeholder="Enter your name" />
+          <Input prefix={<UserOutlined className={styles.inputIcon} />} placeholder="Nhập họ và tên của bạn" />
         </Form.Item>
 
         <Form.Item
           label={<span className={styles.inputLabel}>Email</span>}
           name="email"
           rules={[
-            { required: true, message: 'Please enter your email!' },
-            { type: 'email', message: 'Invalid email address!' }
+            { required: true, message: 'Vui lòng nhập email của bạn!' },
+            { type: 'email', message: 'Email không đúng định dạng!' }
           ]}
         >
-          <Input prefix={<MailOutlined className={styles.inputIcon} />} placeholder="Enter your email" />
+          <Input prefix={<MailOutlined className={styles.inputIcon} />} placeholder="Nhập email của bạn" />
         </Form.Item>
-        
+
         <Form.Item
           label={<span className={styles.inputLabel}>Password</span>}
           name="password"
-          rules={[{ required: true, message: 'Please enter your password!' }]}
+          rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }, { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }]}
         >
           <Input.Password
             prefix={<LockOutlined className={styles.inputIcon} />}
@@ -87,17 +112,17 @@ export default function Register() {
         </Form.Item>
 
         <Form.Item
-          label={<span className={styles.inputLabel}>Confirm Password</span>}
+          label={<span className={styles.inputLabel}>Xác nhận mật khẩu</span>}
           name="confirm"
           dependencies={['password']}
           rules={[
-            { required: true, message: 'Please confirm your password!' },
+            { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('password') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('The two passwords do not match!'));
+                return Promise.reject(new Error('Mật khẩu không trùng khớp!'));
               },
             }),
           ]}
@@ -113,11 +138,16 @@ export default function Register() {
             Sign Up {!loading && <span className={styles.arrowIcon}>→</span>}
           </Button>
         </Form.Item>
-        
+
         <Divider className={styles.divider}>Or continue with</Divider>
 
         <div className={styles.socialLogin}>
-          <Button className={styles.socialBtn} icon={<GoogleOutlined />}>
+          <Button 
+            className={styles.socialBtn} 
+            icon={<GoogleOutlined />} 
+            onClick={() => loginWithGoogle()}
+            loading={loading}
+          >
             Google
           </Button>
           <Button className={styles.socialBtn} icon={<AppleOutlined />}>

@@ -9,6 +9,8 @@ export default defineConfig({
         { path: '/auth/login', component: '@/pages/auth/login' },
         { path: '/auth/register', component: '@/pages/auth/register' },
         { path: '/auth/forgot-password', component: '@/pages/auth/forgot-password' },
+
+        { path: '/auth/otp', component: '@/pages/auth/otp' },
       ],
     },
 
@@ -16,7 +18,7 @@ export default defineConfig({
       path: '/',
       component: '@/layouts/BasicLayout',
       routes: [
-        { path: '/', redirect: '/dashboard' },
+        { path: '/', redirect: '/auth/login' },
         { path: '/dashboard', component: '@/pages/dashboard' },
       ],
     },

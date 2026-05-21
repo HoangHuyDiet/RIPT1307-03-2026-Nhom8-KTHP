@@ -64,7 +64,9 @@ export default function BasicLayout() {
           </div>
           {!collapsed && (
             <div className={styles.logoText}>
-              <div className={styles.brandTitle}>Smart Finance</div>
+              <div className={styles.brandTitle}>Smart Finance <span className={styles.brandAi}></span></div>
+              <div className={styles.brandSubtitle}>Precision Intelligence</div>
+
             </div>
           )}
         </div>

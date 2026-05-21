@@ -1,20 +1,33 @@
 import { Button, Form, Input, Typography, message } from 'antd';
-import { LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { Link } from 'umi';
+import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Link, history } from 'umi';
 import styles from './index.less';
 import { useState } from 'react';
+import api from '../../../utils/api';
 
 const { Title, Text } = Typography;
 
 export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
 
-  const onFinish = (values: any) => {
+  const onFinish = async (values: any) => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await api.post('/auth/forgot-password', {
+        email: values.email,
+        newPassword: values.newPassword,
+      });
+
+      message.success('Đã gửi mã xác nhận OTP qua email của bạn!');
+      
+      history.push('/auth/otp', { email: values.email, type: 'reset' });
+    } catch (error: any) {
+      console.error('Reset password request failed:', error);
+      const errorMsg = error.response?.data?.message || 'Email không tồn tại trong hệ thống!';
+      message.error(errorMsg);
+    } finally {
       setLoading(false);
-      message.success('Reset password successfully!');
-    }, 1000);
+    }
   };
 
   return (
@@ -25,9 +38,9 @@ export default function ForgotPassword() {
       </div>
 
       <div className={styles.header}>
-        <Title level={3} className={styles.title}>Reset Password</Title>
+        <Title level={3} className={styles.title}>Đặt lại mật khẩu</Title>
         <Text type="secondary" className={styles.subtitle}>
-          Please enter your new password to restore access to your account.
+          Vui lòng nhập email và mật khẩu mới để phục hồi tài khoản của bạn.
         </Text>
       </div>
 
@@ -39,11 +52,25 @@ export default function ForgotPassword() {
         size="large"
       >
         <Form.Item
-          label={<span className={styles.inputLabel}>New Password</span>}
+          label={<span className={styles.inputLabel}>Email của bạn</span>}
+          name="email"
+          rules={[
+            { required: true, message: 'Vui lòng nhập Email!' },
+            { type: 'email', message: 'Email không đúng định dạng!' }
+          ]}
+        >
+          <Input 
+            prefix={<MailOutlined className={styles.inputIcon} />} 
+            placeholder="Nhập email tài khoản" 
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={<span className={styles.inputLabel}>Mật khẩu mới</span>}
           name="newPassword"
           rules={[
-            { required: true, message: 'Please enter your new password!' },
-            { min: 6, message: 'Password must be at least 6 characters!' }
+            { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
+            { min: 6, message: 'Mật khẩu phải dài từ 6 ký tự trở lên!' }
           ]}
         >
           <Input.Password
@@ -53,17 +80,17 @@ export default function ForgotPassword() {
         </Form.Item>
 
         <Form.Item
-          label={<span className={styles.inputLabel}>Confirm New Password</span>}
+          label={<span className={styles.inputLabel}>Xác nhận mật khẩu mới</span>}
           name="confirmPassword"
           dependencies={['newPassword']}
           rules={[
-            { required: true, message: 'Please confirm your password!' },
+            { required: true, message: 'Vui lòng xác nhận mật khẩu mới!' },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('The two passwords do not match!'));
+                return Promise.reject(new Error('Hai mật khẩu nhập vào không khớp!'));
               },
             }),
           ]}
@@ -76,12 +103,12 @@ export default function ForgotPassword() {
 
         <Form.Item style={{ marginBottom: '24px', marginTop: '24px' }}>
           <Button type="primary" htmlType="submit" className={styles.submitButton} block loading={loading}>
-            Reset Password {!loading && <span className={styles.arrowIcon}>→</span>}
+            Tiếp tục {!loading && <span className={styles.arrowIcon}>→</span>}
           </Button>
         </Form.Item>
 
         <div className={styles.loginLink}>
-          <Link to="/auth/login">Back to Login</Link>
+          <Link to="/auth/login">Quay lại Đăng nhập</Link>
         </div>
       </Form>
     </div>
