@@ -2,6 +2,7 @@ package com.smartfinance.smart_finance_hub.service;
 
 import com.smartfinance.smart_finance_hub.entity.OtpToken;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import com.smartfinance.smart_finance_hub.repository.OtpTokenRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import jakarta.mail.MessagingException;
@@ -54,8 +55,8 @@ public class TwoFactorAuthService {
         OtpToken otpToken = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByIdDesc(email)
                 .orElseThrow(() -> new IllegalArgumentException("Mã OTP không tồn tại. Vui lòng yêu cầu gửi lại mã mới"));
 
-        if (otpToken.isExpired()) {
-            otpToken.setIsUsed(true);
+        if (LocalDateTime.now().isAfter(otpToken.getExpirationTime())) {
+            otpToken.setUsed(true);
             otpTokenRepository.save(otpToken);
             throw new IllegalArgumentException("Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới");
         }
@@ -63,10 +64,10 @@ public class TwoFactorAuthService {
         boolean isValid = otpToken.getOtpCode().equals(otpCode);
 
         if (isValid) {
-            otpToken.setIsUsed(true);
+            otpToken.setUsed(true);
             otpTokenRepository.save(otpToken);
 
-            user.setStatus("ACTIVE");
+            user.setStatus(UserStatus.ACTIVE);
             userRepository.save(user);
 
             log.info("verifyOtpAndActivate success: {} -> ACTIVE", email);
@@ -84,7 +85,7 @@ public class TwoFactorAuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
 
-        if ("ACTIVE".equals(user.getStatus())) {
+        if (UserStatus.ACTIVE.equals(user.getStatus())) {
             throw new IllegalStateException("Tài khoản đã được kích hoạt. Không cần xác thực OTP");
         }
 
@@ -97,7 +98,7 @@ public class TwoFactorAuthService {
 
     public boolean isAccountActive(String email) {
         return userRepository.findByEmail(email)
-                .map(user -> "ACTIVE".equals(user.getStatus()))
+                .map(user -> UserStatus.ACTIVE.equals(user.getStatus()))
                 .orElse(false);
     }
 

@@ -36,6 +36,8 @@ spring:
     suffix: .html
     mode: HTML
     encoding: UTF-8
+  profiles:
+    active: local
 
 server:
   port: 8080

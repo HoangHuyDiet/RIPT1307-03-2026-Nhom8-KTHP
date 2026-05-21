@@ -1,6 +1,7 @@
 package com.smartfinance.smart_finance_hub.controller;
 
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
+import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
         log.info("register request: {}", request);
-        authService.registerUser(request);
+        authService.register(request);
         log.info("register success: {}", request.getEmail());
 
         Map<String, Object> response = new HashMap<>();
@@ -31,5 +32,15 @@ public class AuthController {
         response.put("message", "Đăng ký tài khoản thành công!");
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/verify-account")
+    public ResponseEntity<?> verifyAccount(@Valid @RequestBody VerifyRequest request) {
+      authService.verifyAccount(request.getEmail(), request.getOtpCode());
+
+      return ResponseEntity.ok(Map.of(
+          "status", 200,
+          "message", "Xác thực tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
+      ));
     }
 }
