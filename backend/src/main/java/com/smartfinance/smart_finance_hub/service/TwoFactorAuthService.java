@@ -4,8 +4,6 @@ import com.smartfinance.smart_finance_hub.entity.OtpToken;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.repository.OtpTokenRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
-import com.warrenstrange.googleauth.GoogleAuthenticator;
-import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +23,6 @@ public class TwoFactorAuthService {
     private final UserRepository userRepository;
     private final OtpTokenRepository otpTokenRepository;
     private final MailService mailService;
-    private final GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
 
     @Value("${app.2fa.otp-length}")
     private int otpLength;
@@ -34,57 +31,11 @@ public class TwoFactorAuthService {
     private int otpExpirySeconds;
 
     @Transactional
-    public String enableTwoFactor(String email) throws MessagingException {
-        log.info("enableTwoFactor param: {}", email);
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
-
-        if (user.getTwoFaSecret() != null && !user.getTwoFaSecret().isEmpty()) {
-            throw new IllegalStateException("Xác thực 2 lớp đã được bật cho tài khoản này");
-        }
-
-        GoogleAuthenticatorKey secretKey = googleAuthenticator.createCredentials();
-        String secret = secretKey.getKey();
-
-        user.setTwoFaSecret(secret);
-        userRepository.save(user);
-
-        String otpCode = generateAndStoreOtp(email);
-        int expiryMinutes = otpExpirySeconds / 60;
-        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
-
-        log.info("enableTwoFactor success: {}", email);
-        return secret;
-    }
-
-    @Transactional
-    public void disableTwoFactor(String email) {
-        log.info("disableTwoFactor param: {}", email);
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
-
-        if (user.getTwoFaSecret() == null || user.getTwoFaSecret().isEmpty()) {
-            throw new IllegalStateException("Xác thực 2 lớp chưa được bật cho tài khoản này");
-        }
-
-        user.setTwoFaSecret(null);
-        userRepository.save(user);
-        otpTokenRepository.deleteByEmail(email);
-
-        log.info("disableTwoFactor success: {}", email);
-    }
-
     public void sendOtp(String email) throws MessagingException {
         log.info("sendOtp param: {}", email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
-
-        if (user.getTwoFaSecret() == null || user.getTwoFaSecret().isEmpty()) {
-            throw new IllegalStateException("Xác thực 2 lớp chưa được bật. Vui lòng bật 2FA trước");
-        }
 
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
@@ -94,10 +45,10 @@ public class TwoFactorAuthService {
     }
 
     @Transactional
-    public boolean verifyOtp(String email, String otpCode) {
-        log.info("verifyOtp param: email={}", email);
+    public boolean verifyOtpAndActivate(String email, String otpCode) {
+        log.info("verifyOtpAndActivate param: email={}", email);
 
-        userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
 
         OtpToken otpToken = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByIdDesc(email)
@@ -114,17 +65,39 @@ public class TwoFactorAuthService {
         if (isValid) {
             otpToken.setIsUsed(true);
             otpTokenRepository.save(otpToken);
-            log.info("verifyOtp success: {}", email);
+
+            user.setStatus("ACTIVE");
+            userRepository.save(user);
+
+            log.info("verifyOtpAndActivate success: {} -> ACTIVE", email);
         } else {
-            log.warn("verifyOtp failed: {}", email);
+            log.warn("verifyOtpAndActivate failed: {}", email);
         }
 
         return isValid;
     }
 
-    public boolean isTwoFactorEnabled(String email) {
+    @Transactional
+    public void resendOtp(String email) throws MessagingException {
+        log.info("resendOtp param: {}", email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
+
+        if ("ACTIVE".equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã được kích hoạt. Không cần xác thực OTP");
+        }
+
+        String otpCode = generateAndStoreOtp(email);
+        int expiryMinutes = otpExpirySeconds / 60;
+        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+
+        log.info("resendOtp success: {}", email);
+    }
+
+    public boolean isAccountActive(String email) {
         return userRepository.findByEmail(email)
-                .map(user -> user.getTwoFaSecret() != null && !user.getTwoFaSecret().isEmpty())
+                .map(user -> "ACTIVE".equals(user.getStatus()))
                 .orElse(false);
     }
 
