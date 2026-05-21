@@ -77,9 +77,21 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     INDEX idx_role_perm_perm (permission_id)
 ) ENGINE=InnoDB COMMENT='Bảng trung gian role-permission';
 
+-- 6. Bảng OTP tokens (dùng cho xác thực email 2FA)
+CREATE TABLE IF NOT EXISTS otp_tokens (
+    id                  BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    email               VARCHAR(255)    NOT NULL COMMENT 'Email nhận OTP',
+    otp_code            VARCHAR(6)      NOT NULL COMMENT 'Mã OTP 6 số',
+    expiration_time     DATETIME        NOT NULL COMMENT 'Thời gian hết hạn',
+    is_used             BOOLEAN         NOT NULL DEFAULT FALSE COMMENT 'Đã sử dụng chưa',
+
+    INDEX idx_otp_email (email)
+) ENGINE=InnoDB COMMENT='Bảng lưu mã OTP xác thực email';
+
 -- ============================================================
 -- MODULE 2: CORE - GIAO DỊCH & DANH MỤC (4 bảng)
 -- ============================================================
+
 
 -- 6. Bảng danh mục thu/chi
 CREATE TABLE IF NOT EXISTS categories (

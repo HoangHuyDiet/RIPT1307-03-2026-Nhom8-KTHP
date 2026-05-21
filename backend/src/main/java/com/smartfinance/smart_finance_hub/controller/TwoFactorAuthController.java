@@ -1,14 +1,12 @@
 package com.smartfinance.smart_finance_hub.controller;
 
 import com.smartfinance.smart_finance_hub.dto.request.OtpSendRequest;
-import com.smartfinance.smart_finance_hub.dto.request.OtpVerifyRequest;
 import com.smartfinance.smart_finance_hub.dto.response.ApiResponse;
 import com.smartfinance.smart_finance_hub.service.TwoFactorAuthService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,23 +31,6 @@ public class TwoFactorAuthController {
         return ResponseEntity.ok(
                 ApiResponse.success("Mã OTP đã được gửi tới email " + request.getEmail())
         );
-    }
-
-    @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<Void>> verifyOtp(
-            @Valid @RequestBody OtpVerifyRequest request) {
-        log.info("verifyOtp param: email={}", request.getEmail());
-
-        boolean isValid = twoFactorAuthService.verifyOtpAndActivate(request.getEmail(), request.getOtpCode());
-
-        if (isValid) {
-            return ResponseEntity.ok(
-                    ApiResponse.success("Xác thực OTP thành công. Tài khoản đã được kích hoạt")
-            );
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("Mã OTP không chính xác. Vui lòng thử lại"));
-        }
     }
 
     @PostMapping("/resend-otp")
@@ -80,3 +61,4 @@ public class TwoFactorAuthController {
         );
     }
 }
+
