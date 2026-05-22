@@ -6,6 +6,7 @@ backend/*.jar
 backend/*.war
 backend/*.log
 backend/logs/
+backend/src/main/resources/application-local.yml
 
 # File cấu hình chứa mật khẩu database cá nhân
 backend/src/main/resources/application-local.properties
@@ -15,15 +16,14 @@ backend/src/main/resources/application-dev.properties
 # 2. FRONTEND (React / UmiJS / Node)
 # ==========================================
 frontend/node_modules/
-frontend/.umi/
+frontend/src/.umi/
 frontend/.umi-production/
 frontend/dist/
-frontend/.env
-frontend/.env.local
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.eslintcache
+frontend/note.md
 
 # ==========================================
 # 3. IDEs & SYSTEM RÁC (VS Code, IntelliJ, STS)

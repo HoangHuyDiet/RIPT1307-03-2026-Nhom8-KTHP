@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chào mừng bạn!</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+
+<!-- Container chính -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f0f2f5; padding: 40px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="520" cellspacing="0" cellpadding="0"
+                   style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+
+                <!-- Header với gradient xanh lá -->
+                <tr>
+                    <td style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 40px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 32px;">🎉</h1>
+                        <h2 style="color: #ffffff; margin: 12px 0 0; font-size: 22px; font-weight: 700;">
+                            Chào mừng bạn!
+                        </h2>
+                        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;" th:text="${appName}">
+                            Smart Finance Hub
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding: 40px;">
+                        <p style="color: #1a1a2e; font-size: 16px; margin: 0 0 16px;">
+                            Xin chào <strong th:text="${userName}">Người dùng</strong>,
+                        </p>
+
+                        <p style="color: #4a4a68; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">
+                            Tài khoản của bạn đã được tạo thành công trên <strong th:text="${appName}">Smart Finance Hub</strong>!
+                            Bạn đã sẵn sàng để quản lý tài chính thông minh.
+                        </p>
+
+                        <!-- Tính năng nổi bật -->
+                        <div style="background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin: 0 0 24px;">
+                            <p style="color: #166534; font-size: 14px; font-weight: 700; margin: 0 0 12px;">
+                                ✨ Bạn có thể:
+                            </p>
+                            <ul style="color: #4a4a68; font-size: 14px; line-height: 2; margin: 0; padding-left: 20px;">
+                                <li>📊 Theo dõi thu chi hàng ngày</li>
+                                <li>🎯 Đặt mục tiêu tiết kiệm</li>
+                                <li>👥 Tạo quỹ chung với bạn bè</li>
+                                <li>📈 Xem báo cáo tài chính thông minh</li>
+                                <li>🔐 Bảo mật tài khoản với xác thực 2 lớp</li>
+                            </ul>
+                        </div>
+
+                        <!-- Nút CTA -->
+                        <div style="text-align: center; margin: 0 0 24px;">
+                            <a th:href="${loginUrl}" href="#"
+                               style="display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                                      color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px;
+                                      font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
+                                🚀 Bắt đầu sử dụng ngay
+                            </a>
+                        </div>
+
+                        <p style="color: #8e8ea0; font-size: 13px; line-height: 1.5; margin: 0;">
+                            💡 <strong>Mẹo:</strong> Hãy bật xác thực 2 lớp (2FA) trong phần Cài đặt để bảo vệ tài khoản tốt hơn.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #f8f9fa; padding: 24px 40px; text-align: center; border-top: 1px solid #e9ecef;">
+                        <p style="color: #8e8ea0; font-size: 12px; margin: 0; line-height: 1.6;">
+                            Email này được gửi tự động từ <span th:text="${appName}">Smart Finance Hub</span>.<br/>
+                            © 2026 Smart Finance Hub. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

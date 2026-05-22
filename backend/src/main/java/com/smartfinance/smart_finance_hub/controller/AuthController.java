@@ -1,0 +1,93 @@
+package com.smartfinance.smart_finance_hub.controller;
+
+import com.smartfinance.smart_finance_hub.dto.LoginRequest;
+import com.smartfinance.smart_finance_hub.dto.LoginResponse;
+import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
+import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
+import com.smartfinance.smart_finance_hub.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Slf4j
+@CrossOrigin(origins = "*")
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("register request: {}", request);
+        authService.register(request);
+        log.info("register success: {}", request.getEmail());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.CREATED.value());
+        response.put("message", "Đăng ký tài khoản thành công!");
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/verify-account")
+    public ResponseEntity<?> verifyAccount(@Valid @RequestBody VerifyRequest request) {
+      authService.verifyAccount(request.getEmail(), request.getOtpCode());
+
+      return ResponseEntity.ok(Map.of(
+          "status", 200,
+          "message", "Xác thực tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
+      ));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
+      log.info("login request: {}", request.getEmail());
+
+      LoginResponse loginResponse = authService.login(request);
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Đăng nhập thành công");
+      response.put("data", loginResponse);
+
+      return ResponseEntity.ok(response);
+    }
+
+    // ==================== FORGOT PASSWORD ====================
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+      log.info("forgot-password request for email: {}", request.getEmail());
+
+      authService.forgotPassword(request);
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Mã OTP đã được gửi đến email của bạn!");
+
+      return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@Valid @RequestBody ResetPasswordOtpRequest request) {
+      log.info("reset-password request for email: {}", request.getEmail());
+
+      authService.resetPasswordWithOtp(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay.");
+
+      return ResponseEntity.ok(response);
+    }
+}
