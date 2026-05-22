@@ -32,7 +32,10 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/v1/auth/**", "/backend/api/v1/auth/**").permitAll()
+            .requestMatchers(
+                "/api/auth/**",
+                "/api/2fa/**"
+            ).permitAll()
 
             .anyRequest().authenticated()
         );
