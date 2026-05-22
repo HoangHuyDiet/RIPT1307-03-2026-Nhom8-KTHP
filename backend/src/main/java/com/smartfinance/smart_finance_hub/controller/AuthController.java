@@ -4,6 +4,8 @@ import com.smartfinance.smart_finance_hub.dto.LoginRequest;
 import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
 import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +18,10 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
@@ -59,4 +62,32 @@ public class AuthController {
 
       return ResponseEntity.ok(response);
     }
-}
+
+    // ==================== FORGOT PASSWORD ====================
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+      log.info("forgot-password request for email: {}", request.getEmail());
+
+      authService.forgotPassword(request);
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Mã OTP đã được gửi đến email của bạn!");
+
+      return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@Valid @RequestBody ResetPasswordOtpRequest request) {
+      log.info("reset-password request for email: {}", request.getEmail());
+
+      authService.resetPasswordWithOtp(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay.");
+
+      return ResponseEntity.ok(response);
+    }
+}
