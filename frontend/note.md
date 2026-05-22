@@ -57,3 +57,4 @@ Lệnh chạy dự án: `npm run dev`
 Hướng pt nếu còn nhiều tg: 
 - Bổ sung Conditional Rendering (Hiển thị có điều kiện)
 - Thêm khả năng đăng nhập từ gg, apple
+- Thêm giao diện cho phần xác nhận 2 lớp để dùng chung cho cả đăng ký, đăng nhập
