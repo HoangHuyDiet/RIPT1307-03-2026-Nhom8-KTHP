@@ -7,6 +7,8 @@ import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import com.smartfinance.smart_finance_hub.exception.business.UserAlreadyExistsException;
 import com.smartfinance.smart_finance_hub.repository.OtpTokenRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
+import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
+import com.smartfinance.smart_finance_hub.security.JwtUtils;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import com.smartfinance.smart_finance_hub.service.OtpService;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final OtpTokenRepository otpTokenRepository;
     private final OtpService otpService;
+    private final JwtUtils jwtUtils;
 
     @Override
     @Transactional
@@ -69,4 +72,35 @@ public class AuthServiceImpl implements AuthService {
 
       log.info("Xác thực tài khoản thành công cho user: {}", email);
     }
-}
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+      log.info("login request: {}", request.getEmail());
+
+      User user = userRepository.findByEmail(request.getEmail())
+          .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không đúng"));
+
+      if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        throw new IllegalArgumentException("Email hoặc mật khẩu không đúng");
+      }
+
+      if (UserStatus.INACTIVE.equals(user.getStatus())) {
+        throw new IllegalStateException("Tài khoản chưa xác thực OTP. Vui lòng kiểm tra email");
+      }
+
+      if (UserStatus.BANNED.equals(user.getStatus())) {
+        throw new IllegalStateException("Tài khoản đã bị khóa");
+      }
+
+      CustomUserDetails userDetails = CustomUserDetails.build(user);
+      String token = jwtUtils.generateToken(userDetails);
+
+      log.info("login success: {}", request.getEmail());
+
+      return LoginResponse.builder()
+          .token(token)
+          .email(user.getEmail())
+          .displayName(user.getDisplayName())
+          .build();
+    }
+}
