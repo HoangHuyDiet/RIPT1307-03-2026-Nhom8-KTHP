@@ -1,17 +1,15 @@
 package com.smartfinance.smart_finance_hub.service.impl;
 
 import com.smartfinance.smart_finance_hub.dto.*;
-import com.smartfinance.smart_finance_hub.entity.OtpToken;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import com.smartfinance.smart_finance_hub.exception.business.UserAlreadyExistsException;
-import com.smartfinance.smart_finance_hub.repository.OtpTokenRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
 import com.smartfinance.smart_finance_hub.security.JwtUtils;
 import com.smartfinance.smart_finance_hub.service.AuthService;
-import com.smartfinance.smart_finance_hub.service.OtpService;
-import java.time.LocalDateTime;
+import com.smartfinance.smart_finance_hub.service.TwoFactorAuthService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,8 +24,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final OtpTokenRepository otpTokenRepository;
-    private final OtpService otpService;
+    private final TwoFactorAuthService twoFactorAuthService;
     private final JwtUtils jwtUtils;
 
     @Override
@@ -48,29 +45,22 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(newUser);
 
-        otpService.generateAndSendOtp(request.getEmail());
-        log.info("Đã tạo tài khoản và gửi mã OTP cho: {}", newUser.getEmail());
+        try {
+            twoFactorAuthService.sendOtp(request.getEmail());
+            log.info("Đã tạo tài khoản và gửi mã OTP cho: {}", newUser.getEmail());
+        } catch (MessagingException e) {
+            log.error("Lỗi hệ thống khi gửi email OTP đến {}: {}", newUser.getEmail(), e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+        }
     }
 
     @Override
     public void verifyAccount(String email, String otpCode) {
-      OtpToken otpToken = otpTokenRepository.findByEmailAndOtpCodeAndIsUsedFalse(email, otpCode)
-          .orElseThrow(() -> new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã được sử dụng!"));
-
-      if (otpToken.getExpirationTime().isBefore(LocalDateTime.now())) {
-        throw new IllegalArgumentException("Mã OTP đã hết hạn, vui lòng yêu cầu gửi lại mã mới!");
-      }
-
-      otpToken.setUsed(true);
-      otpTokenRepository.save(otpToken);
-
-      User user = userRepository.findByEmail(email)
-          .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
-
-      user.setStatus(UserStatus.ACTIVE);
-      userRepository.save(user);
-
-      log.info("Xác thực tài khoản thành công cho user: {}", email);
+        boolean isValid = twoFactorAuthService.verifyOtpAndActivate(email, otpCode);
+        if (!isValid) {
+            throw new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã được sử dụng!");
+        }
+        log.info("Xác thực tài khoản thành công cho user: {}", email);
     }
 
     @Override
