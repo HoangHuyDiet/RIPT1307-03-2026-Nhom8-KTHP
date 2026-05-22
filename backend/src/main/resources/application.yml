@@ -53,4 +53,4 @@ app:
     from-name: Smart Finance Hub
   2fa:
     otp-length: 6
-    otp-expiry-seconds: 300
+    otp-expiry-seconds: 60

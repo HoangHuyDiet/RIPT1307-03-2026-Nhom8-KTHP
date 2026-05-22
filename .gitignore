@@ -6,6 +6,7 @@ backend/*.jar
 backend/*.war
 backend/*.log
 backend/logs/
+backend/src/main/resources/application-local.yml
 
 # File cấu hình chứa mật khẩu database cá nhân
 backend/src/main/resources/application-local.properties
