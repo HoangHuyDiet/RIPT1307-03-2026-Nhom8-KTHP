@@ -19,8 +19,8 @@ export default function ForgotPassword() {
       });
 
       message.success('Đã gửi mã xác nhận OTP qua email của bạn!');
-      
-      history.push('/auth/otp', { email: values.email, type: 'reset' });
+
+      history.push('/auth/otp', { email: values.email, type: 'reset', newPassword: values.newPassword });
     } catch (error: any) {
       console.error('Reset password request failed:', error);
       const errorMsg = error.response?.data?.message || 'Email không tồn tại trong hệ thống!';
@@ -59,9 +59,9 @@ export default function ForgotPassword() {
             { type: 'email', message: 'Email không đúng định dạng!' }
           ]}
         >
-          <Input 
-            prefix={<MailOutlined className={styles.inputIcon} />} 
-            placeholder="Nhập email tài khoản" 
+          <Input
+            prefix={<MailOutlined className={styles.inputIcon} />}
+            placeholder="Nhập email tài khoản"
           />
         </Form.Item>
 

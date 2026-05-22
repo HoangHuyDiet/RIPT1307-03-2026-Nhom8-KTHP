@@ -20,10 +20,10 @@ export default function Register() {
         const response = await api.post('/auth/google', {
           token: tokenResponse.access_token,
         });
-        
+
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
-        
+
         useAuthStore.getState().setAuth(data.token, data.user);
         history.push('/dashboard');
       } catch (error: any) {
@@ -41,7 +41,7 @@ export default function Register() {
     setLoading(true);
     try {
       await api.post('/auth/register', {
-        name: values.name,
+        displayName: values.name,
         email: values.email,
         password: values.password,
       });
@@ -142,9 +142,9 @@ export default function Register() {
         <Divider className={styles.divider}>Or continue with</Divider>
 
         <div className={styles.socialLogin}>
-          <Button 
-            className={styles.socialBtn} 
-            icon={<GoogleOutlined />} 
+          <Button
+            className={styles.socialBtn}
+            icon={<GoogleOutlined />}
             onClick={() => loginWithGoogle()}
             loading={loading}
           >

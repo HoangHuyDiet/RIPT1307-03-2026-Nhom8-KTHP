@@ -20,10 +20,10 @@ export default function Login() {
         const response = await api.post('/auth/google', {
           token: tokenResponse.access_token,
         });
-        
+
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
-        
+
         useAuthStore.getState().setAuth(data.token, data.user);
         history.push('/dashboard');
       } catch (error: any) {
@@ -36,7 +36,7 @@ export default function Login() {
       message.error('Không thể kết nối với tài khoản Google');
     }
   });
- 
+
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
@@ -49,10 +49,10 @@ export default function Login() {
       
       message.success('Đăng nhập thành công');
       
-      useAuthStore.getState().setAuth(data.token);
+      useAuthStore.getState().setAuth(data.data.token, { email: data.data.email, name: data.data.displayName });
       
       history.push('/dashboard');
-      
+
     } catch (error: any) {
       console.error('Login failed:', error);
       const errorMsg = error.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
@@ -80,7 +80,7 @@ export default function Login() {
         className={styles.loginForm}
         initialValues={{ remember: true }}
         onFinish={onFinish}
-        layout="vertical" 
+        layout="vertical"
         size="large"
       >
         <Form.Item
@@ -93,7 +93,7 @@ export default function Login() {
         >
           <Input prefix={<MailOutlined className={styles.inputIcon} />} placeholder="Nhập email của bạn" />
         </Form.Item>
-        
+
         <Form.Item
           label={<span className={styles.inputLabel}>Password</span>}
           name="password"
@@ -104,7 +104,7 @@ export default function Login() {
             placeholder="••••••••"
           />
         </Form.Item>
-        
+
         <div className={styles.formActions}>
           <Form.Item name="remember" valuePropName="checked" noStyle>
             <Checkbox className={styles.checkboxText}>Remember me</Checkbox>
@@ -116,16 +116,16 @@ export default function Login() {
 
         <Form.Item style={{ marginBottom: '24px' }}>
           <Button type="primary" htmlType="submit" className={styles.loginButton} block loading={loading}>
-            Sign In {!loading &&<span className={styles.arrowIcon}>→</span>}
+            Sign In {!loading && <span className={styles.arrowIcon}>→</span>}
           </Button>
         </Form.Item>
-        
+
         <Divider className={styles.divider}>Or continue with</Divider>
 
         <div className={styles.socialLogin}>
-          <Button 
-            className={styles.socialBtn} 
-            icon={<GoogleOutlined />} 
+          <Button
+            className={styles.socialBtn}
+            icon={<GoogleOutlined />}
             onClick={() => loginWithGoogle()}
             loading={loading}
           >

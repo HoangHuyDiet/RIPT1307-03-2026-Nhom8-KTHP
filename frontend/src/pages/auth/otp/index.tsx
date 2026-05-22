@@ -12,14 +12,16 @@ const { Title, Text } = Typography;
 interface LocationState {
   email?: string;
   type?: 'register' | 'login' | 'reset';
+  newPassword?: string;
 }
 
 export default function OTPVerification() {
   const location = useLocation();
   const state = location.state as LocationState;
-  
+
   const email = state?.email || '';
   const type = state?.type || 'register';
+  const newPassword = state?.newPassword || '';
 
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
@@ -46,20 +48,31 @@ export default function OTPVerification() {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/verify-otp', {
-        email: email,
-        otp: otpValue,
-        type: type,
-      });
-
-      const data = response.data;
-      message.success('Xác thực OTP thành công!');
-
-      if (type === 'login') {
-        useAuthStore.getState().setAuth(data.token, data.user);
-        history.push('/dashboard');
-      } else {
+      if (type === 'reset') {
+        // Flow quên mật khẩu: verify OTP + đổi mật khẩu
+        await api.post('/auth/reset-password', {
+          email: email,
+          otpCode: otpValue,
+          newPassword: newPassword,
+        });
+        message.success('Đổi mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.');
         history.push('/auth/login');
+      } else {
+        // Flow đăng ký: verify OTP + kích hoạt tài khoản
+        const response = await api.post('/auth/verify-account', {
+          email: email,
+          otpCode: otpValue,
+        });
+
+        const data = response.data;
+        message.success('Xác thực OTP thành công!');
+
+        if (type === 'login') {
+          useAuthStore.getState().setAuth(data.token, data.user);
+          history.push('/dashboard');
+        } else {
+          history.push('/auth/login');
+        }
       }
     } catch (error: any) {
       console.error('OTP Verification failed:', error);
@@ -74,7 +87,7 @@ export default function OTPVerification() {
     if (!canResend) return;
     setLoading(true);
     try {
-      await api.post('/auth/resend-otp', { email, type });
+      await api.post('/2fa/resend-otp', { email });
       message.success('Đã gửi lại mã OTP mới vào Email của bạn!');
       setCountdown(60);
       setCanResend(false);
@@ -102,19 +115,19 @@ export default function OTPVerification() {
 
       <div className={styles.otpForm}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-          <Input.OTP 
-            length={6} 
-            formatter={(str) => str.toUpperCase()} 
+          <Input.OTP
+            length={6}
+            formatter={(str) => str.toUpperCase()}
             onChange={onFinishOTP}
             disabled={loading}
             size="large"
           />
         </div>
 
-        <Button 
-          type="primary" 
-          block 
-          size="large" 
+        <Button
+          type="primary"
+          block
+          size="large"
           loading={loading}
           disabled={loading}
           className={styles.submitBtn}

@@ -1,6 +1,7 @@
 package com.smartfinance.smart_finance_hub.service.impl;
 
 import com.smartfinance.smart_finance_hub.dto.*;
+import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import com.smartfinance.smart_finance_hub.exception.business.UserAlreadyExistsException;
@@ -93,4 +94,48 @@ public class AuthServiceImpl implements AuthService {
           .displayName(user.getDisplayName())
           .build();
     }
-}
+
+    // ==================== FORGOT PASSWORD ====================
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        log.info("forgotPassword request cho email: {}", request.getEmail());
+
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại trong hệ thống!"));
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa, không thể đổi mật khẩu");
+        }
+
+        // Gửi OTP xác thực qua email
+        try {
+            twoFactorAuthService.sendOtp(request.getEmail());
+            log.info("Đã gửi mã OTP đặt lại mật khẩu cho: {}", request.getEmail());
+        } catch (MessagingException e) {
+            log.error("Lỗi gửi email OTP reset password cho {}: {}", request.getEmail(), e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resetPasswordWithOtp(String email, String otpCode, String newPassword) {
+        log.info("resetPasswordWithOtp cho email: {}", email);
+
+        // Xác thực OTP (nhưng KHÔNG kích hoạt tài khoản — chỉ verify OTP)
+        boolean isValid = twoFactorAuthService.verifyOtp(email, otpCode);
+        if (!isValid) {
+            throw new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã hết hạn!");
+        }
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại trong hệ thống!"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        log.info("Đổi mật khẩu thành công cho user: {}", email);
+    }
+}

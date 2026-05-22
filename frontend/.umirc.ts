@@ -23,6 +23,13 @@ export default defineConfig({
       ],
     },
   ],
+  mock: false,
   npmClient: 'npm',
   utoopack: {},
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080/backend',
+      changeOrigin: true,
+    },
+  },
 });

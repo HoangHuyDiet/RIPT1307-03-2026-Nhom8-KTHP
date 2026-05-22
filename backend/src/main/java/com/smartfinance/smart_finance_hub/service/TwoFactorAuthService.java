@@ -85,15 +85,42 @@ public class TwoFactorAuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
 
-        if (UserStatus.ACTIVE.equals(user.getStatus())) {
-            throw new IllegalStateException("Tài khoản đã được kích hoạt. Không cần xác thực OTP");
-        }
-
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
         mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
 
         log.info("resendOtp success: {}", email);
+    }
+
+    /**
+     * Chỉ xác thực OTP mà KHÔNG kích hoạt tài khoản.
+     * Dùng cho flow quên mật khẩu.
+     */
+    @Transactional
+    public boolean verifyOtp(String email, String otpCode) {
+        log.info("verifyOtp param: email={}", email);
+
+        userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
+
+        OtpToken otpToken = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByIdDesc(email)
+                .orElseThrow(() -> new IllegalArgumentException("Mã OTP không tồn tại. Vui lòng yêu cầu gửi lại mã mới"));
+
+        if (LocalDateTime.now().isAfter(otpToken.getExpirationTime())) {
+            otpToken.setUsed(true);
+            otpTokenRepository.save(otpToken);
+            throw new IllegalArgumentException("Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới");
+        }
+
+        boolean isValid = otpToken.getOtpCode().equals(otpCode);
+        if (isValid) {
+            otpToken.setUsed(true);
+            otpTokenRepository.save(otpToken);
+            log.info("verifyOtp success: {}", email);
+        } else {
+            log.warn("verifyOtp failed (wrong code): {}", email);
+        }
+        return isValid;
     }
 
     public boolean isAccountActive(String email) {
