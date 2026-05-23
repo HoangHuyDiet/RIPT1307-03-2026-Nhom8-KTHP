@@ -37,6 +37,8 @@ public class SecurityConfig {
                 "/api/2fa/**"
             ).permitAll()
 
+            .requestMatchers("/api/v1/funds/**").authenticated()
+
             .anyRequest().authenticated()
         );
 
