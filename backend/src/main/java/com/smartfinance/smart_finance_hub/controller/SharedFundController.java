@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/funds")
+@RequestMapping("/api/funds")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j
