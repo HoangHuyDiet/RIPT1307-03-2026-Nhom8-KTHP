@@ -22,6 +22,14 @@ export default defineConfig({
         { path: '/dashboard', component: '@/pages/dashboard' },
       ],
     },
+
+    {
+      path: '/admin',
+      component: '@/layouts/AdminLayout',
+      routes: [
+        { path: '/admin/users', component: '@/pages/admin/users' },
+      ],
+    },
   ],
   mock: false,
   npmClient: 'npm',

@@ -1,0 +1,229 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.statsRow {
+  margin-bottom: 4px;
+}
+
+.statCard {
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  border: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  :global(.ant-statistic-title) {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  :global(.ant-statistic-content) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :global(.ant-statistic-content-value) {
+    font-size: 28px;
+    line-height: 1;
+  }
+}
+
+.statLabel {
+  color: #5F6368;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.statIconBlue {
+  font-size: 18px;
+  color: #1A73E8;
+}
+
+.statIconGreen {
+  font-size: 18px;
+  color: #34A853;
+}
+
+.statIconRed {
+  font-size: 18px;
+  color: #EA4335;
+}
+
+.statIconOrange {
+  font-size: 18px;
+  color: #F9AB00;
+}
+
+.tableCard {
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  border: none;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .toolbarLeft {
+    flex: 1;
+    min-width: 240px;
+
+    .searchBar {
+      width: 320px;
+      max-width: 100%;
+
+      :global(.ant-input-search .ant-input-group .ant-input) {
+        border-radius: 10px 0 0 10px !important;
+        height: 40px;
+        border-color: #d0d9f0;
+        font-size: 14px;
+        background: #f8faff;
+        transition: all 0.2s ease;
+
+        &:focus,
+        &:hover {
+          border-color: #1A73E8;
+          background: #ffffff;
+          box-shadow: none;
+        }
+      }
+
+      :global(.ant-input-search .ant-input-group .ant-input-search-button) {
+        border-radius: 0 10px 10px 0 !important;
+        height: 40px;
+        width: 44px;
+        background: #1A73E8;
+        border-color: #1A73E8;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+
+        &:hover {
+          background: #1557b0 !important;
+          border-color: #1557b0 !important;
+          box-shadow: 0 4px 12px rgba(26, 115, 232, 0.35);
+        }
+
+        .anticon {
+          font-size: 16px;
+        }
+      }
+
+      :global(.ant-input-group-wrapper) {
+        border-radius: 10px;
+      }
+    }
+  }
+
+  .toolbarRight {
+    .addBtn {
+      height: 38px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.table {
+  :global {
+    .ant-table-thead>tr>th {
+      background-color: #F8FAFF;
+      color: #0f172a;
+      font-weight: 600;
+      font-size: 13px;
+      border-bottom: 2px solid #E8EAED;
+      padding: 14px 16px;
+    }
+
+    .ant-table-tbody>tr>td {
+      border-bottom: 1px solid #F1F4F7;
+      padding: 14px 16px;
+      font-size: 14px;
+    }
+
+    .ant-table-tbody>tr:hover>td {
+      background-color: #F0F7FF !important;
+    }
+
+    .ant-table-tbody>tr:last-child>td {
+      border-bottom: none;
+    }
+  }
+}
+
+.roleTag {
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 10px;
+}
+
+.roleTagDefault {
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 2px 10px;
+}
+
+.lockBtn {
+  color: #EA4335;
+  font-weight: 500;
+
+  &:hover {
+    color: #c0392b !important;
+  }
+}
+
+.unlockBtn {
+  color: #34A853;
+  font-weight: 500;
+
+  &:hover {
+    color: #2d8747 !important;
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  gap: 8px;
+
+  .emptyIcon {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 8px;
+  }
+
+  .emptyText {
+    font-size: 15px;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .emptyHint {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+}
