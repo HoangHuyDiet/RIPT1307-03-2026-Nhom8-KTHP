@@ -11,6 +11,8 @@ public interface AuthService {
 
   void verifyAccount(String email, String otpCode);
 
+  void resendOtp(String email);
+
   LoginResponse login(LoginRequest request);
 
   void forgotPassword(ForgotPasswordRequest request);

@@ -3,19 +3,23 @@ package com.smartfinance.smart_finance_hub.controller;
 import com.smartfinance.smart_finance_hub.dto.LoginRequest;
 import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
+import com.smartfinance.smart_finance_hub.dto.ResendOtpRequest;
 import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -49,6 +53,19 @@ public class AuthController {
       ));
     }
 
+    @PostMapping("/resend-otp")
+    public ResponseEntity<Map<String, Object>> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+      log.info("resend-otp request for email: {}", request.getEmail());
+
+      authService.resendOtp(request.getEmail());
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", 200);
+      response.put("message", "Mã OTP mới đã được gửi lại");
+
+      return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
       log.info("login request: {}", request.getEmail());
@@ -62,8 +79,6 @@ public class AuthController {
 
       return ResponseEntity.ok(response);
     }
-
-    // ==================== FORGOT PASSWORD ====================
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
