@@ -16,6 +16,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByShareFundId(Long fundId);
 
+    List<Transaction> findByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
+
     List<Transaction> findByCategoryId(Long categoryId);
 
    

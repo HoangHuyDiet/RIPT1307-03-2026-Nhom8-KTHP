@@ -44,6 +44,10 @@ public class Transaction {
     @Column(length = 500)
     private String description;
 
+    @Column(name = "is_approved", nullable = false)
+    @Builder.Default
+    private Boolean isApproved = false;
+
     @NotNull
     @Column(nullable = false)
     private LocalDate date;
