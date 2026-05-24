@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:smart_finance_hub_postman;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;NON_KEYWORDS=MONTH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect:
+        format_sql: false
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-postman.sql
+
+logging:
+  level:
+    org.hibernate.SQL: OFF
+    org.springframework: INFO
