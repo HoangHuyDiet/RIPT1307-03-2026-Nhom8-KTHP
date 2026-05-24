@@ -1,6 +1,8 @@
 package com.smartfinance.smart_finance_hub.service.impl;
 
-import com.smartfinance.smart_finance_hub.dto.*;
+import com.smartfinance.smart_finance_hub.dto.LoginRequest;
+import com.smartfinance.smart_finance_hub.dto.LoginResponse;
+import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
@@ -12,11 +14,10 @@ import com.smartfinance.smart_finance_hub.service.AuthService;
 import com.smartfinance.smart_finance_hub.service.TwoFactorAuthService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.extern.slf4j.Slf4j;
-
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    public void resendOtp(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email: " + email));
+
+        if (UserStatus.ACTIVE.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã được kích hoạt");
+        }
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa");
+        }
+
+        try {
+            twoFactorAuthService.resendOtp(email);
+            log.info("Đã gửi lại mã OTP cho: {}", email);
+        } catch (MessagingException e) {
+            log.error("Lỗi gửi lại email OTP cho {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi lại email OTP, vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
     public LoginResponse login(LoginRequest request) {
       log.info("login request: {}", request.getEmail());
 
@@ -95,8 +119,6 @@ public class AuthServiceImpl implements AuthService {
           .build();
     }
 
-    // ==================== FORGOT PASSWORD ====================
-
     @Override
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
@@ -109,7 +131,6 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalStateException("Tài khoản đã bị khóa, không thể đổi mật khẩu");
         }
 
-        // Gửi OTP xác thực qua email
         try {
             twoFactorAuthService.sendOtp(request.getEmail());
             log.info("Đã gửi mã OTP đặt lại mật khẩu cho: {}", request.getEmail());
@@ -124,7 +145,6 @@ public class AuthServiceImpl implements AuthService {
     public void resetPasswordWithOtp(String email, String otpCode, String newPassword) {
         log.info("resetPasswordWithOtp cho email: {}", email);
 
-        // Xác thực OTP (nhưng KHÔNG kích hoạt tài khoản — chỉ verify OTP)
         boolean isValid = twoFactorAuthService.verifyOtp(email, otpCode);
         if (!isValid) {
             throw new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã hết hạn!");
