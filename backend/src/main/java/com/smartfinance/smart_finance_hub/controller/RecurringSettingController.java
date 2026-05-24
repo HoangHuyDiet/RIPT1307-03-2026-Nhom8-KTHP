@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/recurring-settings")
+@RequestMapping("/api/recurring-settings")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j

@@ -81,16 +81,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\": 50000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Ăn trưa văn phòng\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
+							"raw": "{\n    \"amount\": 50000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Ä‚n trÆ°a vÄƒn phÃ²ng\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions",
+							"raw": "{{base_url}}/api/transactions",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions"
 							]
 						}
@@ -120,16 +119,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\": 10000000,\n    \"type\": \"INCOME\",\n    \"description\": \"Lương tháng 5\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 11\n}"
+							"raw": "{\n    \"amount\": 10000000,\n    \"type\": \"INCOME\",\n    \"description\": \"LÆ°Æ¡ng thÃ¡ng 5\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 11\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions",
+							"raw": "{{base_url}}/api/transactions",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions"
 							]
 						}
@@ -152,13 +150,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions?type=EXPENSE&startDate=2026-05-01&endDate=2026-05-31&page=0&size=20",
+							"raw": "{{base_url}}/api/transactions?type=EXPENSE&startDate=2026-05-01&endDate=2026-05-31&page=0&size=20",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions"
 							],
 							"query": [
@@ -203,13 +200,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions/1",
+							"raw": "{{base_url}}/api/transactions/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions",
 								"1"
 							]
@@ -240,16 +236,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\": 60000,\n    \"description\": \"Ăn trưa văn phòng (Cập nhật)\"\n}"
+							"raw": "{\n    \"amount\": 60000,\n    \"description\": \"Ä‚n trÆ°a vÄƒn phÃ²ng (Cáº­p nháº­t)\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions/1",
+							"raw": "{{base_url}}/api/transactions/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions",
 								"1"
 							]
@@ -273,13 +268,12 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions/1",
+							"raw": "{{base_url}}/api/transactions/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"transactions",
 								"1"
 							]
@@ -313,16 +307,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"amount\": -50000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Thử số tiền âm\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
+									"raw": "{\n    \"amount\": -50000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Thá»­ sá»‘ tiá»n Ã¢m\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/api/v1/transactions",
+									"raw": "{{base_url}}/api/transactions",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"transactions"
 									]
 								}
@@ -352,16 +345,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"amount\": 50000,\n    \"type\": \"TRANSFER\",\n    \"description\": \"Thử loại không hợp lệ\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
+									"raw": "{\n    \"amount\": 50000,\n    \"type\": \"TRANSFER\",\n    \"description\": \"Thá»­ loáº¡i khÃ´ng há»£p lá»‡\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/api/v1/transactions",
+									"raw": "{{base_url}}/api/transactions",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"transactions"
 									]
 								}
@@ -391,16 +383,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"amount\": 50000,\n    \"type\": \"INCOME\",\n    \"description\": \"Thử lệch loại danh mục (An uống là EXPENSE nhưng tx là INCOME)\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
+									"raw": "{\n    \"amount\": 50000,\n    \"type\": \"INCOME\",\n    \"description\": \"Thá»­ lá»‡ch loáº¡i danh má»¥c (An uá»‘ng lÃ  EXPENSE nhÆ°ng tx lÃ  INCOME)\",\n    \"date\": \"2026-05-24\",\n    \"categoryId\": 1\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/api/v1/transactions",
+									"raw": "{{base_url}}/api/transactions",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"transactions"
 									]
 								}
@@ -423,13 +414,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}/api/v1/transactions?startDate=2026-05-31&endDate=2026-05-01",
+									"raw": "{{base_url}}/api/transactions?startDate=2026-05-31&endDate=2026-05-01",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"transactions"
 									],
 									"query": [
@@ -476,16 +466,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Tiền mạng internet hàng tháng\",\n    \"frequency\": \"MONTHLY\",\n    \"dayOfMonth\": 24,\n    \"startDate\": \"2026-05-24\",\n    \"categoryId\": 7\n}"
+							"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Tiá»n máº¡ng internet hÃ ng thÃ¡ng\",\n    \"frequency\": \"MONTHLY\",\n    \"dayOfMonth\": 24,\n    \"startDate\": \"2026-05-24\",\n    \"categoryId\": 7\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings",
+							"raw": "{{base_url}}/api/recurring-settings",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings"
 							]
 						}
@@ -508,13 +497,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings",
+							"raw": "{{base_url}}/api/recurring-settings",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings"
 							]
 						}
@@ -537,13 +525,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings?active=true",
+							"raw": "{{base_url}}/api/recurring-settings?active=true",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings"
 							],
 							"query": [
@@ -572,13 +559,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings?active=false",
+							"raw": "{{base_url}}/api/recurring-settings?active=false",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings"
 							],
 							"query": [
@@ -614,16 +600,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"amount\": 550000,\n    \"description\": \"Tiền mạng internet hàng tháng (Cập nhật)\"\n}"
+							"raw": "{\n    \"amount\": 550000,\n    \"description\": \"Tiá»n máº¡ng internet hÃ ng thÃ¡ng (Cáº­p nháº­t)\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings/1",
+							"raw": "{{base_url}}/api/recurring-settings/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings",
 								"1"
 							]
@@ -647,13 +632,12 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/recurring-settings/1",
+							"raw": "{{base_url}}/api/recurring-settings/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"v1",
 								"recurring-settings",
 								"1"
 							]
@@ -687,16 +671,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Tiền mạng internet hàng tháng\",\n    \"frequency\": \"MONTHLY\",\n    \"dayOfMonth\": 24,\n    \"startDate\": \"2026-06-30\",\n    \"endDate\": \"2026-06-01\",\n    \"categoryId\": 7\n}"
+									"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Tiá»n máº¡ng internet hÃ ng thÃ¡ng\",\n    \"frequency\": \"MONTHLY\",\n    \"dayOfMonth\": 24,\n    \"startDate\": \"2026-06-30\",\n    \"endDate\": \"2026-06-01\",\n    \"categoryId\": 7\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/api/v1/recurring-settings",
+									"raw": "{{base_url}}/api/recurring-settings",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"recurring-settings"
 									]
 								}
@@ -726,16 +709,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Học phí hàng tuần\",\n    \"frequency\": \"WEEKLY\",\n    \"startDate\": \"2026-05-24\",\n    \"categoryId\": 5\n}"
+									"raw": "{\n    \"amount\": 500000,\n    \"type\": \"EXPENSE\",\n    \"description\": \"Há»c phÃ­ hÃ ng tuáº§n\",\n    \"frequency\": \"WEEKLY\",\n    \"startDate\": \"2026-05-24\",\n    \"categoryId\": 5\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/api/v1/recurring-settings",
+									"raw": "{{base_url}}/api/recurring-settings",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"api",
-										"v1",
 										"recurring-settings"
 									]
 								}

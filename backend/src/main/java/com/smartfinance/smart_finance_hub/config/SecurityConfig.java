@@ -37,9 +37,9 @@ public class SecurityConfig {
                 "/api/2fa/**"
             ).permitAll()
 
-            .requestMatchers("/api/v1/funds/**").authenticated()
-            .requestMatchers("/api/v1/transactions/**").authenticated()
-            .requestMatchers("/api/v1/recurring-settings/**").authenticated()
+            .requestMatchers("/api/funds/**").authenticated()
+            .requestMatchers("/api/transactions/**").authenticated()
+            .requestMatchers("/api/recurring-settings/**").authenticated()
 
             .anyRequest().authenticated()
         );
