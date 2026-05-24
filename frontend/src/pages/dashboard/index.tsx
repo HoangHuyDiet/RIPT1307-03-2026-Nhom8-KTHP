@@ -1,5 +1,5 @@
-import React from 'react';
-import { Row, Col, Card, Typography, Space, Button, Skeleton, Divider, Select } from 'antd';
+import React, { useState } from 'react';
+import { Row, Col, Card, Typography, Space, Button, Skeleton, Select } from 'antd';
 import {
   PlusOutlined,
   UserAddOutlined,
@@ -7,17 +7,77 @@ import {
   WalletOutlined,
   RobotOutlined,
   MoreOutlined,
-  ArrowUpOutlined,
-  CoffeeOutlined,
-  BankOutlined,
-  ShoppingCartOutlined,
-  ThunderboltOutlined,
 } from '@ant-design/icons';
+import { Pie, Column } from '@ant-design/charts';
 import styles from './index.less';
 
 const { Title, Text } = Typography;
 
+const CHART_COLORS = {
+  pieColors: [],
+  columnColors: [],
+};
+
 export default function DashboardBlank() {
+  const [pieData, setPieData] = useState<any[]>([]);
+  const [columnData, setColumnData] = useState<any[]>([]);
+
+  const pieConfig = {
+    data: pieData,
+    angleField: 'value',
+    colorField: 'category',
+    radius: 0.8,
+    label: {
+      text: 'value',
+      position: 'outside',
+    },
+    legend: {
+      color: {
+        position: 'right',
+      },
+    },
+    tooltip: {
+      items: [
+        {
+          channel: 'y',
+          valueFormatter: (value: any) => `${value.toLocaleString('vi-VN')} đ`,
+        },
+      ],
+    },
+    ...(CHART_COLORS.pieColors && CHART_COLORS.pieColors.length > 0 ? {
+      scale: {
+        color: {
+          range: CHART_COLORS.pieColors,
+        },
+      },
+    } : {}),
+  };
+
+  const columnConfig = {
+    data: columnData,
+    xField: 'month',
+    yField: 'amount',
+    colorField: 'type',
+    isGroup: true,
+    group: true,
+    legend: false,
+    tooltip: {
+      items: [
+        {
+          channel: 'y',
+          valueFormatter: (value: any) => `${value.toLocaleString('vi-VN')} đ`,
+        },
+      ],
+    },
+    ...(CHART_COLORS.columnColors && CHART_COLORS.columnColors.length > 0 ? {
+      scale: {
+        color: {
+          range: CHART_COLORS.columnColors,
+        },
+      },
+    } : {}),
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.header}>
@@ -42,35 +102,34 @@ export default function DashboardBlank() {
                   <div className={styles.iconWrapper}>
                     <WalletOutlined />
                   </div>
-                  <Text strong style={{ fontSize: '16px' }}>Tổng thanh khoản</Text>
+                  <Text strong style={{ fontSize: '16px' }}>Chi tiêu theo danh mục</Text>
                 </Space>
                 <Button type="text" icon={<MoreOutlined />} />
               </div>
               
               <div className={styles.liquidityContent}>
-                <div className={styles.liquidityValue}>
-                  <Skeleton.Input active size="large" style={{ width: 250, height: 48 }} />
-                  <div style={{ marginTop: 8 }}>
-                    <Skeleton.Input active size="small" style={{ width: 120 }} />
-                  </div>
-                </div>
-                <div className={styles.liquidityChart}>
-                  <Skeleton.Node active style={{ width: '100%', height: 120 }}>
-                    <span style={{ color: '#bfbfbf' }}>[Biểu đồ đường]</span>
-                  </Skeleton.Node>
+                <div className={styles.liquidityChart} style={{ height: 260 }}>
+                  <Pie {...pieConfig} />
                 </div>
               </div>
             </Card>
+
             <Card bordered={false} className={styles.cashFlowCard}>
               <div className={styles.cardHeader}>
                 <Text strong style={{ fontSize: '16px' }}>Dòng tiền</Text>
                 <Space size="middle">
                   <Space size="small">
-                    <div className={styles.legendColor} style={{ backgroundColor: '#34A853' }} />
+                    <div
+                      className={styles.legendColor}
+                      style={{ backgroundColor: CHART_COLORS.columnColors[0] || '#34A853' }}
+                    />
                     <Text type="secondary" style={{ fontSize: '12px' }}>Thu nhập</Text>
                   </Space>
                   <Space size="small">
-                    <div className={styles.legendColor} style={{ backgroundColor: '#EA4335' }} />
+                    <div
+                      className={styles.legendColor}
+                      style={{ backgroundColor: CHART_COLORS.columnColors[1] || '#EA4335' }}
+                    />
                     <Text type="secondary" style={{ fontSize: '12px' }}>Chi phí</Text>
                   </Space>
                   <Select
@@ -92,9 +151,7 @@ export default function DashboardBlank() {
               </div>
               
               <div className={styles.cashFlowChart}>
-                 <Skeleton.Node active style={{ width: '100%', height: 250 }}>
-                   <span style={{ color: '#bfbfbf' }}>[Biểu đồ cột]</span>
-                 </Skeleton.Node>
+                 <Column {...columnConfig} />
               </div>
             </Card>
 
