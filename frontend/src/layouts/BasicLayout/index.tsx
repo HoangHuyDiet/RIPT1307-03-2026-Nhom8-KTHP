@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
   BankOutlined,
   SearchOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 
@@ -25,6 +26,11 @@ export default function BasicLayout() {
       key: '/dashboard',
       icon: location.pathname === '/dashboard' ? <AppstoreFilled /> : <AppstoreOutlined />,
       label: <Link to="/dashboard">Tổng quan</Link>,
+    },
+    {
+      key: '/transactions',
+      icon: <WalletOutlined />,
+      label: <Link to="/transactions">Quản lý giao dịch</Link>,
     },
   ];
 
