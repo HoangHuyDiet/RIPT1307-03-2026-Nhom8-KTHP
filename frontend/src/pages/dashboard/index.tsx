@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Typography, Space, Button, Skeleton, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Typography, Space, Button, Skeleton, Select, Avatar } from 'antd';
 import {
   PlusOutlined,
   UserAddOutlined,
@@ -7,9 +7,18 @@ import {
   WalletOutlined,
   RobotOutlined,
   MoreOutlined,
+  CoffeeOutlined,
+  WarningOutlined,
+  LaptopOutlined,
+  CheckCircleOutlined,
+  GlobalOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import { Pie, Column } from '@ant-design/charts';
 import styles from './index.less';
+import { history } from 'umi';
+import dayjs from 'dayjs';
+import api from '../../utils/api';
 
 const { Title, Text } = Typography;
 
@@ -21,6 +30,25 @@ const CHART_COLORS = {
 export default function DashboardBlank() {
   const [pieData, setPieData] = useState<any[]>([]);
   const [columnData, setColumnData] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+
+  useEffect(() => {
+    const fetchRecentTransactions = async () => {
+      setLoadingRecent(true);
+      try {
+        const res = await api.get('/transactions/search', {
+          params: { page: 0, size: 5 }
+        });
+        setRecentTransactions(res.data.content || []);
+      } catch (err) {
+        console.error('Không thể lấy danh sách hoạt động gần đây:', err);
+      } finally {
+        setLoadingRecent(false);
+      }
+    };
+    fetchRecentTransactions();
+  }, []);
 
   const pieConfig = {
     data: pieData,
@@ -86,9 +114,21 @@ export default function DashboardBlank() {
           <Text className={styles.subtitle}>Dưới đây là thông tin phân tích tài chính của bạn hôm nay.</Text>
         </div>
         <Space size="middle">
-          <Button icon={<FlagOutlined />}>Mục tiêu mới</Button>
-          <Button icon={<UserAddOutlined />}>Mời</Button>
-          <Button type="primary" icon={<PlusOutlined />}>Thêm giao dịch</Button>
+          <Button icon={<FlagOutlined />}
+            onClick={() => history.push('')}
+          >
+            Mục tiêu mới
+          </Button>
+          <Button icon={<UserAddOutlined />}
+            onClick={() => history.push('')}
+          >
+            Mời
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />}
+            onClick={() => history.push('/transactions')}
+          >
+            Thêm giao dịch
+          </Button>
         </Space>
       </div>
 
@@ -177,11 +217,106 @@ export default function DashboardBlank() {
             <Card bordered={false} className={styles.recentActivityCard}>
               <div className={styles.cardHeader}>
                 <Text strong style={{ fontSize: '16px' }}>Hoạt động gần đây</Text>
-                <span style={{ fontSize: '13px', color: '#bfbfbf', cursor: 'not-allowed' }}>Xem tất cả</span>
+                <Button
+                  type="text"
+                  onClick={() => history.push('/transactions')}
+                  style={{ padding: 0, height: 'auto' }}
+                >
+                  <span style={{ fontSize: '13px', color: '#1a73e8', fontWeight: 600, cursor: 'pointer' }}>
+                    Xem tất cả
+                  </span>
+                </Button>
               </div>
               
-              <div style={{ marginTop: 24 }}>
-                <Skeleton active avatar paragraph={{ rows: 4 }} />
+              <div style={{ marginTop: 20 }}>
+                {loadingRecent ? (
+                  <Skeleton active avatar paragraph={{ rows: 4 }} />
+                ) : recentTransactions.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: '#bfbfbf', fontSize: '13px' }}>
+                    Chưa có giao dịch nào gần đây
+                  </div>
+                ) : (
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    {recentTransactions.map((item: any) => {
+                      let avatarIcon = <CoffeeOutlined />;
+                      let avatarBg = '#f0f2f5';
+                      let avatarColor = '#595959';
+
+                      if (item.id === 25 || item.description?.includes('bất thường')) {
+                        avatarIcon = <WarningOutlined />;
+                        avatarBg = '#FFF1F0';
+                        avatarColor = '#FF4D4F';
+                      } else if (item.description?.includes('AWS')) {
+                        avatarIcon = <LaptopOutlined />;
+                        avatarBg = '#E6F7FF';
+                        avatarColor = '#1890FF';
+                      } else if (item.type === 'INCOME') {
+                        avatarIcon = <CheckCircleOutlined />;
+                        avatarBg = '#F6FFED';
+                        avatarColor = '#52C41A';
+                      } else if (item.description?.includes('Delta')) {
+                        avatarIcon = <GlobalOutlined />;
+                        avatarBg = '#F5F5F5';
+                        avatarColor = '#8C8C8C';
+                      }
+
+                      const formattedAmount = new Intl.NumberFormat('vi-VN', { 
+                        style: 'currency', 
+                        currency: 'VND' 
+                      }).format(item.amount);
+
+                      return (
+                        <div 
+                          key={item.id} 
+                          style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            padding: '10px 0', 
+                            borderBottom: '1px solid #f1f3f7' 
+                          }}
+                        >
+                          <Space size="middle" align="center">
+                            <Avatar 
+                              size={36} 
+                              icon={avatarIcon} 
+                              style={{ backgroundColor: avatarBg, color: avatarColor }} 
+                            />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <Text 
+                                strong 
+                                style={{ 
+                                  fontSize: '13px', 
+                                  color: '#202124', 
+                                  display: 'block', 
+                                  maxWidth: '150px', 
+                                  overflow: 'hidden', 
+                                  textOverflow: 'ellipsis', 
+                                  whiteSpace: 'nowrap' 
+                                }} 
+                                title={item.description}
+                              >
+                                {item.description}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: '11px' }}>
+                                <CalendarOutlined style={{ marginRight: 4 }} />
+                                {dayjs(item.date).format('DD/MM/YYYY')}
+                              </Text>
+                            </div>
+                          </Space>
+                          
+                          <span style={{ 
+                            fontWeight: 700, 
+                            fontSize: '13px', 
+                            color: item.type === 'INCOME' ? '#34a853' : '#1a1d20' 
+                          }}>
+                            {item.type === 'INCOME' ? `+${formattedAmount}` : `-${formattedAmount}`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </Space>
+                )}
               </div>
             </Card>
 

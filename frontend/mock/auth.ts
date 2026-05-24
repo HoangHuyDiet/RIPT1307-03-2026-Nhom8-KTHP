@@ -1,5 +1,5 @@
 export default {
-  'POST /api/auth/login': (req: any, res: any) => {
+  'POST /api/auth/login_mock': (req: any, res: any) => {
     const { email, password } = req.body;
 
     if (email === 'admin@gmail.com' && password === '123456') {
@@ -23,7 +23,7 @@ export default {
 
 
   
-  'POST /api/auth/register': (req: any, res: any) => {
+  'POST /api/auth/register_mock': (req: any, res: any) => {
     const { email } = req.body;
 
     if (email === 'admin@gmail.com') {
@@ -40,7 +40,7 @@ export default {
   },
 
 
-  'POST /api/auth/verify-otp': (req: any, res: any) => {
+  'POST /api/auth/verify-otp_mock': (req: any, res: any) => {
     const { email, otp, type } = req.body;
     if (otp === '123456') {
       if (type === 'login') {
@@ -66,7 +66,7 @@ export default {
       });
     }
   },
-  'POST /api/auth/resend-otp': (req: any, res: any) => {
+  'POST /api/auth/resend-otp_mock': (req: any, res: any) => {
     res.send({
       status: 'success',
       message: 'Mã OTP mới đã được gửi'
@@ -75,7 +75,7 @@ export default {
 
 
 
-  'POST /api/auth/forgot-password': (req: any, res: any) => {
+  'POST /api/auth/forgot-password_mock': (req: any, res: any) => {
     const { email } = req.body;
 
     if (email === 'admin@gmail.com') {
