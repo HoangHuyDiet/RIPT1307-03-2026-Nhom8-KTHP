@@ -38,6 +38,8 @@ public class SecurityConfig {
             ).permitAll()
 
             .requestMatchers("/api/v1/funds/**").authenticated()
+            .requestMatchers("/api/v1/transactions/**").authenticated()
+            .requestMatchers("/api/v1/recurring-settings/**").authenticated()
 
             .anyRequest().authenticated()
         );
