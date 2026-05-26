@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Table,
@@ -12,6 +12,9 @@ import {
   Statistic,
   Row,
   Col,
+  Modal,
+  Form,
+  Select,
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,7 +24,15 @@ import {
   CheckCircleOutlined,
   StopOutlined,
   UserOutlined,
+  ExclamationCircleOutlined,
+  CrownOutlined,
+  CustomerServiceOutlined,
+  ReloadOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
+import { useAuthStore } from '../../../store/useAuthStore';
+import api from '../../../utils/api';
 import styles from './index.less';
 
 const { Text } = Typography;
@@ -30,35 +41,159 @@ export interface User {
   id: number;
   email: string;
   displayName: string;
-  role: 'ADMIN' | 'USER';
+  roles: string[];
   status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+  createdAt: string;
 }
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState<string>('');
+  
+  // Modal states
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm();
 
-  const handleToggleLock = (userId: number) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) => {
-        if (user.id === userId) {
-          const nextStatus = user.status === 'BANNED' ? 'ACTIVE' : 'BANNED';
-          return { ...user, status: nextStatus };
-        }
-        return user;
-      })
-    );
-    message.success('Đã cập nhật trạng thái');
+  const { isAdmin } = useAuthStore();
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/admin/users');
+      setUsers(res.data.data || []);
+    } catch (error: any) {
+      message.error('Không thể tải danh sách người dùng');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // --- Actions ---
+
+  const handleToggleLock = (user: User) => {
+    const newStatus = user.status === 'BANNED' ? 'ACTIVE' : 'BANNED';
+    const actionText = newStatus === 'BANNED' ? 'khóa' : 'mở khóa';
+
+    Modal.confirm({
+      title: `Xác nhận ${actionText} tài khoản`,
+      icon: <ExclamationCircleOutlined />,
+      content: `Bạn có chắc muốn ${actionText} tài khoản "${user.email}"?`,
+      okText: 'Xác nhận',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: newStatus === 'BANNED' },
+      onOk: async () => {
+        try {
+          await api.put(`/admin/users/${user.id}/status`, { status: newStatus });
+          message.success(`Đã ${actionText} tài khoản ${user.email}`);
+          fetchUsers();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || `Không thể ${actionText} tài khoản`);
+        }
+      },
+    });
+  };
+
+  const handleDeleteUser = (user: User) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa tài khoản',
+      icon: <ExclamationCircleOutlined style={{ color: 'red' }} />,
+      content: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${user.email}"? Hành động này không thể hoàn tác.`,
+      okText: 'Xóa vĩnh viễn',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await api.delete(`/admin/users/${user.id}`);
+          message.success(`Đã xóa tài khoản ${user.email}`);
+          fetchUsers();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || 'Không thể xóa tài khoản này');
+        }
+      },
+    });
+  };
+
+  // --- Modal Logic ---
+
+  const openCreateModal = () => {
+    setModalMode('create');
+    setEditingUserId(null);
+    form.resetFields();
+    form.setFieldsValue({
+      status: 'ACTIVE',
+      roles: ['USER'],
+    });
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (user: User) => {
+    setModalMode('edit');
+    setEditingUserId(user.id);
+    form.resetFields();
+    form.setFieldsValue({
+      email: user.email,
+      displayName: user.displayName,
+      status: user.status,
+      roles: user.roles,
+    });
+    setIsModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  const handleModalSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+
+      if (modalMode === 'create') {
+        await api.post('/admin/users', values);
+        message.success('Đã tạo tài khoản thành công');
+      } else if (modalMode === 'edit' && editingUserId) {
+        await api.put(`/admin/users/${editingUserId}`, values);
+        message.success('Đã cập nhật thông tin tài khoản');
+      }
+
+      setIsModalVisible(false);
+      fetchUsers();
+    } catch (error: any) {
+      if (error.errorFields) return; // Validation error
+      message.error(error.response?.data?.message || 'Đã xảy ra lỗi, vui lòng thử lại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // --- Table Configuration ---
 
   const handleSearch = (value: string) => {
     setSearchText(value);
   };
 
+  const filteredUsers = searchText
+    ? users.filter(
+        (u) =>
+          u.email.toLowerCase().includes(searchText.toLowerCase()) ||
+          u.displayName.toLowerCase().includes(searchText.toLowerCase())
+      )
+    : users;
+
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.status === 'ACTIVE').length;
   const bannedUsers = users.filter((u) => u.status === 'BANNED').length;
-  const adminUsers = users.filter((u) => u.role === 'ADMIN').length;
+  const adminUsers = users.filter((u) => u.roles?.includes('ADMIN') || u.roles?.includes('SUPPORT_ADMIN')).length;
 
   const columns = [
     {
@@ -80,15 +215,25 @@ export default function UserManagement() {
     },
     {
       title: 'Vai trò',
-      dataIndex: 'role',
-      key: 'role',
-      width: 110,
-      render: (role: 'ADMIN' | 'USER') =>
-        role === 'ADMIN' ? (
-          <Tag color="blue" className={styles.roleTag}>{role}</Tag>
-        ) : (
-          <Tag className={styles.roleTagDefault}>{role}</Tag>
-        ),
+      dataIndex: 'roles',
+      key: 'roles',
+      width: 180,
+      render: (roles: string[]) => (
+        <Space>
+          {(roles || []).map((role) => {
+            let color = 'default';
+            let icon = <UserOutlined />;
+            if (role === 'ADMIN') { color = 'red'; icon = <CrownOutlined />; }
+            else if (role === 'SUPPORT_ADMIN') { color = 'orange'; icon = <CustomerServiceOutlined />; }
+            else if (role === 'USER') { color = 'blue'; icon = <UserOutlined />; }
+            return (
+              <Tag key={role} color={color} icon={icon}>
+                {role}
+              </Tag>
+            );
+          })}
+        </Space>
+      ),
     },
     {
       title: 'Trạng thái',
@@ -109,22 +254,64 @@ export default function UserManagement() {
       },
     },
     {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 120,
+      render: (date: string) => date ? new Date(date).toLocaleDateString('vi-VN') : '-',
+    },
+    {
       title: 'Hành động',
       key: 'action',
-      width: 130,
+      width: 250,
       render: (_: any, record: User) => {
+        // Chỉ ADMIN mới có quyền CRUD
+        if (!isAdmin()) {
+          return <Text type="secondary">Chỉ xem</Text>;
+        }
+
         const isBanned = record.status === 'BANNED';
+        const isSuperAdmin = record.roles?.includes('ADMIN');
+
         return (
-          <Button
-            type="link"
-            danger={!isBanned}
-            size="small"
-            icon={isBanned ? <UnlockOutlined /> : <LockOutlined />}
-            onClick={() => handleToggleLock(record.id)}
-            className={isBanned ? styles.unlockBtn : styles.lockBtn}
-          >
-            {isBanned ? 'Mở khóa' : 'Khóa'}
-          </Button>
+          <Space>
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
+              className={styles.editBtn}
+            >
+              Sửa
+            </Button>
+            
+            {!isSuperAdmin ? (
+              <>
+                <Button
+                  type="text"
+                  danger={!isBanned}
+                  size="small"
+                  icon={isBanned ? <UnlockOutlined /> : <LockOutlined />}
+                  onClick={() => handleToggleLock(record)}
+                  className={isBanned ? styles.unlockBtn : styles.lockBtn}
+                >
+                  {isBanned ? 'Mở' : 'Khóa'}
+                </Button>
+                <Button
+                  type="text"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteUser(record)}
+                  className={styles.deleteBtn}
+                >
+                  Xóa
+                </Button>
+              </>
+            ) : (
+              <Text type="secondary" style={{ fontSize: '12px' }}>Không thể thao tác Admin</Text>
+            )}
+          </Space>
         );
       },
     },
@@ -187,20 +374,31 @@ export default function UserManagement() {
           </div>
           <div className={styles.toolbarRight}>
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              className={styles.addBtn}
-              onClick={() => message.info('Chức năng thêm tài khoản sẽ được tích hợp sau')}
+              icon={<ReloadOutlined />}
+              onClick={fetchUsers}
+              loading={loading}
+              style={{ marginRight: 8 }}
             >
-              Thêm tài khoản
+              Làm mới
             </Button>
+            {isAdmin() && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                className={styles.addBtn}
+                onClick={openCreateModal}
+              >
+                Thêm tài khoản
+              </Button>
+            )}
           </div>
         </div>
 
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={filteredUsers}
           rowKey="id"
+          loading={loading}
           className={styles.table}
           pagination={{
             defaultPageSize: 10,
@@ -218,6 +416,79 @@ export default function UserManagement() {
           }}
         />
       </Card>
+
+      {/* CREATE / EDIT MODAL */}
+      <Modal
+        title={modalMode === 'create' ? 'Tạo tài khoản mới' : 'Cập nhật tài khoản'}
+        open={isModalVisible}
+        onOk={handleModalSubmit}
+        onCancel={handleModalClose}
+        confirmLoading={submitting}
+        okText={modalMode === 'create' ? 'Tạo mới' : 'Lưu thay đổi'}
+        cancelText="Hủy"
+        width={500}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: 'Vui lòng nhập email!' },
+              { type: 'email', message: 'Email không đúng định dạng!' }
+            ]}
+          >
+            <Input placeholder="Nhập địa chỉ email" />
+          </Form.Item>
+
+          <Form.Item
+            name="displayName"
+            label="Tên hiển thị"
+            rules={[{ required: true, message: 'Vui lòng nhập tên hiển thị!' }]}
+          >
+            <Input placeholder="Nhập tên người dùng" />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
+            rules={[
+              { required: modalMode === 'create', message: 'Vui lòng nhập mật khẩu!' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
+            ]}
+          >
+            <Input.Password placeholder={modalMode === 'create' ? "Nhập mật khẩu" : "Nhập mật khẩu mới (bỏ trống nếu không đổi)"} />
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Trạng thái"
+            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+          >
+            <Select>
+              <Select.Option value="ACTIVE">ACTIVE</Select.Option>
+              <Select.Option value="INACTIVE">INACTIVE</Select.Option>
+              <Select.Option value="BANNED">BANNED</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="roles"
+            label="Vai trò (Roles)"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 vai trò!' }]}
+          >
+            <Select mode="multiple" placeholder="Chọn vai trò">
+              <Select.Option value="USER">USER</Select.Option>
+              <Select.Option value="SUPPORT_ADMIN">SUPPORT_ADMIN</Select.Option>
+              <Select.Option value="ADMIN">ADMIN</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
+
