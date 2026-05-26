@@ -1,8 +1,4 @@
-// frontend/mock/transaction.ts
-
-// 1. Danh sách danh mục đồng bộ với DB Seed của bạn
 const CATEGORIES = [
-  // Danh mục Chi (EXPENSE)
   { id: 1, name: 'Ăn uống', type: 'EXPENSE', description: 'Chi phí ăn uống, đồ uống hàng ngày' },
   { id: 2, name: 'Di chuyển', type: 'EXPENSE', description: 'Xăng, xe bus, grab, taxi...' },
   { id: 3, name: 'Mua sắm', type: 'EXPENSE', description: 'Quần áo, đồ dùng, mỹ phẩm...' },
@@ -14,7 +10,6 @@ const CATEGORIES = [
   { id: 9, name: 'Quà tặng', type: 'EXPENSE', description: 'Sinh nhật, lễ tết, từ thiện...' },
   { id: 10, name: 'Chi khác', type: 'EXPENSE', description: 'Các khoản chi phí khác' },
 
-  // Danh mục Thu (INCOME)
   { id: 11, name: 'Lương', type: 'INCOME', description: 'Lương tháng, lương thưởng' },
   { id: 12, name: 'Thưởng', type: 'INCOME', description: 'Thưởng KPI, thưởng dự án' },
   { id: 13, name: 'Đầu tư', type: 'INCOME', description: 'Lãi cổ phiếu, crypto, bất động sản...' },
@@ -23,15 +18,13 @@ const CATEGORIES = [
   { id: 16, name: 'Thu khác', type: 'INCOME', description: 'Các khoản thu nhập khác' }
 ];
 
-// 2. Tạo 25 giao dịch mẫu ngẫu nhiên để phục vụ phân trang
 const MOCK_TRANSACTIONS = Array.from({ length: 25 }, (_, index) => {
   const id = index + 1;
-  const isExpense = id % 3 !== 0; // Cứ 3 giao dịch thì có 2 chi, 1 thu
+  const isExpense = id % 3 !== 0; 
   
   const categoryList = CATEGORIES.filter(c => c.type === (isExpense ? 'EXPENSE' : 'INCOME'));
   const category = categoryList[id % categoryList.length];
 
-  // Lùi ngày giao dịch để dữ liệu thực tế hơn
   const dateObj = new Date();
   dateObj.setDate(dateObj.getDate() - (id % 15));
   const dateStr = dateObj.toISOString().split('T')[0];
@@ -52,7 +45,6 @@ const MOCK_TRANSACTIONS = Array.from({ length: 25 }, (_, index) => {
 });
 
 export default {
-  // API Mock Tìm kiếm và Lọc giao dịch
   'GET /api/transactions/search': (req: any, res: any) => {
     const { 
       page = '0', 
@@ -69,17 +61,14 @@ export default {
 
     let filtered = [...MOCK_TRANSACTIONS];
 
-    // Lọc theo loại (INCOME / EXPENSE)
     if (type && type !== 'ALL') {
       filtered = filtered.filter(item => item.type === type);
     }
 
-    // Lọc theo danh mục
     if (category_id) {
       filtered = filtered.filter(item => item.category.id === parseInt(category_id, 10));
     }
 
-    // Lọc theo từ khóa tìm kiếm (trong mô tả)
     if (search) {
       const keyword = search.toLowerCase();
       filtered = filtered.filter(item => 
@@ -87,23 +76,19 @@ export default {
       );
     }
 
-    // Lọc theo khoảng ngày (start_date và end_date)
     if (start_date && end_date) {
       filtered = filtered.filter(item => 
         item.date >= start_date && item.date <= end_date
       );
     }
 
-    // Sắp xếp giao dịch mới nhất lên đầu
     filtered.sort((a, b) => b.date.localeCompare(a.date));
 
-    // Thực hiện Phân trang
     const totalElements = filtered.length;
     const totalPages = Math.ceil(totalElements / pageSize);
     const startIdx = pageNum * pageSize;
     const paginatedContent = filtered.slice(startIdx, startIdx + pageSize);
 
-    // Trả về dữ liệu có định dạng snake_case
     res.json({
       content: paginatedContent,
       page_number: pageNum,
@@ -113,12 +98,10 @@ export default {
     });
   },
 
-  // API Mock lấy danh mục 
   'GET /api/categories': (req: any, res: any) => {
     res.json(CATEGORIES);
   },
 
-  // API Mock gửi lời mời thành viên
   'POST /api/funds/invite': (req: any, res: any) => {
     const { email } = req.body;
     
@@ -135,29 +118,25 @@ export default {
     });
   },
 
-  // API Mock Thêm giao dịch
   'POST /api/transactions': (req: any, res: any) => {
     const { amount, type, description, date, categoryId } = req.body;
 
-    // Tạo một ID đơn giản dựa trên số lượng giao dịch hiện có
     const newId = MOCK_TRANSACTIONS.length + 1;
 
-    // Tìm tên danh mục tương ứng
     const category = CATEGORIES.find(c => c.id === categoryId);
 
     const newTransaction = {
       id: newId,
       amount: parseFloat(amount),
-      type: type, // 'INCOME' hoặc 'EXPENSE'
+      type: type,
       description: description || '',
-      date: date, // Định dạng 'YYYY-MM-DD'
+      date: date, 
       category: {
         id: categoryId,
         name: category?.name || 'Không xác định'
       }
     };
 
-    // Thêm vào đầu mảng mock để giao dịch mới nhất luôn hiện lên đầu
     MOCK_TRANSACTIONS.unshift(newTransaction);
 
     res.json({
