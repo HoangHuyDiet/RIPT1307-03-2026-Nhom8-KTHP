@@ -15,18 +15,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateFundTransactionRequest {
 
-    @NotNull(message = "Số tiền không được để trống")
-    @Positive(message = "Số tiền phải lớn hơn 0")
+    @NotNull(message = "Sá»‘ tiá»n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @Positive(message = "Sá»‘ tiá»n pháº£i lá»›n hÆ¡n 0")
     private BigDecimal amount;
 
-    @NotBlank(message = "Loại giao dịch không được để trống (INCOME/EXPENSE)")
-    private String type; // "INCOME" hoặc "EXPENSE"
+    @NotBlank(message = "Loáº¡i giao dá»‹ch khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng (INCOME/EXPENSE)")
+    private String type; // "INCOME" hoáº·c "EXPENSE"
 
     private String description;
 
-    @NotNull(message = "Ngày giao dịch không được để trống")
+    @NotNull(message = "NgÃ y giao dá»‹ch khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
     private LocalDate date;
 
-    @NotNull(message = "Danh mục không được để trống")
+    @NotNull(message = "Danh má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
     private Long categoryId;
 }
+
+

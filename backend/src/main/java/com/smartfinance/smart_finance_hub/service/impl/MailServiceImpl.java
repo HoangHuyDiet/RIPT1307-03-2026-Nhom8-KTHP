@@ -28,6 +28,9 @@ public class MailServiceImpl implements MailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Override
     public void sendOtpEmail(String toEmail, String userName, String otpCode, int expiryMinutes)
             throws MessagingException {
@@ -40,7 +43,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("appName", fromName);
 
         String htmlContent = templateEngine.process("email/otp-email", context);
-        sendHtmlEmail(toEmail, "🔐 Mã xác thực OTP - " + fromName, htmlContent);
+        sendHtmlEmail(toEmail, "ðŸ” MÃ£ xÃ¡c thá»±c OTP - " + fromName, htmlContent);
 
         log.info("sendOtpEmail success: toEmail={}", toEmail);
     }
@@ -55,7 +58,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("loginUrl", "http://localhost:8000");
 
         String htmlContent = templateEngine.process("email/welcome-email", context);
-        sendHtmlEmail(toEmail, "🎉 Chào mừng bạn đến với " + fromName + "!", htmlContent);
+        sendHtmlEmail(toEmail, "ðŸŽ‰ ChÃ o má»«ng báº¡n Ä‘áº¿n vá»›i " + fromName + "!", htmlContent);
 
         log.info("sendWelcomeEmail success: toEmail={}", toEmail);
     }
@@ -72,9 +75,93 @@ public class MailServiceImpl implements MailService {
         context.setVariable("appName", fromName);
 
         String htmlContent = templateEngine.process("email/reset-password-email", context);
-        sendHtmlEmail(toEmail, "🔑 Yêu cầu đặt lại mật khẩu - " + fromName, htmlContent);
+        sendHtmlEmail(toEmail, "ðŸ”‘ YÃªu cáº§u Ä‘áº·t láº¡i máº­t kháº©u - " + fromName, htmlContent);
 
         log.info("sendResetPasswordEmail success: toEmail={}", toEmail);
+    }
+
+    @Override
+    public void sendFundInvitationEmail(String toEmail, String userName, String invitedByName,
+            String fundName, String token, int expiryDays) throws MessagingException {
+        log.info("sendFundInvitationEmail param: toEmail={}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("invitedByName", invitedByName);
+        context.setVariable("fundName", fundName);
+        context.setVariable("expiryDays", expiryDays);
+        context.setVariable("appName", fromName);
+        context.setVariable("actionUrl", invitationActionUrl(token));
+
+        String htmlContent = templateEngine.process("email/fund-invitation", context);
+        sendHtmlEmail(toEmail, "Fund invitation - " + fundName, htmlContent);
+    }
+
+    @Override
+    public void sendKickProposalEmail(String toEmail, String userName, String fundName,
+            String kickedByName, String reason, String token) throws MessagingException {
+        log.info("sendKickProposalEmail param: toEmail={}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("kickedByName", kickedByName);
+        context.setVariable("fundName", fundName);
+        context.setVariable("reason", reason);
+        context.setVariable("appName", fromName);
+        context.setVariable("actionUrl", invitationActionUrl(token));
+
+        String htmlContent = templateEngine.process("email/kick-proposal", context);
+        sendHtmlEmail(toEmail, "Kick proposal - " + fundName, htmlContent);
+    }
+
+    @Override
+    public void sendDisbandProposalEmail(String toEmail, String userName, String fundName,
+            String proposedByName, String reason, String token) throws MessagingException {
+        log.info("sendDisbandProposalEmail param: toEmail={}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("proposedByName", proposedByName);
+        context.setVariable("fundName", fundName);
+        context.setVariable("reason", reason);
+        context.setVariable("appName", fromName);
+        context.setVariable("actionUrl", invitationActionUrl(token));
+
+        String htmlContent = templateEngine.process("email/disband-proposal", context);
+        sendHtmlEmail(toEmail, "Disband proposal - " + fundName, htmlContent);
+    }
+
+    @Override
+    public void sendDisbandConfirmationEmail(String toEmail, String userName, String fundName)
+            throws MessagingException {
+        log.info("sendDisbandConfirmationEmail param: toEmail={}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("fundName", fundName);
+        context.setVariable("appName", fromName);
+
+        String htmlContent = templateEngine.process("email/disband-confirmation", context);
+        sendHtmlEmail(toEmail, "Fund disbanded - " + fundName, htmlContent);
+    }
+
+    @Override
+    public void sendFundNotificationEmail(String toEmail, String userName, String fundName,
+            String subject, String content) throws MessagingException {
+        log.info("sendFundNotificationEmail param: toEmail={}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("fundName", fundName);
+        context.setVariable("notificationContent", content);
+        context.setVariable("appName", fromName);
+
+        String htmlContent = templateEngine.process("email/fund-notification", context);
+        sendHtmlEmail(toEmail, subject + " - " + fundName, htmlContent);
+    }
+
+    private String invitationActionUrl(String token) {
+        return frontendUrl + "/funds/invitations/" + token;
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)
@@ -95,3 +182,5 @@ public class MailServiceImpl implements MailService {
         mailSender.send(message);
     }
 }
+
+

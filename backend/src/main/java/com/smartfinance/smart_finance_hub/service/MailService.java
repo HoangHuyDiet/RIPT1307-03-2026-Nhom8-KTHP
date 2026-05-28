@@ -11,4 +11,21 @@ public interface MailService {
 
     void sendResetPasswordEmail(String toEmail, String userName, String resetCode, int expiryMinutes)
             throws MessagingException;
+
+    void sendFundInvitationEmail(String toEmail, String userName, String invitedByName,
+            String fundName, String token, int expiryDays) throws MessagingException;
+
+    void sendKickProposalEmail(String toEmail, String userName, String fundName,
+            String kickedByName, String reason, String token) throws MessagingException;
+
+    void sendDisbandProposalEmail(String toEmail, String userName, String fundName,
+            String proposedByName, String reason, String token) throws MessagingException;
+
+    void sendDisbandConfirmationEmail(String toEmail, String userName, String fundName)
+            throws MessagingException;
+
+    void sendFundNotificationEmail(String toEmail, String userName, String fundName,
+            String subject, String content) throws MessagingException;
 }
+
+

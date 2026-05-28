@@ -10,11 +10,25 @@ import java.util.Optional;
 @Repository
 public interface FundInvitationRepository extends JpaRepository<FundInvitation, Long> {
 
-    List<FundInvitation> findByShareFundId(Long fundId);
+    List<FundInvitation> findByFundId(Long fundId);
 
     List<FundInvitation> findByInvitedEmail(String email);
 
     Optional<FundInvitation> findByInvitationToken(String token);
 
-    List<FundInvitation> findByShareFundIdAndStatus(Long fundId, String status);
+    List<FundInvitation> findByFundIdAndStatus(Long fundId, String status);
+
+    boolean existsByFundIdAndInvitedEmailIgnoreCaseAndTypeAndStatus(
+            Long fundId, String invitedEmail, String type, String status);
+
+    List<FundInvitation> findByFundIdAndTypeAndStatus(Long fundId, String type, String status);
+
+    List<FundInvitation> findByFundIdAndType(Long fundId, String type);
+
+    List<FundInvitation> findByInvitedEmailIgnoreCaseAndStatus(String email, String status);
+
+    List<FundInvitation> findByFundIdAndInvitedEmailIgnoreCaseAndStatus(
+            Long fundId, String invitedEmail, String status);
 }
+
+

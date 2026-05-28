@@ -16,23 +16,39 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByUserIdAndType(Long userId, String type);
 
-    List<Transaction> findByShareFundId(Long fundId);
+    List<Transaction> findByFundId(Long fundId);
 
-    List<Transaction> findByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
+    Page<Transaction> findByFundId(Long fundId, Pageable pageable);
+
+    Page<Transaction> findByFundIdAndType(Long fundId, String type, Pageable pageable);
+
+    List<Transaction> findByFundIdAndIsApproved(Long fundId, Boolean isApproved);
+
+    long countByFundId(Long fundId);
+
+    long countByFundIdAndIsApproved(Long fundId, Boolean isApproved);
+
+    List<Transaction> findByFundIdAndIsApprovedAndDateBetween(
+            Long fundId, Boolean isApproved, LocalDate startDate, LocalDate endDate);
+
+    List<Transaction> findByFundIdInAndIsApprovedAndDateBetween(
+            List<Long> fundIds, Boolean isApproved, LocalDate startDate, LocalDate endDate);
 
     List<Transaction> findByCategoryId(Long categoryId);
 
    
     List<Transaction> findByUserIdAndDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
 
-    Page<Transaction> findByUserIdAndShareFundIsNull(Long userId, Pageable pageable);
+    Page<Transaction> findByUserIdAndFundIsNull(Long userId, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndFundIsNull(
             Long userId, String type, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndDateBetweenAndFundIsNull(
             Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndFundIsNull(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 }
+
+

@@ -83,8 +83,10 @@ public class User {
     private List<SupportTicket> assignedTickets;
 
     @OneToMany(mappedBy = "createdByUser", cascade = CascadeType.ALL)
-    private List<ShareFund> createdFunds;
+    private List<Fund> createdFunds;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<FundMember> fundMemberships;
 }
+
+

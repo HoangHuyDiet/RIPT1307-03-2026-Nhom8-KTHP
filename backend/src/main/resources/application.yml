@@ -51,6 +51,7 @@ jwt:
 app:
   mail:
     from-name: Smart Finance Hub
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   2fa:
     otp-length: 6
     otp-expiry-seconds: 60

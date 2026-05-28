@@ -11,7 +11,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+            @Index(name = "idx_transactions_fund_status", columnList = "fund_id,status"),
+            @Index(name = "idx_transactions_fund_approved_date", columnList = "fund_id,is_approved,date"),
+            @Index(name = "idx_transactions_user_fund", columnList = "user_id,fund_id"),
+            @Index(name = "idx_transactions_fund_type", columnList = "fund_id,type")
+        })
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +39,7 @@ public class Transaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id")
-    private ShareFund shareFund;
+    private Fund fund;
 
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)
@@ -48,6 +55,16 @@ public class Transaction {
     @Builder.Default
     private Boolean isApproved = false;
 
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String status = "PENDING";
+
+    @Column(name = "bank_account", length = 100)
+    private String bankAccount;
+
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
     @NotNull
     @Column(nullable = false)
     private LocalDate date;
@@ -60,3 +77,5 @@ public class Transaction {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
+
+

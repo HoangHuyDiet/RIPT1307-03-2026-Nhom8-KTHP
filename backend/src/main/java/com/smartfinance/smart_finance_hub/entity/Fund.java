@@ -7,16 +7,23 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "share_funds")
-@Getter @Setter
+@Table(
+        name = "funds",
+        indexes = {
+            @Index(name = "idx_funds_created_by", columnList = "created_by"),
+            @Index(name = "idx_funds_status", columnList = "status")
+        })
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ShareFund {
+public class Fund {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +44,19 @@ public class ShareFund {
     @Builder.Default
     private String status = "ACTIVE";
 
+    @Column(name = "target_amount", precision = 19, scale = 4)
+    private BigDecimal targetAmount;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Column(name = "theme_color", length = 20)
+    private String themeColor;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdByUser;
@@ -49,16 +69,14 @@ public class ShareFund {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-   
-   
-   
-
-    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
-    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FundMember> members;
 
-    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FundInvitation> invitations;
 }
+
+
