@@ -113,8 +113,9 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS transactions (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL COMMENT 'Người thực hiện',
-    category_id     BIGINT          NOT NULL COMMENT 'Danh mục',
+    category_id     BIGINT          NULL COMMENT 'Danh mục (nullable cho mục tiêu)',
     fund_id         BIGINT          NULL COMMENT 'Quỹ chung (nullable - giao dịch cá nhân thì null)',
+    saving_goal_id  BIGINT          NULL COMMENT 'Mục tiêu (nullable)',
     amount          DECIMAL(19,4)   NOT NULL COMMENT 'Số tiền (chuẩn tài chính 19,4)',
     type            VARCHAR(20)     NOT NULL COMMENT 'INCOME / EXPENSE',
     description     VARCHAR(500)    NULL COMMENT 'Mô tả giao dịch',
@@ -124,11 +125,13 @@ CREATE TABLE IF NOT EXISTS transactions (
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES categories(id),
+    CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     CONSTRAINT fk_transactions_fund FOREIGN KEY (fund_id) REFERENCES share_funds(id) ON DELETE SET NULL,
+    CONSTRAINT fk_transactions_saving_goal FOREIGN KEY (saving_goal_id) REFERENCES saving_goals(id) ON DELETE CASCADE,
     INDEX idx_transactions_user (user_id),
     INDEX idx_transactions_category (category_id),
     INDEX idx_transactions_fund (fund_id),
+    INDEX idx_transactions_saving_goal (saving_goal_id),
     INDEX idx_transactions_date (date)
 ) ENGINE=InnoDB COMMENT='Bảng giao dịch';
 
@@ -155,21 +158,6 @@ CREATE TABLE IF NOT EXISTS saving_goals (
     INDEX idx_saving_goals_status (status)
 ) ENGINE=InnoDB COMMENT='Bảng mục tiêu tiết kiệm';
 
--- 8.1. Bảng lịch sử nạp/rút mục tiêu
-CREATE TABLE IF NOT EXISTS goal_transactions (
-    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    saving_goal_id  BIGINT          NOT NULL,
-    amount          DECIMAL(19, 4)  NOT NULL,
-    type            VARCHAR(20)     NOT NULL COMMENT 'DEPOSIT / WITHDRAW',
-    description     VARCHAR(500)    NULL,
-    transaction_date DATETIME       NOT NULL,
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_goal_transaction_saving_goal FOREIGN KEY (saving_goal_id) REFERENCES saving_goals(id) ON DELETE CASCADE,
-    INDEX idx_goal_transaction_goal (saving_goal_id),
-    INDEX idx_goal_transaction_date (transaction_date)
-) ENGINE=InnoDB COMMENT='Lịch sử nạp rút mục tiêu';
 
 
 -- 9. Bảng báo cáo tài chính hàng tháng
