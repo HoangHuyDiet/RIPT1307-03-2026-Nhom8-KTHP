@@ -5,12 +5,12 @@ import com.smartfinance.smart_finance_hub.dto.request.GoalTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.PinGoalRequest;
 import com.smartfinance.smart_finance_hub.dto.request.UpdateSavingGoalRequest;
 import com.smartfinance.smart_finance_hub.entity.Category;
-import com.smartfinance.smart_finance_hub.entity.GoalTransaction;
+import com.smartfinance.smart_finance_hub.entity.Transaction;
 import com.smartfinance.smart_finance_hub.entity.SavingGoal;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.SavingGoalStatus;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
-import com.smartfinance.smart_finance_hub.repository.GoalTransactionRepository;
+import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import com.smartfinance.smart_finance_hub.repository.SavingGoalRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.SavingGoalService;
@@ -26,7 +26,7 @@ import java.util.List;
 public class SavingGoalServiceImpl implements SavingGoalService {
 
     private final SavingGoalRepository savingGoalRepository;
-    private final GoalTransactionRepository goalTransactionRepository;
+    private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
@@ -51,7 +51,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                 .user(user)
                 .name(request.getName())
                 .targetAmount(request.getTargetAmount())
-                .currentAmount(request.getCurrentAmount())
+                .currentAmount(request.getCurrentAmount() != null ? request.getCurrentAmount() : java.math.BigDecimal.ZERO)
                 .currency(request.getCurrency())
                 .dueDate(request.getDueDate())
                 .category(category)
@@ -99,24 +99,25 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         SavingGoal goal = savingGoalRepository.findByIdAndUserIdAndDeletedAtIsNull(goalId, userId)
                 .orElseThrow(() -> new RuntimeException("Saving goal not found"));
 
-        // Add amount
         goal.setCurrentAmount(goal.getCurrentAmount().add(request.getAmount()));
 
-        // Check if completed
         if (goal.getCurrentAmount().compareTo(goal.getTargetAmount()) >= 0) {
             goal.setStatus(SavingGoalStatus.COMPLETED);
         }
 
         savingGoalRepository.save(goal);
 
-        // Record transaction
-        GoalTransaction transaction = GoalTransaction.builder()
+        Transaction transaction = Transaction.builder()
+                .user(goal.getUser())
+                .category(goal.getCategory())
                 .savingGoal(goal)
                 .amount(request.getAmount())
-                .type("DEPOSIT")
-                .transactionDate(LocalDateTime.now())
+                .type("EXPENSE") // Represents money going out of main wallet to the goal
+                .description("Nạp tiền vào mục tiêu: " + goal.getName())
+                .date(java.time.LocalDate.now())
+                .isApproved(true)
                 .build();
-        goalTransactionRepository.save(transaction);
+        transactionRepository.save(transaction);
 
         return goal;
     }
@@ -127,7 +128,6 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         SavingGoal goal = savingGoalRepository.findByIdAndUserIdAndDeletedAtIsNull(goalId, userId)
                 .orElseThrow(() -> new RuntimeException("Saving goal not found"));
 
-        // Soft delete
         goal.setDeletedAt(LocalDateTime.now());
         savingGoalRepository.save(goal);
     }

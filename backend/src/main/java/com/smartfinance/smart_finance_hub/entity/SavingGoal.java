@@ -25,6 +25,7 @@ public class SavingGoal {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User user;
 
     @NotBlank
@@ -51,6 +52,7 @@ public class SavingGoal {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Category category;
 
     @Enumerated(EnumType.STRING)

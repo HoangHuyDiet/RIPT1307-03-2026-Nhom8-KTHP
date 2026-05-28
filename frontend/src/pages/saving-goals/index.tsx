@@ -3,6 +3,7 @@ import { Row, Col, Card, Space, Button, Progress, Tag, Modal, Form, Input, Input
 import { PlusOutlined, HomeOutlined, CarOutlined, SafetyOutlined, CompassOutlined, LineChartOutlined, FolderOpenOutlined, RobotOutlined, DeleteOutlined, EditOutlined, DollarCircleOutlined, FlagOutlined, PushpinOutlined, PushpinFilled, MedicineBoxOutlined, BookOutlined, ShoppingOutlined, AppstoreOutlined, LaptopOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import styles from './index.less';
+import api from '../../utils/api';
 
 export interface SavingGoal {
   id: number;
@@ -123,9 +124,8 @@ export default function SavingGoals() {
   };
 
   useEffect(() => {
-    fetch(goalsApi.getAll())
-      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-      .then((data: SavingGoal[]) => { setGoals(data); syncCache(data); })
+    api.get('/saving-goals')
+      .then(res => { setGoals(res.data.data || []); syncCache(res.data.data || []); })
       .catch(() => {
         try {
           const cached = localStorage.getItem('saving_goals');
@@ -199,14 +199,12 @@ export default function SavingGoals() {
     let updated: SavingGoal[] = goals;
     try {
       if (editingGoal) {
-        const res = await fetch(goalsApi.update(editingGoal.id), { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(formattedData) });
-        if (!res.ok) throw new Error();
-        const saved: SavingGoal = await res.json();
+        const res = await api.put(`/saving-goals/${editingGoal.id}`, formattedData);
+        const saved: SavingGoal = res.data.data;
         updated = goals.map(g => g.id === editingGoal.id ? saved : g);
       } else {
-        const res = await fetch(goalsApi.create(), { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ ...formattedData, isPinned: false }) });
-        if (!res.ok) throw new Error();
-        const saved: SavingGoal = await res.json();
+        const res = await api.post('/saving-goals', { ...formattedData, isPinned: false });
+        const saved: SavingGoal = res.data.data;
         updated = [...goals, saved];
       }
     } catch {
@@ -236,9 +234,8 @@ export default function SavingGoals() {
     const newPinned = !target.isPinned;
     let updated: SavingGoal[] = goals;
     try {
-      const res = await fetch(goalsApi.togglePin(goalId), { method: 'PATCH', headers: jsonHeaders, body: JSON.stringify({ isPinned: newPinned }) });
-      if (!res.ok) throw new Error();
-      const saved: SavingGoal = await res.json();
+      const res = await api.patch(`/saving-goals/${goalId}/pin`, { isPinned: newPinned });
+      const saved: SavingGoal = res.data.data;
       updated = goals.map(g => g.id === goalId ? saved : g);
     } catch {
       updated = goals.map(g => g.id === goalId ? { ...g, isPinned: newPinned } : g);
@@ -258,8 +255,7 @@ export default function SavingGoals() {
       cancelText: 'Hủy',
       onOk: async () => {
         try {
-          const res = await fetch(goalsApi.remove(goalId), { method: 'DELETE' });
-          if (!res.ok) throw new Error();
+          await api.delete(`/saving-goals/${goalId}`);
         } catch {}
         const updated = goals.filter(g => g.id !== goalId);
         setGoals(updated);
@@ -281,9 +277,8 @@ export default function SavingGoals() {
 
     let updated: SavingGoal[] = goals;
     try {
-      const res = await fetch(goalsApi.deposit(activeGoalId), { method: 'PATCH', headers: jsonHeaders, body: JSON.stringify({ amount: addAmount }) });
-      if (!res.ok) throw new Error();
-      const saved: SavingGoal = await res.json();
+      const res = await api.patch(`/saving-goals/${activeGoalId}/deposit`, { amount: addAmount });
+      const saved: SavingGoal = res.data.data;
       updated = goals.map(g => g.id === activeGoalId ? saved : g);
     } catch {
       updated = goals.map(g => {
