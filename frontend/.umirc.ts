@@ -20,7 +20,8 @@ export default defineConfig({
       routes: [
         { path: '/', redirect: '/auth/login' },
         { path: '/dashboard', component: '@/pages/dashboard' },
-        { path: '/transactions', component: '@/pages/transactions'},
+        { path: '/saving-goals', component: '@/pages/saving-goals' },
+        { path: '/transactions', component: '@/pages/transactions' },
       ],
     },
 
