@@ -49,9 +49,19 @@ export default function Login() {
       
       message.success('Đăng nhập thành công');
       
-      useAuthStore.getState().setAuth(data.data.token, { email: data.data.email, name: data.data.displayName });
+      const roles = data.data.roles || [];
+      useAuthStore.getState().setAuth(
+        data.data.token, 
+        { email: data.data.email, name: data.data.displayName },
+        roles
+      );
       
-      history.push('/dashboard');
+      // Phân quyền: Admin/Support Admin → /admin/users, User → /dashboard
+      if (roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN')) {
+        history.push('/admin/users');
+      } else {
+        history.push('/dashboard');
+      }
 
     } catch (error: any) {
       console.error('Login failed:', error);

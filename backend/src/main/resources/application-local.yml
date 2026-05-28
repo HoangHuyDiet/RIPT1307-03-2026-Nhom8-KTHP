@@ -1,4 +1,6 @@
 spring:
+  datasource:
+    password: 145hoang
   mail:
     username: ${MAIL_USERNAME:hoangnv.private@gmail.com}
     password: ${MAIL_PASSWORD:jzohaqtkspgpffqg}

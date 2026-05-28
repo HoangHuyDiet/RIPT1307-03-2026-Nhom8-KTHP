@@ -12,6 +12,7 @@ import {
   SearchOutlined,
   FlagOutlined,
   FlagFilled,
+  WalletOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 
@@ -32,6 +33,11 @@ export default function BasicLayout() {
       key: '/saving-goals',
       icon: location.pathname === '/saving-goals' ? <FlagFilled /> : <FlagOutlined />,
       label: <Link to="/saving-goals">Mục tiêu</Link>,
+    },
+    {
+      key: '/transactions',
+      icon: <WalletOutlined />,
+      label: <Link to="/transactions">Quản lý giao dịch</Link>,
     },
   ];
 

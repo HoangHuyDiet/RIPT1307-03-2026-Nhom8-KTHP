@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { Link, Outlet, useLocation } from 'umi';
-import { Layout, Menu, Button, Typography, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Link, Outlet, useLocation, history } from 'umi';
+import { Layout, Menu, Button, Typography, Space, Tag, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   TeamOutlined,
   LogoutOutlined,
   SafetyOutlined,
   BankOutlined,
+  DashboardOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
+import { useAuthStore } from '../../store/useAuthStore';
 import styles from './index.less';
 
 const { Header, Sider, Content } = Layout;
@@ -24,6 +27,14 @@ const PAGE_TITLES: Record<string, { title: string; icon: React.ReactNode; subtit
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { hasAdminAccess, isAdmin, isSupportAdmin, user, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (!hasAdminAccess()) {
+      message.error('Bạn không có quyền truy cập trang quản trị');
+      history.push('/dashboard');
+    }
+  }, []);
 
   const currentPage = PAGE_TITLES[location.pathname] ?? {
     title: 'Quản trị hệ thống',
@@ -37,11 +48,24 @@ export default function AdminLayout() {
       icon: <TeamOutlined />,
       label: <Link to="/admin/users">Người dùng</Link>,
     },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'back-to-user',
+      icon: <SettingOutlined />,
+      label: <Link to="/dashboard">Về giao diện User</Link>,
+    },
   ];
 
   const handleLogout = () => {
-    window.location.href = '/auth/login';
+    logout();
+    history.push('/auth/login');
   };
+
+  // Xác định role hiển thị
+  const roleBadge = isAdmin() ? 'ADMIN' : isSupportAdmin() ? 'SUPPORT' : '';
+  const roleColor = isAdmin() ? 'red' : 'orange';
 
   return (
     <Layout className={styles.layout}>
@@ -80,7 +104,9 @@ export default function AdminLayout() {
           <div className={styles.siderFooter}>
             <div className={styles.adminBadge}>
               <SafetyOutlined style={{ fontSize: 12 }} />
-              <Text className={styles.adminBadgeText}>Quyền Admin</Text>
+              <Text className={styles.adminBadgeText}>
+                Quyền {isAdmin() ? 'Admin' : 'Support Admin'}
+              </Text>
             </div>
           </div>
         )}
@@ -99,6 +125,10 @@ export default function AdminLayout() {
             </div>
           </div>
           <div className={styles.headerRight}>
+            <Tag color={roleColor} style={{ fontWeight: 600, marginRight: 12 }}>
+              {roleBadge}
+            </Tag>
+            <Text style={{ marginRight: 12, fontWeight: 500 }}>{user?.name || 'Admin'}</Text>
             <Button
               danger
               icon={<LogoutOutlined />}
@@ -116,3 +146,4 @@ export default function AdminLayout() {
     </Layout>
   );
 }
+

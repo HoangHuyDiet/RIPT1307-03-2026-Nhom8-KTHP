@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     type            VARCHAR(20)     NOT NULL COMMENT 'INCOME / EXPENSE',
     description     VARCHAR(500)    NULL COMMENT 'Mô tả giao dịch',
     date            DATE            NOT NULL COMMENT 'Ngày giao dịch',
+    is_approved     BOOLEAN         NOT NULL DEFAULT FALSE COMMENT 'TRUE neu giao dich da duoc phe duyet',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -290,3 +291,32 @@ CREATE TABLE IF NOT EXISTS otp_tokens (
 
     INDEX idx_otp_email_code (email, otp_code)
 ) ENGINE=InnoDB COMMENT='Bảng lưu trữ mã OTP tạm thời';
+
+-- ============================================================
+-- MODULE 7: CAU HINH DINH KY (1 bang)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS recurring_settings (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    category_id     BIGINT          NOT NULL,
+    amount          DECIMAL(19,4)   NOT NULL,
+    type            VARCHAR(20)     NOT NULL COMMENT 'INCOME / EXPENSE',
+    description     VARCHAR(500)    NULL,
+    frequency       VARCHAR(20)     NOT NULL DEFAULT 'MONTHLY' COMMENT 'DAILY / WEEKLY / MONTHLY',
+    day_of_month    INT             NULL COMMENT '1-31',
+    day_of_week     INT             NULL COMMENT '1=MON, 7=SUN',
+    start_date      DATE            NOT NULL,
+    end_date        DATE            NULL COMMENT 'NULL = vo thoi han',
+    next_run_date   DATE            NOT NULL,
+    is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
+    last_run_at     DATETIME        NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recurring_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_recurring_category FOREIGN KEY (category_id) REFERENCES categories(id),
+    INDEX idx_recurring_user (user_id),
+    INDEX idx_recurring_next_run (next_run_date),
+    INDEX idx_recurring_active (is_active)
+) ENGINE=InnoDB COMMENT='Cau hinh thu chi dinh ky';
