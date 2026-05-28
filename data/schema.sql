@@ -136,18 +136,41 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE TABLE IF NOT EXISTS saving_goals (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
+    category_id     BIGINT          NULL COMMENT 'Danh mục',
     name            VARCHAR(100)    NOT NULL COMMENT 'Tên: Mua xe, Du lịch...',
     target_amount   DECIMAL(19,4)   NOT NULL COMMENT 'Số tiền mục tiêu (chuẩn tài chính 19,4)',
     current_amount  DECIMAL(19,4)   NOT NULL DEFAULT 0.0000 COMMENT 'Số tiền hiện có',
+    currency        VARCHAR(3)      NULL COMMENT 'Đơn vị tiền tệ',
     due_date        DATE            NULL COMMENT 'Ngày đến hạn',
-    status          VARCHAR(20)     NOT NULL DEFAULT 'IN_PROGRESS' COMMENT 'IN_PROGRESS / COMPLETED / FAILED',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'IN_PROGRESS' COMMENT 'IN_PROGRESS / COMPLETED / CANCELLED',
+    is_pinned       BOOLEAN         NOT NULL DEFAULT FALSE COMMENT 'Ghim mục tiêu',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL COMMENT 'Soft delete',
+
+    CONSTRAINT fk_saving_goals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_saving_goals_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    INDEX idx_saving_goals_user (user_id),
+    INDEX idx_saving_goals_category (category_id),
+    INDEX idx_saving_goals_status (status)
+) ENGINE=InnoDB COMMENT='Bảng mục tiêu tiết kiệm';
+
+-- 8.1. Bảng lịch sử nạp/rút mục tiêu
+CREATE TABLE IF NOT EXISTS goal_transactions (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    saving_goal_id  BIGINT          NOT NULL,
+    amount          DECIMAL(19, 4)  NOT NULL,
+    type            VARCHAR(20)     NOT NULL COMMENT 'DEPOSIT / WITHDRAW',
+    description     VARCHAR(500)    NULL,
+    transaction_date DATETIME       NOT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_saving_goals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_saving_goals_user (user_id),
-    INDEX idx_saving_goals_status (status)
-) ENGINE=InnoDB COMMENT='Bảng mục tiêu tiết kiệm';
+    CONSTRAINT fk_goal_transaction_saving_goal FOREIGN KEY (saving_goal_id) REFERENCES saving_goals(id) ON DELETE CASCADE,
+    INDEX idx_goal_transaction_goal (saving_goal_id),
+    INDEX idx_goal_transaction_date (transaction_date)
+) ENGINE=InnoDB COMMENT='Lịch sử nạp rút mục tiêu';
+
 
 -- 9. Bảng báo cáo tài chính hàng tháng
 CREATE TABLE IF NOT EXISTS monthly_statements (
