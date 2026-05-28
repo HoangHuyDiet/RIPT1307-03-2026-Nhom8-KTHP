@@ -19,7 +19,6 @@ import com.smartfinance.smart_finance_hub.repository.FundRepository;
 import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -224,37 +223,38 @@ public class FundTransactionApplicationService {
 
     @Transactional(readOnly = true)
     public List<BudgetChartResponse> getBudgetChart(Long fundId, Long userId) {
-        access.requireFund(fundId);
+        Fund fund = access.requireFund(fundId);
         access.requireMember(fundId, userId);
-        Map<String, BigDecimal> incomeByMonth = new HashMap<>();
-        Map<String, BigDecimal> expenseByMonth = new HashMap<>();
-        for (Transaction transaction : transactionRepository.findByFundIdAndIsApproved(fundId, true)) {
-            String month = "T" + transaction.getDate().getMonthValue();
-            if (TransactionType.INCOME.name().equals(transaction.getType())) {
-                incomeByMonth.merge(month, transaction.getAmount(), BigDecimal::add);
-            } else {
-                expenseByMonth.merge(month, transaction.getAmount(), BigDecimal::add);
+
+        List<Transaction> approvedTransactions = transactionRepository.findByFundIdAndIsApproved(fundId, true);
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+
+        return java.util.stream.IntStream.iterate(5, monthsAgo -> monthsAgo - 1)
+                .limit(5)
+                .mapToObj(monthsAgo -> currentMonth.minusMonths(monthsAgo))
+                .map(monthStart -> BudgetChartResponse.builder()
+                        .month("T" + monthStart.getMonthValue())
+                        .amount(calculateClosingBalanceAtMonthEnd(
+                                fund.getBalance(), approvedTransactions, monthStart).longValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private BigDecimal calculateClosingBalanceAtMonthEnd(
+            BigDecimal currentBalance, List<Transaction> approvedTransactions, LocalDate monthStart) {
+        LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+        BigDecimal balance = currentBalance;
+
+        for (Transaction transaction : approvedTransactions) {
+            if (transaction.getDate().isAfter(monthEnd)) {
+                if (TransactionType.INCOME.name().equals(transaction.getType())) {
+                    balance = balance.subtract(transaction.getAmount());
+                } else if (TransactionType.EXPENSE.name().equals(transaction.getType())) {
+                    balance = balance.add(transaction.getAmount());
+                }
             }
         }
-        List<BudgetChartResponse> chart = new ArrayList<>();
-        for (int month = 1; month <= 12; month++) {
-            String key = "T" + month;
-            if (incomeByMonth.containsKey(key)) {
-                chart.add(BudgetChartResponse.builder()
-                        .month(key)
-                        .type("Thu")
-                        .value(incomeByMonth.get(key))
-                        .build());
-            }
-            if (expenseByMonth.containsKey(key)) {
-                chart.add(BudgetChartResponse.builder()
-                        .month(key)
-                        .type("Chi")
-                        .value(expenseByMonth.get(key))
-                        .build());
-            }
-        }
-        return chart;
+        return balance.max(BigDecimal.ZERO);
     }
 
     @Transactional(readOnly = true)
