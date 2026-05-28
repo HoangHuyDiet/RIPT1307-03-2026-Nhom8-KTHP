@@ -141,25 +141,25 @@ public class FundCoreApplicationService {
 
         return List.of(
                 FeFundStatResponse.builder()
-                        .title("Tong quy tham gia")
-                        .value(funds.size() + " Quy")
+                        .title("Total funds")
+                        .value(funds.size() + " funds")
                         .trend("")
                         .icon("TeamOutlined")
                         .build(),
                 FeFundStatResponse.builder()
-                        .title("Tong so du")
+                        .title("Total balance")
                         .value(mapper.formatVnd(totalBalance))
                         .trend("")
                         .icon("WalletOutlined")
                         .build(),
                 FeFundStatResponse.builder()
-                        .title("Quy dat muc tieu")
-                        .value(completedFunds + " Quy")
-                        .trend("Thang nay")
+                        .title("Completed funds")
+                        .value(completedFunds + " funds")
+                        .trend("This month")
                         .icon("TrophyOutlined")
                         .build(),
                 FeFundStatResponse.builder()
-                        .title("Tong chi tieu")
+                        .title("Monthly spending")
                         .value(mapper.formatVnd(monthlyExpense))
                         .trend("")
                         .icon("LineChartOutlined")

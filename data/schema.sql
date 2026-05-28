@@ -109,7 +109,27 @@ CREATE TABLE IF NOT EXISTS categories (
     INDEX idx_categories_type (type)
 ) ENGINE=InnoDB COMMENT='Bảng danh mục thu/chi';
 
--- 7. Bảng giao dịch
+-- 7. Bảng quỹ nhóm
+CREATE TABLE IF NOT EXISTS funds (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(100)    NOT NULL COMMENT 'Fund name',
+    description     VARCHAR(500)    NULL COMMENT 'Fund description',
+    balance         DECIMAL(19,4)   NOT NULL DEFAULT 0.0000 COMMENT 'Current balance',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / DISBANDED',
+    target_amount   DECIMAL(19,4)   NULL COMMENT 'Target amount',
+    due_date        DATE            NULL COMMENT 'Due date',
+    theme_color     VARCHAR(20)     NULL COMMENT 'Frontend theme color',
+    version         BIGINT          NULL DEFAULT 0 COMMENT 'Optimistic locking version',
+    created_by      BIGINT          NOT NULL COMMENT 'Creator user id',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_funds_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    INDEX idx_funds_created_by (created_by),
+    INDEX idx_funds_status (status)
+) ENGINE=InnoDB COMMENT='Group funds';
+
+-- 8. Bảng giao dịch
 CREATE TABLE IF NOT EXISTS transactions (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL COMMENT 'Người thực hiện',
@@ -120,19 +140,26 @@ CREATE TABLE IF NOT EXISTS transactions (
     description     VARCHAR(500)    NULL COMMENT 'Mô tả giao dịch',
     date            DATE            NOT NULL COMMENT 'Ngày giao dịch',
     is_approved     BOOLEAN         NOT NULL DEFAULT FALSE COMMENT 'TRUE neu giao dich da duoc phe duyet',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / APPROVED / REJECTED',
+    bank_account    VARCHAR(100)    NULL COMMENT 'Bank account for withdrawal request',
+    bank_name       VARCHAR(100)    NULL COMMENT 'Bank name for withdrawal request',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES categories(id),
-    CONSTRAINT fk_transactions_fund FOREIGN KEY (fund_id) REFERENCES share_funds(id) ON DELETE SET NULL,
+    CONSTRAINT fk_transactions_fund FOREIGN KEY (fund_id) REFERENCES funds(id) ON DELETE SET NULL,
     INDEX idx_transactions_user (user_id),
     INDEX idx_transactions_category (category_id),
     INDEX idx_transactions_fund (fund_id),
-    INDEX idx_transactions_date (date)
+    INDEX idx_transactions_date (date),
+    INDEX idx_transactions_fund_status (fund_id, status),
+    INDEX idx_transactions_fund_approved_date (fund_id, is_approved, date),
+    INDEX idx_transactions_user_fund (user_id, fund_id),
+    INDEX idx_transactions_fund_type (fund_id, type)
 ) ENGINE=InnoDB COMMENT='Bảng giao dịch';
 
--- 8. Bảng mục tiêu tiết kiệm
+-- 9. Bảng mục tiêu tiết kiệm
 CREATE TABLE IF NOT EXISTS saving_goals (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
@@ -149,7 +176,7 @@ CREATE TABLE IF NOT EXISTS saving_goals (
     INDEX idx_saving_goals_status (status)
 ) ENGINE=InnoDB COMMENT='Bảng mục tiêu tiết kiệm';
 
--- 9. Bảng báo cáo tài chính hàng tháng
+-- 10. Bảng báo cáo tài chính hàng tháng
 CREATE TABLE IF NOT EXISTS monthly_statements (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
@@ -164,26 +191,10 @@ CREATE TABLE IF NOT EXISTS monthly_statements (
 ) ENGINE=InnoDB COMMENT='Báo cáo tài chính hàng tháng';
 
 -- ============================================================
--- MODULE 3: QUỸ CHUNG - SHARE FUNDS (3 bảng)
+-- MODULE 3: GROUP FUND MEMBERSHIP (3 bảng)
 -- ============================================================
 
--- 10. Bảng quỹ chung
-CREATE TABLE IF NOT EXISTS share_funds (
-    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    name            VARCHAR(100)    NOT NULL COMMENT 'Tên quỹ',
-    description     VARCHAR(500)    NULL COMMENT 'Mô tả',
-    balance         DECIMAL(19,4)   NOT NULL DEFAULT 0.0000 COMMENT 'Số dư hiện tại (chuẩn tài chính 19,4)',
-    status          VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / CLOSED',
-    created_by      BIGINT          NOT NULL COMMENT 'Người tạo quỹ',
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_share_funds_creator FOREIGN KEY (created_by) REFERENCES users(id),
-    INDEX idx_share_funds_creator (created_by),
-    INDEX idx_share_funds_status (status)
-) ENGINE=InnoDB COMMENT='Bảng quỹ chung';
-
--- 11. Bảng thành viên quỹ (user <-> share_funds, N:M)
+-- 11. Bảng thành viên quỹ (user <-> funds, N:M)
 CREATE TABLE IF NOT EXISTS fund_members (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     fund_id         BIGINT          NOT NULL,
@@ -192,11 +203,12 @@ CREATE TABLE IF NOT EXISTS fund_members (
     joined_at       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_fund_members_fund FOREIGN KEY (fund_id) REFERENCES share_funds(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fund_members_fund FOREIGN KEY (fund_id) REFERENCES funds(id) ON DELETE CASCADE,
     CONSTRAINT fk_fund_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY uk_fund_member (fund_id, user_id),
     INDEX idx_fund_members_fund (fund_id),
-    INDEX idx_fund_members_user (user_id)
+    INDEX idx_fund_members_user (user_id),
+    INDEX idx_fund_members_role (fund_id, fund_role)
 ) ENGINE=InnoDB COMMENT='Bảng thành viên quỹ chung';
 
 -- 12. Bảng lời mời tham gia quỹ
@@ -205,16 +217,32 @@ CREATE TABLE IF NOT EXISTS fund_invitation (
     fund_id             BIGINT          NOT NULL,
     invited_email       VARCHAR(255)    NOT NULL COMMENT 'Email người được mời',
     invitation_token    VARCHAR(255)    NOT NULL UNIQUE COMMENT 'Token xác thực',
-    status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / ACCEPTED / REJECTED',
-    type                VARCHAR(50)     NULL COMMENT 'Loại lời mời',
+    status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / ACCEPTED / REJECTED / EXPIRED / CANCELLED',
+    type                VARCHAR(50)     NULL COMMENT 'MEMBER_INVITE / KICK_PROPOSAL / DISBAND_PROPOSAL',
+    reason              VARCHAR(500)    NULL COMMENT 'Reason for kick/disband proposal',
     created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at          DATETIME        NOT NULL COMMENT 'Ngày hết hạn',
 
-    CONSTRAINT fk_fund_invitation_fund FOREIGN KEY (fund_id) REFERENCES share_funds(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fund_invitation_fund FOREIGN KEY (fund_id) REFERENCES funds(id) ON DELETE CASCADE,
     INDEX idx_fund_invitation_fund (fund_id),
     INDEX idx_fund_invitation_token (invitation_token),
-    INDEX idx_fund_invitation_email (invited_email)
+    INDEX idx_fund_invitation_email (invited_email),
+    INDEX idx_fund_invitation_fund_type_status (fund_id, type, status),
+    INDEX idx_fund_invitation_email_status (invited_email, status)
 ) ENGINE=InnoDB COMMENT='Bảng lời mời tham gia quỹ';
+
+CREATE TABLE IF NOT EXISTS fund_messages (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    fund_id         BIGINT          NOT NULL,
+    sender_id       BIGINT          NULL,
+    type            VARCHAR(20)     NOT NULL DEFAULT 'user' COMMENT 'user / system',
+    text            VARCHAR(1000)   NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_fund_messages_fund FOREIGN KEY (fund_id) REFERENCES funds(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fund_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_fund_messages_fund_created_at (fund_id, created_at)
+) ENGINE=InnoDB COMMENT='Fund chat messages';
 
 -- ============================================================
 -- MODULE 4: HỖ TRỢ - SUPPORT (1 bảng)

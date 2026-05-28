@@ -15,20 +15,18 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateFundTransactionRequest {
 
-    @NotNull(message = "Sá»‘ tiá»n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-    @Positive(message = "Sá»‘ tiá»n pháº£i lá»›n hÆ¡n 0")
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be greater than 0")
     private BigDecimal amount;
 
-    @NotBlank(message = "Loáº¡i giao dá»‹ch khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng (INCOME/EXPENSE)")
-    private String type; // "INCOME" hoáº·c "EXPENSE"
+    @NotBlank(message = "Type is required (INCOME/EXPENSE)")
+    private String type;
 
     private String description;
 
-    @NotNull(message = "NgÃ y giao dá»‹ch khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotNull(message = "Transaction date is required")
     private LocalDate date;
 
-    @NotNull(message = "Danh má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotNull(message = "Category is required")
     private Long categoryId;
 }
-
-

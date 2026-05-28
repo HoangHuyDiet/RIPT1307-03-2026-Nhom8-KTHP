@@ -20,6 +20,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+  private static final String[] PUBLIC_ENDPOINTS = {
+      "/api/auth/**",
+      "/api/2fa/**",
+      "/ws/**"
+  };
+
+  private static final String[] ADMIN_ENDPOINTS = {
+      "/api/admin/**"
+  };
+
   private final JwtAuthenticationEntryPoint unauthorizedHandler;
   private final JwtAuthenticationFilter jwtAuthFilter;
 
@@ -34,19 +44,8 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(
-                "/api/auth/**",
-                "/api/2fa/**",
-                "/ws/**"
-            ).permitAll()
-
-            // Admin-only endpoints (ADMIN + SUPPORT_ADMIN)
-            .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPPORT_ADMIN")
-
-            .requestMatchers("/api/funds/**").authenticated()
-            .requestMatchers("/api/transactions/**").authenticated()
-            .requestMatchers("/api/recurring-settings/**").authenticated()
-
+            .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+            .requestMatchers(ADMIN_ENDPOINTS).hasAnyRole("ADMIN", "SUPPORT_ADMIN")
             .anyRequest().authenticated()
         );
 

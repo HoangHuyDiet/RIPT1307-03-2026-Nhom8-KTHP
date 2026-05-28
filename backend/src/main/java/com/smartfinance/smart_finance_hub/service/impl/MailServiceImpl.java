@@ -43,7 +43,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("appName", fromName);
 
         String htmlContent = templateEngine.process("email/otp-email", context);
-        sendHtmlEmail(toEmail, "ðŸ” MÃ£ xÃ¡c thá»±c OTP - " + fromName, htmlContent);
+        sendHtmlEmail(toEmail, "OTP verification - " + fromName, htmlContent);
 
         log.info("sendOtpEmail success: toEmail={}", toEmail);
     }
@@ -58,7 +58,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("loginUrl", "http://localhost:8000");
 
         String htmlContent = templateEngine.process("email/welcome-email", context);
-        sendHtmlEmail(toEmail, "ðŸŽ‰ ChÃ o má»«ng báº¡n Ä‘áº¿n vá»›i " + fromName + "!", htmlContent);
+        sendHtmlEmail(toEmail, "Welcome to " + fromName, htmlContent);
 
         log.info("sendWelcomeEmail success: toEmail={}", toEmail);
     }
@@ -75,7 +75,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("appName", fromName);
 
         String htmlContent = templateEngine.process("email/reset-password-email", context);
-        sendHtmlEmail(toEmail, "ðŸ”‘ YÃªu cáº§u Ä‘áº·t láº¡i máº­t kháº©u - " + fromName, htmlContent);
+        sendHtmlEmail(toEmail, "Password reset request - " + fromName, htmlContent);
 
         log.info("sendResetPasswordEmail success: toEmail={}", toEmail);
     }
@@ -182,5 +182,3 @@ public class MailServiceImpl implements MailService {
         mailSender.send(message);
     }
 }
-
-
