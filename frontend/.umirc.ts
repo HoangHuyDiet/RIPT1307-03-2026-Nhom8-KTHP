@@ -20,6 +20,8 @@ export default defineConfig({
       routes: [
         { path: '/', redirect: '/auth/login' },
         { path: '/dashboard', component: '@/pages/dashboard' },
+        { path: '/transactions', component: '@/pages/transactions'},
+        { path: 'funds', component: '@/pages/funds'},
         { path: '/saving-goals', component: '@/pages/saving-goals' },
         { path: '/transactions', component: '@/pages/transactions' },
       ],
@@ -40,6 +42,11 @@ export default defineConfig({
     '/api': {
       target: 'http://localhost:8080/backend',
       changeOrigin: true,
+    },
+    '/ws': {
+      target: 'http://localhost:8080/backend',
+      changeOrigin: true,
+      ws: true,
     },
   },
 });
