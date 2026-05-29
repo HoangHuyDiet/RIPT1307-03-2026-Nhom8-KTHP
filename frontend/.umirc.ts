@@ -21,6 +21,7 @@ export default defineConfig({
         { path: '/', redirect: '/auth/login' },
         { path: '/dashboard', component: '@/pages/dashboard' },
         { path: '/transactions', component: '@/pages/transactions'},
+        { path: 'funds', component: '@/pages/funds'},
       ],
     },
 
@@ -39,6 +40,11 @@ export default defineConfig({
     '/api': {
       target: 'http://localhost:8080/backend',
       changeOrigin: true,
+    },
+    '/ws': {
+      target: 'http://localhost:8080/backend',
+      changeOrigin: true,
+      ws: true,
     },
   },
 });
