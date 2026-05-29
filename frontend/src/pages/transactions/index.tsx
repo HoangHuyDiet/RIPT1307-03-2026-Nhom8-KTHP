@@ -16,7 +16,8 @@ import {
   TagsOutlined,
   WalletOutlined,
   ReloadOutlined,
-  FilterOutlined
+  FilterOutlined,
+  FlagOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import styles from './index.less';
@@ -31,10 +32,10 @@ interface Transaction {
   type: 'INCOME' | 'EXPENSE';
   description: string;
   date: string;
-  category: {
-    id: number;
-    name: string;
-  };
+  categoryName?: string;
+  categoryId?: number;
+  savingGoalId?: number;
+  savingGoalName?: string;
   anomaly?: boolean;
   limitExceeded?: boolean;
   subtitle?: string;
@@ -63,7 +64,7 @@ export default function TransactionsManager() {
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');
-        setCategories(res.data);
+        setCategories(res.data.data || []);
       } catch (err) {
         console.error('Không thể lấy danh mục:', err);
       }
@@ -83,9 +84,9 @@ export default function TransactionsManager() {
         params.end_date = dateRange[1];
       }
 
-      const res = await api.get('/transactions/search', { params });
+      const res = await api.get('/transactions', { params });
       
-      const enrichedData = (res.data.content || []).map((item: any) => {
+      const enrichedData = (res.data.data?.content || []).map((item: any) => {
         if (item.id === 25) {
           return {
             ...item,
@@ -130,7 +131,7 @@ export default function TransactionsManager() {
       });
 
       setTransactions(enrichedData);
-      setTotalElements(res.data.total_elements || 0);
+      setTotalElements(res.data.data?.totalElements || res.data.data?.total_elements || 0);
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Có lỗi xảy ra khi tải danh sách giao dịch!');
     } finally {
@@ -194,6 +195,10 @@ export default function TransactionsManager() {
           avatarIcon = <WarningOutlined />;
           avatarBg = '#FFF1F0';
           avatarColor = '#FF4D4F';
+        } else if (record.savingGoalId) {
+          avatarIcon = <FlagOutlined />;
+          avatarBg = '#FFFBE6';
+          avatarColor = '#FAAD14';
         } else if (record.description.includes('AWS')) {
           avatarIcon = <LaptopOutlined />;
           avatarBg = '#E6F7FF';
@@ -237,9 +242,16 @@ export default function TransactionsManager() {
       width: '20%',
       render: (_: any, record: Transaction) => (
         <Space direction="vertical" size={2}>
-          <Tag color={record.type === 'INCOME' ? 'success' : 'default'} className={styles.txTag}>
-            {record.category?.name || 'Chưa phân loại'}
-          </Tag>
+          {record.savingGoalId ? (
+            <Tag color="gold" className={styles.txTag}>
+              <FlagOutlined style={{ marginRight: 4 }} />
+              {record.savingGoalName || 'Mục tiêu'}
+            </Tag>
+          ) : (
+            <Tag color={record.type === 'INCOME' ? 'success' : 'default'} className={styles.txTag}>
+              {record.categoryName || 'Chưa phân loại'}
+            </Tag>
+          )}
           {record.limitExceeded && (
             <span className={styles.limitText}>⚠️ Vượt hạn mức</span>
           )}

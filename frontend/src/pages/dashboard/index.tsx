@@ -37,10 +37,10 @@ export default function DashboardBlank() {
     const fetchRecentTransactions = async () => {
       setLoadingRecent(true);
       try {
-        const res = await api.get('/transactions/search', {
+        const res = await api.get('/transactions', {
           params: { page: 0, size: 5 }
         });
-        setRecentTransactions(res.data.content || []);
+        setRecentTransactions(res.data.data?.content || []);
       } catch (err) {
         console.error('Không thể lấy danh sách hoạt động gần đây:', err);
       } finally {
@@ -242,7 +242,11 @@ export default function DashboardBlank() {
                       let avatarBg = '#f0f2f5';
                       let avatarColor = '#595959';
 
-                      if (item.id === 25 || item.description?.includes('bất thường')) {
+                      if (item.savingGoalId) {
+                        avatarIcon = <FlagOutlined />;
+                        avatarBg = '#FFFBE6';
+                        avatarColor = '#FAAD14';
+                      } else if (item.id === 25 || item.description?.includes('bất thường')) {
                         avatarIcon = <WarningOutlined />;
                         avatarBg = '#FFF1F0';
                         avatarColor = '#FF4D4F';

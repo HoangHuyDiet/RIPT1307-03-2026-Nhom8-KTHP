@@ -180,7 +180,7 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
     }
 
     private void validateCategoryType(Category category, String transactionType) {
-        if (!category.getType().equalsIgnoreCase(transactionType)) {
+        if (category != null && !category.getType().equalsIgnoreCase(transactionType)) {
             throw new IllegalArgumentException("Danh mục không khớp với loại giao dịch!");
         }
     }

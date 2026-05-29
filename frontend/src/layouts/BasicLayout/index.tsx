@@ -10,6 +10,8 @@ import {
   LogoutOutlined,
   BankOutlined,
   SearchOutlined,
+  FlagOutlined,
+  FlagFilled,
   WalletOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -76,6 +78,11 @@ export default function BasicLayout() {
       label: <Link to="/dashboard">Tổng quan</Link>,
     },
     {
+      key: '/saving-goals',
+      icon: location.pathname === '/saving-goals' ? <FlagFilled /> : <FlagOutlined />,
+      label: <Link to="/saving-goals">Mục tiêu</Link>,
+    },
+    {
       key: '/transactions',
       icon: <WalletOutlined />,
       label: <Link to="/transactions">Quản lý giao dịch</Link>,
@@ -139,7 +146,7 @@ export default function BasicLayout() {
           />
         </div>
       </Sider>
-      <Layout>
+      <Layout className={styles.mainLayout}>
         <Header className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.searchWrapper}>

@@ -1,5 +1,5 @@
 package com.smartfinance.smart_finance_hub.entity;
-
+import com.smartfinance.smart_finance_hub.enums.SavingGoalStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +25,7 @@ public class SavingGoal {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User user;
 
     @NotBlank
@@ -42,9 +43,22 @@ public class SavingGoal {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    @Column(name = "is_pinned", nullable = false)
+    @Builder.Default
+    private Boolean isPinned = false;
+
+    @Column(length = 3)
+    private String currency;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Category category;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String status = "IN_PROGRESS";
+    private SavingGoalStatus status = SavingGoalStatus.IN_PROGRESS;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -53,4 +67,7 @@ public class SavingGoal {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
