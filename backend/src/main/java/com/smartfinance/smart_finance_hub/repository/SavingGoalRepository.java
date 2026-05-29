@@ -13,3 +13,5 @@ public interface SavingGoalRepository extends JpaRepository<SavingGoal, Long> {
 
     List<SavingGoal> findByUserIdAndStatus(Long userId, String status);
 }
+
+
