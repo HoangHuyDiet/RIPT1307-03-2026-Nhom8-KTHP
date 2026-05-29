@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class FundDiscussionResponse {
 
     private Long id;
+    private Long groupId;
     private String senderName;
     private String senderAvatar;
     private String type;

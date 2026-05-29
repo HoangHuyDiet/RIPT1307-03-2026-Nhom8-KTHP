@@ -33,8 +33,14 @@ interface GroupDetailViewProps {
 
 export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameGroup, onDeleteGroup }: GroupDetailViewProps) {
   const user = useAuthStore(state => state.user);
-  const { sendMessage } = useWebSocket(group.id);
   const [discussions, setDiscussions] = useState<any[]>([]);
+  
+  const { sendMessage } = useWebSocket(group.id, (newMsg) => {
+    setDiscussions((prev) => {
+      if (prev.some((d) => d.id === newMsg.id)) return prev;
+      return [...prev, newMsg];
+    });
+  });
   const [chartData, setChartData] = useState<any[]>([]);
   const [fundTransactions, setFundTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);

@@ -37,7 +37,7 @@ public class SavingGoalResponse {
                 .targetAmount(goal.getTargetAmount())
                 .currentAmount(goal.getCurrentAmount())
                 .dueDate(goal.getDueDate())
-                .status(goal.getStatus())
+                .status(goal.getStatus() != null ? goal.getStatus().name() : null)
                 .progressPercent(progress)
                 .createdAt(goal.getCreatedAt())
                 .updatedAt(goal.getUpdatedAt())

@@ -4,7 +4,7 @@ import com.smartfinance.smart_finance_hub.dto.request.FundChatMessageRequest;
 import com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
-import com.smartfinance.smart_finance_hub.service.FundService;
+import com.smartfinance.smart_finance_hub.service.SharedFundService;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class FundChatController {
 
-    private final FundService fundService;
+    private final SharedFundService sharedFundService;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -30,7 +30,7 @@ public class FundChatController {
         }
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new IllegalArgumentException("WebSocket user not found"));
-        FundDiscussionResponse response = fundService.sendChatMessage(fundId, request, user.getId());
+        FundDiscussionResponse response = sharedFundService.sendChatMessage(fundId, request, user.getId());
         messagingTemplate.convertAndSend("/topic/funds/" + fundId + "/chat", response);
     }
 }

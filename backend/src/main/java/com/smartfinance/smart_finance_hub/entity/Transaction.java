@@ -11,15 +11,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "transactions",
-        indexes = {
-            @Index(name = "idx_transactions_fund_status", columnList = "fund_id,status"),
-            @Index(name = "idx_transactions_fund_approved_date", columnList = "fund_id,is_approved,date"),
-            @Index(name = "idx_transactions_user_fund", columnList = "user_id,fund_id"),
-            @Index(name = "idx_transactions_fund_type", columnList = "fund_id,type")
-        })
-@Getter @Setter
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_transactions_fund_status", columnList = "fund_id,status"),
+        @Index(name = "idx_transactions_fund_approved_date", columnList = "fund_id,is_approved,date"),
+        @Index(name = "idx_transactions_user_fund", columnList = "user_id,fund_id"),
+        @Index(name = "idx_transactions_fund_type", columnList = "fund_id,type")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -39,12 +38,11 @@ public class Transaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id")
-    private Fund fund;
+    private ShareFund shareFund;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "saving_goal_id")
     private SavingGoal savingGoal;
-
 
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)
@@ -92,5 +90,3 @@ public class Transaction {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
-
-

@@ -34,4 +34,10 @@ public interface SharedFundService {
     java.util.List<com.smartfinance.smart_finance_hub.entity.Transaction> getFundTransactions(Long fundId, Long userId);
 
     java.util.List<java.util.Map<String, Object>> getActivitiesForUser(Long userId);
+
+    com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse sendChatMessage(Long fundId, com.smartfinance.smart_finance_hub.dto.request.FundChatMessageRequest request, Long userId);
+
+    java.util.List<com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse> getDiscussions(Long fundId, Long userId);
+
+    void verifyInvitationToken(String token, Long userId);
 }

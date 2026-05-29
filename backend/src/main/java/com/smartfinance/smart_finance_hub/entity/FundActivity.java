@@ -44,7 +44,7 @@ public class FundActivity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id", nullable = false)
-    private Fund fund;
+    private ShareFund shareFund;
 
     @Column(nullable = false, length = 50)
     private String type;

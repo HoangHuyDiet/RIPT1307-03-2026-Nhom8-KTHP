@@ -7,23 +7,16 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "funds",
-        indexes = {
-            @Index(name = "idx_funds_created_by", columnList = "created_by"),
-            @Index(name = "idx_funds_status", columnList = "status")
-        })
-@Getter
-@Setter
+@Table(name = "share_funds")
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Fund {
+public class ShareFund {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,26 +37,6 @@ public class Fund {
     @Builder.Default
     private String status = "ACTIVE";
 
-    @Column(name = "target_amount", precision = 19, scale = 4)
-    private BigDecimal targetAmount;
-
-    @Column(name = "due_date")
-    private LocalDate dueDate;
-
-    @Column(name = "theme_color", length = 20)
-    private String themeColor;
-
-    @Column(name = "fund_type", nullable = false, length = 20)
-    @Builder.Default
-    private String fundType = "GROUP";
-
-    @Column(name = "wallet_type", length = 30)
-    private String walletType;
-
-    @Version
-    @Column(name = "version")
-    private Long version;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdByUser;
@@ -76,14 +49,16 @@ public class Fund {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL)
+   
+   
+   
+
+    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
-    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FundMember> members;
 
-    @OneToMany(mappedBy = "fund", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "shareFund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FundInvitation> invitations;
 }
-
-

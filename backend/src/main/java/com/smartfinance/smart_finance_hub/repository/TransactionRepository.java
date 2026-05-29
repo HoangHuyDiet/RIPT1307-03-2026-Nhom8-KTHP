@@ -16,26 +16,26 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByUserIdAndType(Long userId, String type);
 
-    List<Transaction> findByFundId(Long fundId);
+    List<Transaction> findByShareFundId(Long fundId);
 
-    Page<Transaction> findByFundId(Long fundId, Pageable pageable);
+    Page<Transaction> findByShareFundId(Long fundId, Pageable pageable);
 
-    Page<Transaction> findByFundIdAndType(Long fundId, String type, Pageable pageable);
+    Page<Transaction> findByShareFundIdAndType(Long fundId, String type, Pageable pageable);
 
-    List<Transaction> findByFundIdAndIsApproved(Long fundId, Boolean isApproved);
+    List<Transaction> findByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
 
-    List<Transaction> findByFundIdAndStatus(Long fundId, String status);
+    List<Transaction> findByShareFundIdAndStatus(Long fundId, String status);
 
-    List<Transaction> findByFundIdInAndStatus(List<Long> fundIds, String status);
+    List<Transaction> findByShareFundIdInAndStatus(List<Long> fundIds, String status);
 
-    long countByFundId(Long fundId);
+    long countByShareFundId(Long fundId);
 
-    long countByFundIdAndIsApproved(Long fundId, Boolean isApproved);
+    long countByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
 
-    List<Transaction> findByFundIdAndIsApprovedAndDateBetween(
+    List<Transaction> findByShareFundIdAndIsApprovedAndDateBetween(
             Long fundId, Boolean isApproved, LocalDate startDate, LocalDate endDate);
 
-    List<Transaction> findByFundIdInAndIsApprovedAndDateBetween(
+    List<Transaction> findByShareFundIdInAndIsApprovedAndDateBetween(
             List<Long> fundIds, Boolean isApproved, LocalDate startDate, LocalDate endDate);
 
     List<Transaction> findByCategoryId(Long categoryId);
@@ -43,15 +43,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
    
     List<Transaction> findByUserIdAndDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
 
-    Page<Transaction> findByUserIdAndFundIsNull(Long userId, Pageable pageable);
+    Page<Transaction> findByUserIdAndShareFundIsNull(Long userId, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndShareFundIsNull(
             Long userId, String type, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndDateBetweenAndFundIsNull(
+    Page<Transaction> findByUserIdAndDateBetweenAndShareFundIsNull(
             Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 }
 

@@ -161,7 +161,7 @@ public class MailServiceImpl implements MailService {
     }
 
     private String invitationActionUrl(String token) {
-        return frontendUrl + "/funds/invitations/" + token;
+        return frontendUrl + "/funds/verify?token=" + token;
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)

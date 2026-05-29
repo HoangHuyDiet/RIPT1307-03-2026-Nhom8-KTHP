@@ -10,17 +10,11 @@ import java.util.Optional;
 @Repository
 public interface FundMemberRepository extends JpaRepository<FundMember, Long> {
 
-    List<FundMember> findByFundId(Long fundId);
+    List<FundMember> findByShareFundId(Long fundId);
 
     List<FundMember> findByUserId(Long userId);
 
-    Optional<FundMember> findByFundIdAndUserId(Long fundId, Long userId);
+    Optional<FundMember> findByShareFundIdAndUserId(Long fundId, Long userId);
 
-    Optional<FundMember> findByFundIdAndUserEmailIgnoreCase(Long fundId, String email);
-
-    boolean existsByFundIdAndUserId(Long fundId, Long userId);
-
-    boolean existsByFundIdAndUserIdAndFundRole(Long fundId, Long userId, String role);
+    boolean existsByShareFundIdAndUserId(Long fundId, Long userId);
 }
-
-

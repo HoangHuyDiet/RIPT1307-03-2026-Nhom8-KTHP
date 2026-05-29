@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FundMessageRepository extends JpaRepository<FundMessage, Long> {
 
-    List<FundMessage> findByFundIdOrderByCreatedAtAsc(Long fundId);
+    List<FundMessage> findByShareFundIdOrderByCreatedAtAsc(Long fundId);
 }
 
 

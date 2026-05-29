@@ -10,5 +10,5 @@ public interface FundActivityRepository extends JpaRepository<FundActivity, Long
 
     List<FundActivity> findTop20ByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<FundActivity> findTop20ByFundIdOrderByCreatedAtDesc(Long fundId);
+    List<FundActivity> findTop20ByShareFundIdOrderByCreatedAtDesc(Long fundId);
 }

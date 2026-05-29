@@ -26,12 +26,12 @@ public class FundInvitationResponse {
     public static FundInvitationResponse from(FundInvitation invitation) {
         return FundInvitationResponse.builder()
                 .invitationId(invitation.getId())
-                .fundId(invitation.getFund().getId())
-                .fundName(invitation.getFund().getName())
+                .fundId(invitation.getShareFund() != null ? invitation.getShareFund().getId() : null)
+                .fundName(invitation.getShareFund() != null ? invitation.getShareFund().getName() : null)
                 .invitedEmail(invitation.getInvitedEmail())
                 .type(invitation.getType())
                 .status(invitation.getStatus())
-                .reason(invitation.getReason())
+                .reason(null)
                 .createdAt(invitation.getCreatedAt())
                 .expiresAt(invitation.getExpiresAt())
                 .build();

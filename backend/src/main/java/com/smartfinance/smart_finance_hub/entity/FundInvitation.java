@@ -8,13 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "fund_invitation",
-        indexes = {
-            @Index(name = "idx_fund_invitation_fund_type_status", columnList = "fund_id,type,status"),
-            @Index(name = "idx_fund_invitation_email_status", columnList = "invited_email,status"),
-            @Index(name = "idx_fund_invitation_token", columnList = "invitation_token")
-        })
+@Table(name = "fund_invitation")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,7 +21,7 @@ public class FundInvitation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id", nullable = false)
-    private Fund fund;
+    private ShareFund shareFund;
 
     @NotBlank
     @Column(name = "invited_email", nullable = false)
@@ -44,9 +38,6 @@ public class FundInvitation {
     @Column(length = 50)
     private String type;
 
-    @Column(length = 500)
-    private String reason;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -54,5 +45,3 @@ public class FundInvitation {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 }
-
-

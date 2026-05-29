@@ -38,7 +38,7 @@ public class FundMessage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id", nullable = false)
-    private Fund fund;
+    private ShareFund shareFund;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id")

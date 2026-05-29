@@ -9,6 +9,7 @@ import com.smartfinance.smart_finance_hub.enums.InvitationStatus;
 import com.smartfinance.smart_finance_hub.enums.TransactionType;
 import com.smartfinance.smart_finance_hub.repository.*;
 import com.smartfinance.smart_finance_hub.service.SharedFundService;
+import com.smartfinance.smart_finance_hub.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,8 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+    private final FundMessageRepository fundMessageRepository;
+    private final MailService mailService;
 
     @Override
     @Transactional
@@ -53,8 +56,10 @@ public class SharedFundServiceImpl implements SharedFundService {
 
         for (FundInvitation existing : pendingInvitations) {
             if (existing.getInvitedEmail().equalsIgnoreCase(request.getEmail())) {
-                throw new IllegalStateException(
-                        "Đã có lời mời đang chờ xử lý cho email: " + request.getEmail());
+                // Hủy lời mời cũ và tạo lời mời mới
+                existing.setStatus("CANCELLED");
+                fundInvitationRepository.save(existing);
+                log.info("Đã hủy lời mời cũ (id={}) cho email: {}", existing.getId(), request.getEmail());
             }
         }
 
@@ -69,6 +74,25 @@ public class SharedFundServiceImpl implements SharedFundService {
 
         FundInvitation saved = fundInvitationRepository.save(invitation);
         log.info("inviteMember success: invitationId={}", saved.getId());
+
+        // Gửi email mời tham gia quỹ nhóm
+        try {
+            User inviter = userRepository.findById(inviterUserId).orElse(null);
+            String inviterName = inviter != null ? (inviter.getDisplayName() != null ? inviter.getDisplayName() : inviter.getEmail()) : "Thành viên";
+            String invitedName = invitedUser.getDisplayName() != null ? invitedUser.getDisplayName() : invitedUser.getEmail();
+            mailService.sendFundInvitationEmail(
+                    invitedUser.getEmail(),
+                    invitedName,
+                    inviterName,
+                    fund.getName(),
+                    invitation.getInvitationToken(),
+                    7
+            );
+            log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedUser.getEmail());
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email mời tham gia quỹ nhóm đến {}: {}", invitedUser.getEmail(), e.getMessage());
+        }
+
         return saved;
     }
 
@@ -357,7 +381,24 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Chỉ người tạo quỹ mới được quyền xóa quỹ!");
         }
 
+        // Lấy danh sách thành viên trước khi xóa để gửi thông báo
+        List<FundMember> members = fundMemberRepository.findByShareFundId(fundId);
+
         shareFundRepository.delete(fund);
+
+        // Gửi email thông báo giải tán quỹ cho tất cả thành viên khác
+        for (FundMember member : members) {
+            User memberUser = member.getUser();
+            if (memberUser != null && !memberUser.getId().equals(userId)) {
+                try {
+                    String memberName = memberUser.getDisplayName() != null ? memberUser.getDisplayName() : memberUser.getEmail();
+                    mailService.sendDisbandConfirmationEmail(memberUser.getEmail(), memberName, fund.getName());
+                    log.info("Đã gửi email thông báo giải tán quỹ {} đến {}", fund.getName(), memberUser.getEmail());
+                } catch (Exception e) {
+                    log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", memberUser.getEmail(), e.getMessage());
+                }
+            }
+        }
     }
 
     @Override
@@ -418,5 +459,129 @@ public class SharedFundServiceImpl implements SharedFundService {
         
         activities.sort((a, b) -> Long.compare((Long) b.get("id"), (Long) a.get("id")));
         return activities;
+    }
+
+    private String formatTime(java.time.LocalDateTime time) {
+        if (time == null) return "";
+        return time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM"));
+    }
+
+    private String defaultAvatar(User user) {
+        if (user == null || user.getDisplayName() == null || user.getDisplayName().isBlank()) {
+            return "";
+        }
+        return user.getDisplayName().trim().substring(0, 1).toUpperCase();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse> getDiscussions(Long fundId, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ với ID: " + fundId));
+        
+        boolean isMember = fund.getCreatedByUser().getId().equals(userId);
+        if (!isMember) {
+            isMember = fundMemberRepository.existsByShareFundIdAndUserId(fundId, userId);
+        }
+        if (!isMember) {
+            throw new IllegalArgumentException("Bạn không có quyền truy cập thảo luận của quỹ này!");
+        }
+
+        return fundMessageRepository.findByShareFundIdOrderByCreatedAtAsc(fundId).stream()
+                .map(msg -> {
+                    User sender = msg.getSender();
+                    String senderName = sender == null ? "System" : sender.getDisplayName();
+                    return com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse.builder()
+                            .id(msg.getId())
+                            .groupId(fundId)
+                            .senderName(senderName)
+                            .senderAvatar(sender == null ? "" : defaultAvatar(sender))
+                            .type(msg.getType())
+                            .text(msg.getText())
+                            .time(formatTime(msg.getCreatedAt()))
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse sendChatMessage(Long fundId, com.smartfinance.smart_finance_hub.dto.request.FundChatMessageRequest request, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ với ID: " + fundId));
+        
+        boolean isMember = fund.getCreatedByUser().getId().equals(userId);
+        if (!isMember) {
+            isMember = fundMemberRepository.existsByShareFundIdAndUserId(fundId, userId);
+        }
+        if (!isMember) {
+            throw new IllegalArgumentException("Bạn không phải thành viên của quỹ này!");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung tin nhắn không được để trống!");
+        }
+
+        FundMessage message = FundMessage.builder()
+                .shareFund(fund)
+                .sender(user)
+                .type("user")
+                .text(request.getContent().trim())
+                .build();
+        
+        FundMessage saved = fundMessageRepository.save(message);
+        
+        return com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse.builder()
+                .id(saved.getId())
+                .groupId(fundId)
+                .senderName(user.getDisplayName())
+                .senderAvatar(defaultAvatar(user))
+                .type(saved.getType())
+                .text(saved.getText())
+                .time(formatTime(saved.getCreatedAt()))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void verifyInvitationToken(String token, Long userId) {
+        FundInvitation invitation = fundInvitationRepository.findByInvitationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lời mời với mã xác nhận đã cho!"));
+
+        if (!InvitationStatus.PENDING.name().equals(invitation.getStatus())) {
+            throw new IllegalStateException("Lời mời này đã được xử lý trước đó! Trạng thái: " + invitation.getStatus());
+        }
+
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            invitation.setStatus(InvitationStatus.EXPIRED.name());
+            fundInvitationRepository.save(invitation);
+            throw new IllegalStateException("Lời mời đã hết hạn!");
+        }
+
+        User respondUser = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+
+        if (!respondUser.getEmail().equalsIgnoreCase(invitation.getInvitedEmail())) {
+            throw new IllegalArgumentException("Bạn không phải người được mời!");
+        }
+
+        // Accept the invitation
+        invitation.setStatus(InvitationStatus.ACCEPTED.name());
+        fundInvitationRepository.save(invitation);
+
+        // Add user as member to the fund
+        boolean alreadyMember = fundMemberRepository.existsByShareFundIdAndUserId(
+                invitation.getShareFund().getId(), respondUser.getId());
+        if (!alreadyMember) {
+            FundMember newMember = FundMember.builder()
+                    .shareFund(invitation.getShareFund())
+                    .user(respondUser)
+                    .fundRole(FundRole.MEMBER.name())
+                    .build();
+            fundMemberRepository.save(newMember);
+        }
     }
 }
