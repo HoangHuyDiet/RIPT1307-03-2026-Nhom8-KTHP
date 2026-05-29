@@ -36,7 +36,9 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
                 "/api/auth/**",
-                "/api/2fa/**"
+                "/api/2fa/**",
+                "/error",
+                "/ws/**"
             ).permitAll()
 
             // Admin-only endpoints (ADMIN + SUPPORT_ADMIN)

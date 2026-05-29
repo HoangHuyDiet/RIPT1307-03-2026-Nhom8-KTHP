@@ -17,4 +17,21 @@ public interface SharedFundService {
     Transaction createFundTransaction(Long fundId, CreateFundTransactionRequest request, Long userId);
 
     Transaction approveTransaction(Long transactionId, Long approverUserId);
+
+    // Task 3: Thêm các API quản lý Quỹ nhóm hoàn chỉnh
+    java.util.List<com.smartfinance.smart_finance_hub.entity.ShareFund> getFundsForUser(Long userId);
+
+    com.smartfinance.smart_finance_hub.entity.ShareFund createFund(String name, java.math.BigDecimal target, java.math.BigDecimal initialContribution, Long userId);
+
+    com.smartfinance.smart_finance_hub.entity.ShareFund renameFund(Long fundId, String newName, Long userId);
+
+    void leaveFund(Long fundId, Long userId);
+
+    void removeMember(Long fundId, String memberEmail, Long ownerUserId);
+
+    void deleteFund(Long fundId, Long userId);
+
+    java.util.List<com.smartfinance.smart_finance_hub.entity.Transaction> getFundTransactions(Long fundId, Long userId);
+
+    java.util.List<java.util.Map<String, Object>> getActivitiesForUser(Long userId);
 }

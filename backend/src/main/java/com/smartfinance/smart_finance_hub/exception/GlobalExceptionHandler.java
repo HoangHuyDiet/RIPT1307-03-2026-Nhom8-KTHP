@@ -100,7 +100,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         log.error("handleGlobalException error: {}", ex.getMessage());
         response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("message", "Hệ thống gặp sự cố đột xuất. Vui lòng thử lại sau!");
+        response.put("message", "Hệ thống gặp sự cố: " + ex.getMessage());
 
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }

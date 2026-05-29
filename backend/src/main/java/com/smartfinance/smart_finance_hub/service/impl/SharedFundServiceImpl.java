@@ -236,4 +236,187 @@ public class SharedFundServiceImpl implements SharedFundService {
         log.info("approveTransaction success: transactionId={}, isApproved=true, newBalance={}", transactionId, fund.getBalance());
         return transaction;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShareFund> getFundsForUser(Long userId) {
+        List<FundMember> memberships = fundMemberRepository.findByUserId(userId);
+        List<ShareFund> funds = new java.util.ArrayList<>();
+        for (FundMember member : memberships) {
+            if (member.getShareFund() != null) {
+                ShareFund fund = member.getShareFund();
+                if (fund.getMembers() != null) {
+                    fund.getMembers().size();
+                    for (FundMember fm : fund.getMembers()) {
+                        if (fm.getUser() != null) {
+                            fm.getUser().getDisplayName();
+                        }
+                    }
+                }
+                funds.add(fund);
+            }
+        }
+        return funds;
+    }
+
+    @Override
+    @Transactional
+    public ShareFund createFund(String name, java.math.BigDecimal target, java.math.BigDecimal initialContribution, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+
+        ShareFund fund = ShareFund.builder()
+                .name(name)
+                .balance(initialContribution != null ? initialContribution : java.math.BigDecimal.ZERO)
+                .status("ACTIVE")
+                .createdByUser(user)
+                .build();
+
+        ShareFund savedFund = shareFundRepository.save(fund);
+
+        FundMember ownerMember = FundMember.builder()
+                .shareFund(savedFund)
+                .user(user)
+                .fundRole(FundRole.OWNER.name())
+                .build();
+
+        fundMemberRepository.save(ownerMember);
+        return savedFund;
+    }
+
+    @Override
+    @Transactional
+    public ShareFund renameFund(Long fundId, String newName, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
+
+        boolean isOwner = fund.getCreatedByUser().getId().equals(userId);
+        if (!isOwner) {
+            FundMember member = fundMemberRepository.findByShareFundIdAndUserId(fundId, userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Bạn không phải thành viên quỹ!"));
+            if (!FundRole.OWNER.name().equals(member.getFundRole())) {
+                throw new IllegalArgumentException("Chỉ chủ quỹ mới có quyền đổi tên!");
+            }
+        }
+
+        fund.setName(newName);
+        return shareFundRepository.save(fund);
+    }
+
+    @Override
+    @Transactional
+    public void leaveFund(Long fundId, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
+
+        if (fund.getCreatedByUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Chủ quỹ sáng lập không thể rời quỹ! Bạn phải xóa quỹ.");
+        }
+
+        FundMember member = fundMemberRepository.findByShareFundIdAndUserId(fundId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bạn không phải thành viên quỹ này!"));
+
+        fundMemberRepository.delete(member);
+    }
+
+    @Override
+    @Transactional
+    public void removeMember(Long fundId, String memberEmail, Long ownerUserId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
+
+        boolean isOwner = fund.getCreatedByUser().getId().equals(ownerUserId);
+        if (!isOwner) {
+            FundMember member = fundMemberRepository.findByShareFundIdAndUserId(fundId, ownerUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("Bạn không phải thành viên quỹ!"));
+            if (!FundRole.OWNER.name().equals(member.getFundRole())) {
+                throw new IllegalArgumentException("Chỉ chủ quỹ mới có quyền xóa thành viên!");
+            }
+        }
+
+        User targetUser = userRepository.findByEmail(memberEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên với email này!"));
+
+        if (fund.getCreatedByUser().getId().equals(targetUser.getId())) {
+            throw new IllegalArgumentException("Không thể xóa chủ quỹ sáng lập!");
+        }
+
+        FundMember targetMember = fundMemberRepository.findByShareFundIdAndUserId(fundId, targetUser.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng này không thuộc quỹ!"));
+
+        fundMemberRepository.delete(targetMember);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFund(Long fundId, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
+
+        if (!fund.getCreatedByUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Chỉ người tạo quỹ mới được quyền xóa quỹ!");
+        }
+
+        shareFundRepository.delete(fund);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> getFundTransactions(Long fundId, Long userId) {
+        ShareFund fund = shareFundRepository.findById(fundId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
+
+        boolean isMember = fund.getCreatedByUser().getId().equals(userId);
+        if (!isMember) {
+            isMember = fundMemberRepository.existsByShareFundIdAndUserId(fundId, userId);
+        }
+
+        if (!isMember) {
+            throw new IllegalArgumentException("Bạn không có quyền truy cập giao dịch của quỹ này!");
+        }
+
+        return transactionRepository.findByShareFundId(fundId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> getActivitiesForUser(Long userId) {
+        List<ShareFund> userFunds = getFundsForUser(userId);
+        List<java.util.Map<String, Object>> activities = new java.util.ArrayList<>();
+
+        User user = userRepository.findById(userId).orElse(null);
+        String userEmail = user != null ? user.getEmail() : "";
+
+        long idCounter = 1;
+        for (ShareFund fund : userFunds) {
+            java.util.Map<String, Object> actCreate = new java.util.HashMap<>();
+            actCreate.put("id", idCounter++);
+            actCreate.put("email", userEmail);
+            actCreate.put("type", "create");
+            actCreate.put("text", "Bạn đã tham gia nhóm '" + fund.getName() + "'");
+            actCreate.put("time", "Mới đây");
+            actCreate.put("color", "#1A73E8");
+            activities.add(actCreate);
+
+            List<Transaction> transactions = transactionRepository.findByShareFundId(fund.getId());
+            for (Transaction tx : transactions) {
+                java.util.Map<String, Object> actTx = new java.util.HashMap<>();
+                actTx.put("id", idCounter++);
+                actTx.put("email", userEmail);
+                
+                String requesterName = tx.getUser().getDisplayName();
+                String typeStr = "INCOME".equalsIgnoreCase(tx.getType()) ? "đóng góp" : "rút tiền";
+                String actionColor = "INCOME".equalsIgnoreCase(tx.getType()) ? "#34A853" : "#EA4335";
+                
+                actTx.put("type", "INCOME".equalsIgnoreCase(tx.getType()) ? "join" : "leave");
+                actTx.put("text", requesterName + " đã " + typeStr + " " + tx.getAmount() + "đ (" + (tx.getIsApproved() ? "Đã duyệt" : "Chờ duyệt") + ") vào quỹ '" + fund.getName() + "'");
+                actTx.put("time", tx.getDate().toString());
+                actTx.put("color", actionColor);
+                activities.add(actTx);
+            }
+        }
+        
+        activities.sort((a, b) -> Long.compare((Long) b.get("id"), (Long) a.get("id")));
+        return activities;
+    }
 }
