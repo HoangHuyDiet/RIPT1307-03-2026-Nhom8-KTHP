@@ -51,6 +51,7 @@ jwt:
 app:
   mail:
     from-name: Smart Finance Hub
+    from-email: hoangnv.private@gmail.com
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   2fa:
     otp-length: 6

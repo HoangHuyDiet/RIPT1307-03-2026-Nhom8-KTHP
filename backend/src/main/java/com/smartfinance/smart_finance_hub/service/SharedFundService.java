@@ -16,6 +16,8 @@ public interface SharedFundService {
 
     Transaction approveTransaction(Long transactionId, Long approverUserId);
 
+    Transaction approveOrRejectTransaction(Long transactionId, String action, String rejectReason, Long userId);
+
     java.util.List<com.smartfinance.smart_finance_hub.entity.ShareFund> getFundsForUser(Long userId);
 
     com.smartfinance.smart_finance_hub.entity.ShareFund createFund(String name, java.math.BigDecimal target, java.math.BigDecimal initialContribution, Long userId);

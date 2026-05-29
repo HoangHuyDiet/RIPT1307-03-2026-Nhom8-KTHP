@@ -28,20 +28,24 @@ export default function DepositModal({ isOpen, onClose, selectedGroup }: Deposit
         requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh'
       });
       if (data.success) {
-        addNotification({
-          id: data.requestId,
-          type: 'DEPOSIT_REQUEST',
-          fundId: selectedGroup.id,
-          fundName: selectedGroup.name,
-          amount,
-          description: values.description || 'Đóng góp vào quỹ',
-          requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
-          date: new Date().toISOString().slice(0, 10),
-          read: false,
-          targetRole: 'OWNER'
-        });
-
-        message.success('Đã gửi yêu cầu nạp tiền! Chờ chủ quỹ duyệt.');
+        if (data.data.isApproved) {
+          message.success('Đã nạp tiền vào quỹ thành công!');
+          window.dispatchEvent(new Event('transaction-approved'));
+        } else {
+          addNotification({
+            id: data.data.requestId,
+            type: 'DEPOSIT_REQUEST',
+            fundId: selectedGroup.id,
+            fundName: selectedGroup.name,
+            amount,
+            description: values.description || 'Đóng góp vào quỹ',
+            requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
+            date: new Date().toISOString().slice(0, 10),
+            read: false,
+            targetRole: 'OWNER'
+          });
+          message.success('Đã gửi yêu cầu nạp tiền! Chờ chủ quỹ duyệt.');
+        }
         onClose();
         depositForm.resetFields();
       }

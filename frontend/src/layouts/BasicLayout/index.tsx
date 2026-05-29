@@ -19,6 +19,8 @@ import {
 } from '@ant-design/icons';
 import styles from './index.less';
 import { useNotificationStore, FundNotification } from '@/store/useNotificationStore';
+import request from '@/utils/request';
+
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -38,12 +40,11 @@ export default function BasicLayout() {
 
   const handleApproveRequest = async (req: FundNotification, action: 'approved' | 'rejected', reason?: string) => {
     try {
-      const res = await fetch('/api/funds/approve-transaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId: req.id, action, rejectReason: reason })
+      const data = await request.post('/funds/approve-transaction', {
+        requestId: req.id,
+        action,
+        rejectReason: reason
       });
-      const data = await res.json();
       if (data.success) {
         if (action === 'approved') {
           message.success(`Đã duyệt thành công!`);

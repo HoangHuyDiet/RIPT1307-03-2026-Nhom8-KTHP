@@ -69,7 +69,7 @@ public class SharedFundServiceImpl implements SharedFundService {
                 .invitationToken(UUID.randomUUID().toString())
                 .status(InvitationStatus.PENDING.name())
                 .type("MEMBER_INVITE")
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(LocalDateTime.now().plusHours(12))
                 .build();
 
         FundInvitation saved = fundInvitationRepository.save(invitation);
@@ -79,6 +79,7 @@ public class SharedFundServiceImpl implements SharedFundService {
         String finalInvitedName = invitedUser.getDisplayName() != null ? invitedUser.getDisplayName() : invitedUser.getEmail();
         User inviter = userRepository.findById(inviterUserId).orElse(null);
         String finalInviterName = inviter != null ? (inviter.getDisplayName() != null ? inviter.getDisplayName() : inviter.getEmail()) : "Thành viên";
+        final String finalInviterEmail = inviter != null ? inviter.getEmail() : "";
         String finalFundName = fund.getName();
         String token = invitation.getInvitationToken();
 
@@ -88,9 +89,10 @@ public class SharedFundServiceImpl implements SharedFundService {
                         invitedEmail,
                         finalInvitedName,
                         finalInviterName,
+                        finalInviterEmail,
                         finalFundName,
                         token,
-                        7
+                        12
                 );
                 log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedEmail);
             } catch (Exception e) {
@@ -191,6 +193,8 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Loại giao dịch không hợp lệ! Chỉ chấp nhận INCOME hoặc EXPENSE.");
         }
 
+        boolean autoApprove = (members.size() <= 1);
+
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
@@ -199,11 +203,24 @@ public class SharedFundServiceImpl implements SharedFundService {
                 .type(transactionType.name())
                 .description(request.getDescription())
                 .date(request.getDate())
-                .isApproved(false)
+                .isApproved(autoApprove)
+                .status(autoApprove ? "APPROVED" : "PENDING")
+                .approvedByUser(autoApprove ? user : null)
+                .approvedAt(autoApprove ? java.time.LocalDateTime.now() : null)
                 .build();
 
+        if (autoApprove) {
+            java.math.BigDecimal currentBalance = fund.getBalance() != null ? fund.getBalance() : java.math.BigDecimal.ZERO;
+            if (TransactionType.INCOME == transactionType) {
+                fund.setBalance(currentBalance.add(request.getAmount()));
+            } else if (TransactionType.EXPENSE == transactionType) {
+                fund.setBalance(currentBalance.subtract(request.getAmount()));
+            }
+            shareFundRepository.save(fund);
+        }
+
         Transaction saved = transactionRepository.save(transaction);
-        log.info("createFundTransaction success: transactionId={}, isApproved=false", saved.getId());
+        log.info("createFundTransaction success: transactionId={}, isApproved={}", saved.getId(), autoApprove);
         return saved;
     }
 
@@ -267,6 +284,70 @@ public class SharedFundServiceImpl implements SharedFundService {
     }
 
     @Override
+    @Transactional
+    public Transaction approveOrRejectTransaction(Long transactionId, String action, String rejectReason, Long userId) {
+        log.info("approveOrRejectTransaction param: transactionId={}, action={}, userId={}", transactionId, action, userId);
+
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch với ID: " + transactionId));
+
+        ShareFund fund = transaction.getShareFund();
+        if (fund == null) {
+            throw new IllegalArgumentException("Giao dịch này không thuộc quỹ chung nào!");
+        }
+
+        boolean isOwner = fund.getCreatedByUser().getId().equals(userId);
+        if (!isOwner) {
+            List<FundMember> members = fundMemberRepository.findByShareFundId(fund.getId());
+            for (FundMember member : members) {
+                if (member.getUser().getId().equals(userId)
+                        && FundRole.OWNER.name().equals(member.getFundRole())) {
+                    isOwner = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isOwner) {
+            throw new IllegalArgumentException("Chỉ Chủ quỹ (Owner) mới có quyền phê duyệt hoặc từ chối giao dịch!");
+        }
+
+        if (!"PENDING".equalsIgnoreCase(transaction.getStatus())) {
+            throw new IllegalStateException("Giao dịch này đã được xử lý trước đó! Trạng thái: " + transaction.getStatus());
+        }
+
+        User approver = userRepository.findById(userId).orElse(null);
+
+        if ("approved".equalsIgnoreCase(action)) {
+            transaction.setIsApproved(true);
+            transaction.setStatus("APPROVED");
+            transaction.setApprovedByUser(approver);
+            transaction.setApprovedAt(LocalDateTime.now());
+
+            BigDecimal currentBalance = fund.getBalance();
+            TransactionType txType = TransactionType.valueOf(transaction.getType());
+
+            if (TransactionType.INCOME == txType) {
+                fund.setBalance(currentBalance.add(transaction.getAmount()));
+                log.info("INCOME APPROVED: balance +{} -> new balance={}", transaction.getAmount(), fund.getBalance());
+            } else if (TransactionType.EXPENSE == txType) {
+                fund.setBalance(currentBalance.subtract(transaction.getAmount()));
+                log.info("EXPENSE APPROVED: balance -{} -> new balance={}", transaction.getAmount(), fund.getBalance());
+            }
+            shareFundRepository.save(fund);
+        } else if ("rejected".equalsIgnoreCase(action)) {
+            transaction.setIsApproved(false);
+            transaction.setStatus("REJECTED");
+            transaction.setRejectReason(rejectReason);
+            log.info("TRANSACTION REJECTED: transactionId={}", transactionId);
+        } else {
+            throw new IllegalArgumentException("Hành động không hợp lệ! Chỉ chấp nhận approved hoặc rejected.");
+        }
+
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<ShareFund> getFundsForUser(Long userId) {
         List<FundMember> memberships = fundMemberRepository.findByUserId(userId);
@@ -291,11 +372,24 @@ public class SharedFundServiceImpl implements SharedFundService {
     @Override
     @Transactional
     public ShareFund createFund(String name, java.math.BigDecimal target, java.math.BigDecimal initialContribution, Long userId) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên quỹ không được để trống!");
+        }
+        String trimmedName = name.trim();
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
 
+        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
+        java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(userId);
+        for (ShareFund existing : existingFunds) {
+            if (existing.getName().trim().equalsIgnoreCase(trimmedName)) {
+                throw new IllegalArgumentException("Bạn đã tạo một quỹ nhóm với tên này rồi! Vui lòng chọn tên khác.");
+            }
+        }
+
         ShareFund fund = ShareFund.builder()
-                .name(name)
+                .name(trimmedName)
                 .balance(initialContribution != null ? initialContribution : java.math.BigDecimal.ZERO)
                 .status("ACTIVE")
                 .createdByUser(user)
@@ -316,6 +410,11 @@ public class SharedFundServiceImpl implements SharedFundService {
     @Override
     @Transactional
     public ShareFund renameFund(Long fundId, String newName, Long userId) {
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên quỹ không được để trống!");
+        }
+        String trimmedName = newName.trim();
+
         ShareFund fund = shareFundRepository.findById(fundId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
 
@@ -328,7 +427,16 @@ public class SharedFundServiceImpl implements SharedFundService {
             }
         }
 
-        fund.setName(newName);
+        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
+        Long creatorId = fund.getCreatedByUser().getId();
+        java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(creatorId);
+        for (ShareFund existing : existingFunds) {
+            if (!existing.getId().equals(fundId) && existing.getName().trim().equalsIgnoreCase(trimmedName)) {
+                throw new IllegalArgumentException("Chủ quỹ đã có một quỹ nhóm khác với tên này! Vui lòng chọn tên khác.");
+            }
+        }
+
+        fund.setName(trimmedName);
         return shareFundRepository.save(fund);
     }
 
@@ -400,6 +508,7 @@ public class SharedFundServiceImpl implements SharedFundService {
         String fundName = fund.getName();
         User owner = fund.getCreatedByUser();
         String ownerName = owner.getDisplayName() != null ? owner.getDisplayName() : owner.getEmail();
+        final String ownerEmail = owner.getEmail();
 
         List<FundMember> members = fundMemberRepository.findByShareFundId(fundId);
         java.util.List<java.util.Map<String, String>> membersToNotify = new java.util.ArrayList<>();
@@ -440,7 +549,7 @@ public class SharedFundServiceImpl implements SharedFundService {
                     .invitationToken(java.util.UUID.randomUUID().toString())
                     .status("PENDING")
                     .type("DISBAND_PROPOSAL")
-                    .expiresAt(LocalDateTime.now().plusDays(7))
+                    .expiresAt(LocalDateTime.now().plusHours(12))
                     .build();
 
             fundInvitationRepository.save(invitation);
@@ -448,7 +557,7 @@ public class SharedFundServiceImpl implements SharedFundService {
             String tokenVal = invitation.getInvitationToken();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    mailService.sendDisbandProposalEmail(email, name, fundName, ownerName, "Yêu cầu giải tán quỹ nhóm từ chủ quỹ", tokenVal);
+                    mailService.sendDisbandProposalEmail(email, name, fundName, ownerName, ownerEmail, "Yêu cầu giải tán quỹ nhóm từ chủ quỹ", tokenVal);
                     log.info("Đã gửi email đề xuất giải tán quỹ {} đến {}", fundName, email);
                 } catch (Exception e) {
                     log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", email, e.getMessage());

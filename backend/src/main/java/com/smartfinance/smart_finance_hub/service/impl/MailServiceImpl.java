@@ -22,7 +22,7 @@ public class MailServiceImpl implements MailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from-email:no-reply@smartfinance.com}")
     private String fromEmail;
 
     @Value("${app.mail.from-name}")
@@ -81,20 +81,21 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendFundInvitationEmail(String toEmail, String userName, String invitedByName,
-            String fundName, String token, int expiryDays) throws MessagingException {
+    public void sendFundInvitationEmail(String toEmail, String userName, String invitedByName, String invitedByEmail,
+            String fundName, String token, int expiryHours) throws MessagingException {
         log.info("sendFundInvitationEmail param: toEmail={}", toEmail);
 
         Context context = new Context();
         context.setVariable("userName", userName);
         context.setVariable("invitedByName", invitedByName);
+        context.setVariable("invitedByEmail", invitedByEmail);
         context.setVariable("fundName", fundName);
-        context.setVariable("expiryDays", expiryDays);
+        context.setVariable("expiryHours", expiryHours);
         context.setVariable("appName", fromName);
         context.setVariable("actionUrl", invitationActionUrl(token));
 
         String htmlContent = templateEngine.process("email/fund-invitation", context);
-        sendHtmlEmail(toEmail, "Fund invitation - " + fundName, htmlContent);
+        sendHtmlEmailWithSender(toEmail, "Fund invitation - " + fundName, htmlContent, invitedByEmail, invitedByName);
     }
 
     @Override
@@ -116,19 +117,20 @@ public class MailServiceImpl implements MailService {
 
     @Override
     public void sendDisbandProposalEmail(String toEmail, String userName, String fundName,
-            String proposedByName, String reason, String token) throws MessagingException {
+            String proposedByName, String proposedByEmail, String reason, String token) throws MessagingException {
         log.info("sendDisbandProposalEmail param: toEmail={}", toEmail);
 
         Context context = new Context();
         context.setVariable("userName", userName);
         context.setVariable("proposedByName", proposedByName);
+        context.setVariable("proposedByEmail", proposedByEmail);
         context.setVariable("fundName", fundName);
         context.setVariable("reason", reason);
         context.setVariable("appName", fromName);
         context.setVariable("actionUrl", invitationActionUrl(token));
 
         String htmlContent = templateEngine.process("email/disband-proposal", context);
-        sendHtmlEmail(toEmail, "Disband proposal - " + fundName, htmlContent);
+        sendHtmlEmailWithSender(toEmail, "Disband proposal - " + fundName, htmlContent, proposedByEmail, proposedByName);
     }
 
     @Override
@@ -171,6 +173,29 @@ public class MailServiceImpl implements MailService {
 
         try {
             helper.setFrom(fromEmail, fromName);
+        } catch (UnsupportedEncodingException e) {
+            log.warn("setFrom fallback: {}", e.getMessage());
+            helper.setFrom(fromEmail);
+        }
+
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true);
+        mailSender.send(message);
+    }
+
+    private void sendHtmlEmailWithSender(String toEmail, String subject, String htmlContent, String senderEmail, String senderName)
+            throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        try {
+            // Gmail SMTP only allows sending from the authenticated account
+            helper.setFrom(fromEmail, fromName);
+            // Set replyTo so replies go to the actual person
+            if (senderEmail != null && !senderEmail.trim().isEmpty()) {
+                helper.setReplyTo(senderEmail);
+            }
         } catch (UnsupportedEncodingException e) {
             log.warn("setFrom fallback: {}", e.getMessage());
             helper.setFrom(fromEmail);

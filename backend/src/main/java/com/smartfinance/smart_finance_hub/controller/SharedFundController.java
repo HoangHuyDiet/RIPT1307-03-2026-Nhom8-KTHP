@@ -219,6 +219,8 @@ public class SharedFundController {
 
         java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put("requestId", tx.getId().toString());
+        data.put("isApproved", tx.getIsApproved());
+        data.put("status", tx.getStatus());
         
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Gửi yêu cầu giao dịch thành công!", data));
     }
@@ -391,5 +393,37 @@ public class SharedFundController {
         String msg = sharedFundService.verifyInvitationToken(token, currentUserId);
 
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
+    }
+
+    @PostMapping("/approve-transaction")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Map<String, Object>>> approveOrRejectTransaction(
+            @RequestBody Map<String, Object> body) {
+        Long currentUserId = getCurrentUserId();
+        
+        Object reqIdObj = body.get("requestId");
+        if (reqIdObj == null || "undefined".equals(reqIdObj.toString().trim())) {
+            throw new IllegalArgumentException("Mã yêu cầu (requestId) không hợp lệ hoặc bằng undefined!");
+        }
+        
+        Long requestId;
+        try {
+            requestId = Long.valueOf(reqIdObj.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Mã yêu cầu (requestId) phải là dạng số nguyên!");
+        }
+        
+        String action = (String) body.get("action");
+        String rejectReason = (String) body.get("rejectReason");
+
+        log.info("approveOrRejectTransaction endpoint param: requestId={}, action={}", requestId, action);
+        Transaction tx = sharedFundService.approveOrRejectTransaction(requestId, action, rejectReason, currentUserId);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("id", tx.getId());
+        data.put("status", tx.getStatus());
+        data.put("isApproved", tx.getIsApproved());
+
+        String successMsg = "approved".equalsIgnoreCase(action) ? "Đã duyệt giao dịch thành công!" : "Đã từ chối giao dịch thành công!";
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(successMsg, data));
     }
 }
