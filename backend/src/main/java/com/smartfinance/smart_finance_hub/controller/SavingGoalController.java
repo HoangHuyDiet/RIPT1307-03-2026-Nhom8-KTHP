@@ -1,91 +1,84 @@
 package com.smartfinance.smart_finance_hub.controller;
 
-import com.smartfinance.smart_finance_hub.dto.request.SavingGoalDepositRequest;
-import com.smartfinance.smart_finance_hub.dto.request.SavingGoalRequest;
+import com.smartfinance.smart_finance_hub.dto.request.CreateSavingGoalRequest;
+import com.smartfinance.smart_finance_hub.dto.request.GoalTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.PinGoalRequest;
+import com.smartfinance.smart_finance_hub.dto.request.UpdateSavingGoalRequest;
 import com.smartfinance.smart_finance_hub.dto.response.ApiResponse;
-import com.smartfinance.smart_finance_hub.dto.response.SavingGoalResponse;
+import com.smartfinance.smart_finance_hub.entity.SavingGoal;
 import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
 import com.smartfinance.smart_finance_hub.service.SavingGoalService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/saving-goals")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@Slf4j
 public class SavingGoalController {
 
     private final SavingGoalService savingGoalService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> createGoal(
-            @Valid @RequestBody SavingGoalRequest request) {
-        Long userId = getCurrentUserId();
-        SavingGoalResponse data = savingGoalService.createGoal(request, userId);
-        return new ResponseEntity<>(ApiResponse.success("Saving goal created successfully", data), HttpStatus.CREATED);
-    }
-
     @GetMapping
-    public ResponseEntity<ApiResponse<List<SavingGoalResponse>>> getMyGoals() {
+    public ResponseEntity<ApiResponse<List<SavingGoal>>> getAllGoals() {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("OK", savingGoalService.getMyGoals(userId)));
+        List<SavingGoal> goals = savingGoalService.getAllGoals(userId);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách mục tiêu thành công", goals));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> getGoalById(@PathVariable("id") Long id) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<SavingGoal>> createGoal(@Valid @RequestBody CreateSavingGoalRequest request) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("OK", savingGoalService.getGoalById(id, userId)));
+        SavingGoal goal = savingGoalService.createGoal(userId, request);
+        return new ResponseEntity<>(ApiResponse.success("Tạo mục tiêu thành công", goal), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> updateGoal(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody SavingGoalRequest request) {
+    public ResponseEntity<ApiResponse<SavingGoal>> updateGoal(
+            @PathVariable("id") Long goalId,
+            @Valid @RequestBody UpdateSavingGoalRequest request) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("Saving goal updated successfully", 
-                savingGoalService.updateGoal(id, request, userId)));
+        SavingGoal goal = savingGoalService.updateGoal(userId, goalId, request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật mục tiêu thành công", goal));
     }
 
-    @PostMapping("/{id}/deposit")
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> deposit(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody SavingGoalDepositRequest request) {
+    @PatchMapping("/{id}/pin")
+    public ResponseEntity<ApiResponse<SavingGoal>> pinGoal(
+            @PathVariable("id") Long goalId,
+            @Valid @RequestBody PinGoalRequest request) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("Deposit processed successfully", 
-                savingGoalService.deposit(id, request, userId)));
+        SavingGoal goal = savingGoalService.pinGoal(userId, goalId, request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái ghim thành công", goal));
     }
 
-    @PostMapping("/{id}/withdraw")
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> withdraw(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody SavingGoalDepositRequest request) {
+    @PatchMapping("/{id}/deposit")
+    public ResponseEntity<ApiResponse<SavingGoal>> depositGoal(
+            @PathVariable("id") Long goalId,
+            @Valid @RequestBody GoalTransactionRequest request) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("Withdrawal processed successfully", 
-                savingGoalService.withdraw(id, request, userId)));
+        SavingGoal goal = savingGoalService.depositGoal(userId, goalId, request);
+        return ResponseEntity.ok(ApiResponse.success("Nạp tiền vào mục tiêu thành công", goal));
     }
 
-    @PostMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<SavingGoalResponse>> cancelGoal(
-            @PathVariable("id") Long id,
-            @RequestParam("fundId") Long fundId) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteGoal(@PathVariable("id") Long goalId) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("Saving goal cancelled successfully", 
-                savingGoalService.cancelGoal(id, fundId, userId)));
+        savingGoalService.deleteGoal(userId, goalId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa mục tiêu thành công"));
     }
 
     private Long getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
             return userDetails.getId();
         }
-        throw new IllegalStateException("Cannot authenticate current user");
+        throw new IllegalStateException("Không thể xác thực người dùng hiện tại!");
     }
 }

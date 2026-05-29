@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex) {
         log.error("handleGlobalException: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(
-                ApiResponse.error("Unexpected system error. Please try again later."),
+                ApiResponse.error("Hệ thống gặp sự cố: " + ex.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

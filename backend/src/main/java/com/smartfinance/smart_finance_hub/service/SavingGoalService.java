@@ -1,23 +1,23 @@
 package com.smartfinance.smart_finance_hub.service;
 
-import com.smartfinance.smart_finance_hub.dto.request.SavingGoalDepositRequest;
-import com.smartfinance.smart_finance_hub.dto.request.SavingGoalRequest;
-import com.smartfinance.smart_finance_hub.dto.response.SavingGoalResponse;
+import com.smartfinance.smart_finance_hub.dto.request.CreateSavingGoalRequest;
+import com.smartfinance.smart_finance_hub.dto.request.GoalTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.PinGoalRequest;
+import com.smartfinance.smart_finance_hub.dto.request.UpdateSavingGoalRequest;
+import com.smartfinance.smart_finance_hub.entity.SavingGoal;
+
 import java.util.List;
 
 public interface SavingGoalService {
+    List<SavingGoal> getAllGoals(Long userId);
 
-    SavingGoalResponse createGoal(SavingGoalRequest request, Long userId);
+    SavingGoal createGoal(Long userId, CreateSavingGoalRequest request);
 
-    List<SavingGoalResponse> getMyGoals(Long userId);
+    SavingGoal updateGoal(Long userId, Long goalId, UpdateSavingGoalRequest request);
 
-    SavingGoalResponse getGoalById(Long goalId, Long userId);
+    SavingGoal pinGoal(Long userId, Long goalId, PinGoalRequest request);
 
-    SavingGoalResponse updateGoal(Long goalId, SavingGoalRequest request, Long userId);
+    SavingGoal depositGoal(Long userId, Long goalId, GoalTransactionRequest request);
 
-    SavingGoalResponse deposit(Long goalId, SavingGoalDepositRequest request, Long userId);
-
-    SavingGoalResponse withdraw(Long goalId, SavingGoalDepositRequest request, Long userId);
-
-    SavingGoalResponse cancelGoal(Long goalId, Long fundId, Long userId);
+    void deleteGoal(Long userId, Long goalId);
 }

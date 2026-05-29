@@ -34,12 +34,17 @@ public class Transaction {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id")
     private Fund fund;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "saving_goal_id")
+    private SavingGoal savingGoal;
+
 
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)

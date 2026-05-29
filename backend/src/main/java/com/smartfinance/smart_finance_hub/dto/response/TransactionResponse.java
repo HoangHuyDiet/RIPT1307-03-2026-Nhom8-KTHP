@@ -24,6 +24,8 @@ public class TransactionResponse {
     private Long categoryId;
     private Boolean isApproved;
     private LocalDateTime createdAt;
+    private Long savingGoalId;
+    private String savingGoalName;
 
     public static TransactionResponse from(Transaction transaction) {
         return TransactionResponse.builder()
@@ -32,10 +34,12 @@ public class TransactionResponse {
                 .type(transaction.getType())
                 .description(transaction.getDescription())
                 .date(transaction.getDate())
-                .categoryName(transaction.getCategory().getName())
-                .categoryId(transaction.getCategory().getId())
+                .categoryName(transaction.getCategory() != null ? transaction.getCategory().getName() : null)
+                .categoryId(transaction.getCategory() != null ? transaction.getCategory().getId() : null)
                 .isApproved(transaction.getIsApproved())
                 .createdAt(transaction.getCreatedAt())
+                .savingGoalId(transaction.getSavingGoal() != null ? transaction.getSavingGoal().getId() : null)
+                .savingGoalName(transaction.getSavingGoal() != null ? transaction.getSavingGoal().getName() : null)
                 .build();
     }
 }

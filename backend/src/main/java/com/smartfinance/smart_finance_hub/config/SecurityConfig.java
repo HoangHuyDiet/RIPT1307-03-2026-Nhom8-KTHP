@@ -23,7 +23,8 @@ public class SecurityConfig {
   private static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/**",
       "/api/2fa/**",
-      "/ws/**"
+      "/ws/**",
+      "/error"
   };
 
   private static final String[] ADMIN_ENDPOINTS = {
@@ -54,6 +55,3 @@ public class SecurityConfig {
     return http.build();
   }
 }
-
-
-
