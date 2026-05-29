@@ -32,6 +32,7 @@ import com.smartfinance.smart_finance_hub.enums.FundStatus;
 import com.smartfinance.smart_finance_hub.enums.InvitationStatus;
 import com.smartfinance.smart_finance_hub.enums.TransactionType;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
+import com.smartfinance.smart_finance_hub.repository.FundActivityRepository;
 import com.smartfinance.smart_finance_hub.repository.FundInvitationRepository;
 import com.smartfinance.smart_finance_hub.repository.FundMessageRepository;
 import com.smartfinance.smart_finance_hub.repository.FundMemberRepository;
@@ -91,6 +92,9 @@ class FundServiceTest {
     private FundMessageRepository fundMessageRepository;
 
     @Mock
+    private FundActivityRepository fundActivityRepository;
+
+    @Mock
     private SimpMessagingTemplate messagingTemplate;
 
     @Mock
@@ -108,6 +112,7 @@ class FundServiceTest {
         FundCoreApplicationService coreService = new FundCoreApplicationService(
                 fundRepository,
                 fundMemberRepository,
+                fundActivityRepository,
                 transactionRepository,
                 accessService,
                 mapper,
@@ -146,7 +151,7 @@ class FundServiceTest {
         });
 
         fundService.createFund(
-                new CreateFundRequest("Trip", "Summer", new BigDecimal("1000"), null, null, null), OWNER_ID);
+                new CreateFundRequest("Trip", "Summer", new BigDecimal("1000"), null, null, null, null, null), OWNER_ID);
 
         ArgumentCaptor<FundMember> captor = ArgumentCaptor.forClass(FundMember.class);
         verify(fundMemberRepository).save(captor.capture());

@@ -3,6 +3,7 @@ package com.smartfinance.smart_finance_hub.service.impl.fund;
 import com.smartfinance.smart_finance_hub.dto.request.ApproveFundTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.InternalTransferRequest;
 import com.smartfinance.smart_finance_hub.dto.response.BudgetChartResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FeFundTransactionResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundStatisticsResponse;
@@ -12,6 +13,7 @@ import com.smartfinance.smart_finance_hub.entity.Fund;
 import com.smartfinance.smart_finance_hub.entity.FundMember;
 import com.smartfinance.smart_finance_hub.entity.Transaction;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.enums.FundType;
 import com.smartfinance.smart_finance_hub.enums.TransactionType;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
 import com.smartfinance.smart_finance_hub.repository.FundMemberRepository;
@@ -19,11 +21,13 @@ import com.smartfinance.smart_finance_hub.repository.FundRepository;
 import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FundTransactionApplicationService {
 
     private final FundRepository fundRepository;
@@ -55,6 +60,8 @@ public class FundTransactionApplicationService {
                         "Category not found: " + request.getCategoryId()));
         TransactionType transactionType = access.parseTransactionType(request.getType());
 
+        boolean isPersonal = FundType.PERSONAL.name().equals(fund.getFundType());
+
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
@@ -63,12 +70,30 @@ public class FundTransactionApplicationService {
                 .type(transactionType.name())
                 .description(request.getDescription())
                 .date(request.getDate())
-                .isApproved(false)
-                .status("PENDING")
+                .isApproved(isPersonal)
+                .status(isPersonal ? "APPROVED" : "PENDING")
+                .approvedByUser(isPersonal ? user : null)
+                .approvedAt(isPersonal ? LocalDateTime.now() : null)
                 .build();
 
         Transaction saved = transactionRepository.save(transaction);
-        notifications.notifyOwnerTransactionRequest(fund, saved);
+
+        if (isPersonal) {
+            applyApprovedAmount(fund, saved);
+            fundRepository.save(fund);
+            notifications.saveActivity(fund, user, "APPROVE_TX",
+                    user.getDisplayName() + " recorded " + mapper.formatVnd(saved.getAmount())
+                            + " in " + fund.getName(),
+                    "#52c41a");
+            log.info("Auto-approved personal fund transaction: txId={}, fundId={}", saved.getId(), fundId);
+        } else {
+            notifications.saveActivity(fund, user, "CREATE_TX",
+                    user.getDisplayName() + " requested " + transactionType.name() + " "
+                            + mapper.formatVnd(saved.getAmount()) + " in " + fund.getName(),
+                    "#faad14");
+            notifications.notifyOwnerTransactionRequest(fund, saved);
+        }
+
         return FundTransactionResponse.from(saved);
     }
 
@@ -83,6 +108,8 @@ public class FundTransactionApplicationService {
         var category = fundCategoryService.createFundCategory(
                 user, transactionType, transactionType == TransactionType.INCOME ? "Other income" : "Other expense");
 
+        boolean isPersonal = FundType.PERSONAL.name().equals(fund.getFundType());
+
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
@@ -91,14 +118,32 @@ public class FundTransactionApplicationService {
                 .type(transactionType.name())
                 .description(request.getDescription())
                 .date(LocalDate.now())
-                .isApproved(false)
-                .status("PENDING")
+                .isApproved(isPersonal)
+                .status(isPersonal ? "APPROVED" : "PENDING")
+                .approvedByUser(isPersonal ? user : null)
+                .approvedAt(isPersonal ? LocalDateTime.now() : null)
                 .bankAccount(request.getBankAccount())
                 .bankName(request.getBankName())
                 .build();
 
         Transaction saved = transactionRepository.save(transaction);
-        notifications.notifyOwnerTransactionRequest(fund, saved);
+
+        if (isPersonal) {
+            applyApprovedAmount(fund, saved);
+            fundRepository.save(fund);
+            notifications.saveActivity(fund, user, "APPROVE_TX",
+                    user.getDisplayName() + " recorded " + mapper.formatVnd(saved.getAmount())
+                            + " in " + fund.getName(),
+                    "#52c41a");
+            log.info("Auto-approved personal fund frontend transaction: txId={}, fundId={}", saved.getId(), fund.getId());
+        } else {
+            notifications.saveActivity(fund, user, "CREATE_TX",
+                    user.getDisplayName() + " requested " + transactionType.name() + " "
+                            + mapper.formatVnd(saved.getAmount()) + " in " + fund.getName(),
+                    "#faad14");
+            notifications.notifyOwnerTransactionRequest(fund, saved);
+        }
+
         return mapper.toFeTransactionResponse(saved);
     }
 
@@ -112,7 +157,7 @@ public class FundTransactionApplicationService {
             throw new IllegalArgumentException("Transaction does not belong to a fund");
         }
         access.requireActiveFund(fund.getId());
-        access.requireOwner(fund.getId(), approverUserId);
+        User approver = access.requireOwner(fund.getId(), approverUserId).getUser();
 
         if (Boolean.TRUE.equals(transaction.getIsApproved())) {
             throw new IllegalStateException("Transaction was already approved");
@@ -120,12 +165,19 @@ public class FundTransactionApplicationService {
 
         transaction.setIsApproved(true);
         transaction.setStatus("APPROVED");
+        transaction.setApprovedByUser(approver);
+        transaction.setApprovedAt(LocalDateTime.now());
+        transaction.setRejectReason(null);
         transactionRepository.save(transaction);
 
         applyApprovedAmount(fund, transaction);
         fundRepository.save(fund);
         notifications.saveSystemMessage(fund, "Owner approved " + mapper.formatVnd(transaction.getAmount())
                 + " request from " + transaction.getUser().getDisplayName());
+        notifications.saveActivity(fund, transaction.getUser(), "APPROVE_TX",
+                approver.getDisplayName() + " approved " + mapper.formatVnd(transaction.getAmount())
+                        + " request in " + fund.getName(),
+                "#52c41a");
         notifications.notifyRequesterTransactionResult(transaction, "approved");
 
         return FundTransactionResponse.from(transaction);
@@ -142,7 +194,7 @@ public class FundTransactionApplicationService {
             throw new IllegalArgumentException("Transaction does not belong to a fund");
         }
         access.requireActiveFund(fund.getId());
-        access.requireOwner(fund.getId(), approverUserId);
+        User approver = access.requireOwner(fund.getId(), approverUserId).getUser();
         if (!"PENDING".equalsIgnoreCase(transaction.getStatus())) {
             throw new IllegalStateException("Transaction request was already processed");
         }
@@ -153,9 +205,16 @@ public class FundTransactionApplicationService {
         } else if ("rejected".equals(action) || "reject".equals(action)) {
             transaction.setStatus("REJECTED");
             transaction.setIsApproved(false);
+            transaction.setApprovedByUser(approver);
+            transaction.setApprovedAt(LocalDateTime.now());
+            transaction.setRejectReason(request.getRejectReason());
             transactionRepository.save(transaction);
             notifications.saveSystemMessage(fund, "Owner rejected " + mapper.formatVnd(transaction.getAmount())
                     + " request from " + transaction.getUser().getDisplayName());
+            notifications.saveActivity(fund, transaction.getUser(), "REJECT_TX",
+                    approver.getDisplayName() + " rejected " + mapper.formatVnd(transaction.getAmount())
+                            + " request in " + fund.getName(),
+                    "#ff4d4f");
             notifications.notifyRequesterTransactionResult(transaction, "rejected");
         } else {
             throw new IllegalArgumentException("action must be approved or rejected");
@@ -184,6 +243,28 @@ public class FundTransactionApplicationService {
         access.requireFund(fundId);
         access.requireMember(fundId, userId);
         return transactionRepository.findByFundIdAndIsApproved(fundId, true).stream()
+                .map(mapper::toFeTransactionResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<FeFundTransactionResponse> getPendingTransactionRequests(Long fundId, Long userId) {
+        if (fundId != null) {
+            access.requireFund(fundId);
+            access.requireOwner(fundId, userId);
+            return transactionRepository.findByFundIdAndStatus(fundId, "PENDING").stream()
+                    .map(mapper::toFeTransactionResponse)
+                    .collect(Collectors.toList());
+        }
+
+        List<Long> ownerFundIds = fundMemberRepository.findByUserId(userId).stream()
+                .filter(member -> "OWNER".equals(member.getFundRole()))
+                .map(member -> member.getFund().getId())
+                .collect(Collectors.toList());
+        if (ownerFundIds.isEmpty()) {
+            return List.of();
+        }
+        return transactionRepository.findByFundIdInAndStatus(ownerFundIds, "PENDING").stream()
                 .map(mapper::toFeTransactionResponse)
                 .collect(Collectors.toList());
     }
@@ -329,6 +410,83 @@ public class FundTransactionApplicationService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than 0");
         }
+    }
+
+    @Transactional
+    public void internalTransfer(InternalTransferRequest request, Long userId) {
+        requirePositiveAmount(request.getAmount());
+
+        if (request.getFromFundId().equals(request.getToFundId())) {
+            throw new IllegalArgumentException("Source and destination funds must be different");
+        }
+
+        Fund fromFund = access.requireActiveFund(request.getFromFundId());
+        Fund toFund = access.requireActiveFund(request.getToFundId());
+
+        access.requireOwner(fromFund.getId(), userId);
+        access.requireOwner(toFund.getId(), userId);
+
+        if (!FundType.PERSONAL.name().equals(fromFund.getFundType())
+                || !FundType.PERSONAL.name().equals(toFund.getFundType())) {
+            throw new IllegalArgumentException("Internal transfer is only available between personal funds");
+        }
+
+        if (fromFund.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException("Insufficient balance in source fund");
+        }
+
+        User user = access.requireUser(userId);
+        String description = request.getDescription() != null && !request.getDescription().isBlank() ? request.getDescription()
+                : "Transfer: " + fromFund.getName() + " → " + toFund.getName();
+
+        var expenseCategory = fundCategoryService.createFundCategory(user, TransactionType.TRANSFER, "Internal transfer out");
+        var incomeCategory = fundCategoryService.createFundCategory(user, TransactionType.TRANSFER, "Internal transfer in");
+
+        Transaction expenseTx = Transaction.builder()
+                .user(user)
+                .category(expenseCategory)
+                .fund(fromFund)
+                .amount(request.getAmount())
+                .type(TransactionType.TRANSFER.name())
+                .description(description)
+                .date(LocalDate.now())
+                .isApproved(true)
+                .status("APPROVED")
+                .approvedByUser(user)
+                .approvedAt(LocalDateTime.now())
+                .build();
+
+        Transaction incomeTx = Transaction.builder()
+                .user(user)
+                .category(incomeCategory)
+                .fund(toFund)
+                .amount(request.getAmount())
+                .type(TransactionType.TRANSFER.name())
+                .description(description)
+                .date(LocalDate.now())
+                .isApproved(true)
+                .status("APPROVED")
+                .approvedByUser(user)
+                .approvedAt(LocalDateTime.now())
+                .build();
+
+        transactionRepository.save(expenseTx);
+        transactionRepository.save(incomeTx);
+
+        fromFund.setBalance(fromFund.getBalance().subtract(request.getAmount()));
+        toFund.setBalance(toFund.getBalance().add(request.getAmount()));
+        fundRepository.save(fromFund);
+        fundRepository.save(toFund);
+
+        notifications.saveActivity(fromFund, user, "TRANSFER_OUT",
+                "Transferred " + mapper.formatVnd(request.getAmount()) + " to " + toFund.getName(),
+                "#fa8c16");
+        notifications.saveActivity(toFund, user, "TRANSFER_IN",
+                "Received " + mapper.formatVnd(request.getAmount()) + " from " + fromFund.getName(),
+                "#52c41a");
+
+        log.info("Internal transfer: {}đ from fund {} to fund {} by user {}",
+                request.getAmount(), fromFund.getId(), toFund.getId(), userId);
     }
 
     private List<FundStatisticsResponse.MemberContribution> calculateTopMonthlyContributors(

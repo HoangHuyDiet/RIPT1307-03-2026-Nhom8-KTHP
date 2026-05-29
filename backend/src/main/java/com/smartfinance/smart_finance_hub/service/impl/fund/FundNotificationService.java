@@ -3,10 +3,12 @@ package com.smartfinance.smart_finance_hub.service.impl.fund;
 import com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundNotificationResponse;
 import com.smartfinance.smart_finance_hub.entity.Fund;
+import com.smartfinance.smart_finance_hub.entity.FundActivity;
 import com.smartfinance.smart_finance_hub.entity.FundInvitation;
 import com.smartfinance.smart_finance_hub.entity.FundMessage;
 import com.smartfinance.smart_finance_hub.entity.Transaction;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.repository.FundActivityRepository;
 import com.smartfinance.smart_finance_hub.repository.FundMessageRepository;
 import com.smartfinance.smart_finance_hub.service.MailService;
 import jakarta.mail.MessagingException;
@@ -23,6 +25,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class FundNotificationService {
 
     private final FundMessageRepository fundMessageRepository;
+    private final FundActivityRepository fundActivityRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final MailService mailService;
     private final FundAccessService access;
@@ -35,6 +38,17 @@ public class FundNotificationService {
                 .text(text)
                 .build();
         fundMessageRepository.save(message);
+    }
+
+    public void saveActivity(Fund fund, User user, String type, String text, String color) {
+        FundActivity activity = FundActivity.builder()
+                .fund(fund)
+                .user(user)
+                .type(type)
+                .text(text)
+                .color(color)
+                .build();
+        fundActivityRepository.save(activity);
     }
 
     public void notifyOwnerTransactionRequest(Fund fund, Transaction transaction) {

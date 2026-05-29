@@ -1,10 +1,12 @@
 package com.smartfinance.smart_finance_hub.service.impl.fund;
 
 import com.smartfinance.smart_finance_hub.dto.response.DisbandStatusResponse;
+import com.smartfinance.smart_finance_hub.dto.response.FeFundActivityResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FeFundListResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FeFundTransactionResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse;
 import com.smartfinance.smart_finance_hub.entity.Fund;
+import com.smartfinance.smart_finance_hub.entity.FundActivity;
 import com.smartfinance.smart_finance_hub.entity.FundInvitation;
 import com.smartfinance.smart_finance_hub.entity.FundMessage;
 import com.smartfinance.smart_finance_hub.entity.Transaction;
@@ -46,6 +48,8 @@ public class FundMapper {
                 .balance(fund.getBalance())
                 .target(fund.getTargetAmount())
                 .status(fund.getStatus() == null ? "active" : fund.getStatus().toLowerCase())
+                .fundType(fund.getFundType())
+                .walletType(fund.getWalletType())
                 .membersCount(members.size())
                 .themeColor(resolveThemeColor(fund))
                 .members(members)
@@ -53,16 +57,34 @@ public class FundMapper {
     }
 
     public FeFundTransactionResponse toFeTransactionResponse(Transaction transaction) {
+        User approver = transaction.getApprovedByUser();
         return FeFundTransactionResponse.builder()
                 .id(transaction.getId())
+                .fundId(transaction.getFund() == null ? null : transaction.getFund().getId())
                 .type(transaction.getType())
                 .amount(transaction.getAmount())
                 .description(transaction.getDescription())
                 .date(transaction.getDate())
+                .requesterName(transaction.getUser().getDisplayName())
                 .userDisplayName(transaction.getUser().getDisplayName())
                 .categoryName(transaction.getCategory().getName())
                 .isApproved(transaction.getIsApproved())
                 .status(transaction.getStatus())
+                .bankAccount(transaction.getBankAccount())
+                .bankName(transaction.getBankName())
+                .rejectReason(transaction.getRejectReason())
+                .approvedByUserId(approver == null ? null : approver.getId())
+                .approvedByName(approver == null ? null : approver.getDisplayName())
+                .build();
+    }
+
+    public FeFundActivityResponse toActivityResponse(FundActivity activity) {
+        return FeFundActivityResponse.builder()
+                .id(activity.getId())
+                .type(activity.getType())
+                .text(activity.getText())
+                .time(formatTime(activity.getCreatedAt()))
+                .color(activity.getColor())
                 .build();
     }
 

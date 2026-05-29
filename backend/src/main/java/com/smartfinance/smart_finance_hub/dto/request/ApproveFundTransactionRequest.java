@@ -16,6 +16,13 @@ public class ApproveFundTransactionRequest {
 
     @NotBlank(message = "action is required")
     private String action;
+
+    private String rejectReason;
+
+    public ApproveFundTransactionRequest(Long requestId, String action) {
+        this.requestId = requestId;
+        this.action = action;
+    }
 }
 
 

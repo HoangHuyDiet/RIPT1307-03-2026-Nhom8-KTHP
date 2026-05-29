@@ -22,6 +22,8 @@ public class FundResponse {
     private BigDecimal targetAmount;
     private LocalDate dueDate;
     private String status;
+    private String fundType;
+    private String walletType;
     private Long createdByUserId;
     private String createdByName;
     private int memberCount;
@@ -37,6 +39,8 @@ public class FundResponse {
                 .targetAmount(fund.getTargetAmount())
                 .dueDate(fund.getDueDate())
                 .status(fund.getStatus())
+                .fundType(fund.getFundType())
+                .walletType(fund.getWalletType())
                 .createdByUserId(fund.getCreatedByUser().getId())
                 .createdByName(fund.getCreatedByUser().getDisplayName())
                 .memberCount(memberCount)

@@ -5,6 +5,7 @@ import com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionReque
 import com.smartfinance.smart_finance_hub.dto.request.DisbandFundRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ApproveFundTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.InternalTransferRequest;
 import com.smartfinance.smart_finance_hub.dto.request.InviteMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.KickMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RemoveMemberRequest;
@@ -25,6 +26,7 @@ import com.smartfinance.smart_finance_hub.dto.response.FundMemberResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundStatisticsResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundTransactionResponse;
+import com.smartfinance.smart_finance_hub.dto.response.PersonalFundDashboardResponse;
 import com.smartfinance.smart_finance_hub.dto.response.TopContributorResponse;
 import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
 import com.smartfinance.smart_finance_hub.service.FundService;
@@ -68,15 +70,17 @@ public class FundController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<FundResponse>>> getMyFunds() {
+    public ResponseEntity<ApiResponse<List<FundResponse>>> getMyFunds(
+            @RequestParam(value = "type", required = false) String type) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("OK", fundService.getMyFunds(userId)));
+        return ResponseEntity.ok(ApiResponse.success("OK", fundService.getMyFunds(userId, type)));
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<List<FeFundListResponse>>> getFrontendFundList() {
+    public ResponseEntity<ApiResponse<List<FeFundListResponse>>> getFrontendFundList(
+            @RequestParam(value = "type", required = false) String type) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("OK", fundService.getFrontendFundList(userId)));
+        return ResponseEntity.ok(ApiResponse.success("OK", fundService.getFrontendFundList(userId, type)));
     }
 
     @GetMapping("/stats")
@@ -247,6 +251,14 @@ public class FundController {
                 fundService.getFrontendFundTransactions(fundId, userId)));
     }
 
+    @GetMapping("/pending-requests")
+    public ResponseEntity<ApiResponse<List<FeFundTransactionResponse>>> getPendingRequests(
+            @RequestParam(value = "fundId", required = false) Long fundId) {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success("OK",
+                fundService.getPendingTransactionRequests(fundId, userId)));
+    }
+
     @GetMapping("/{id}/transactions")
     public ResponseEntity<ApiResponse<Page<FundTransactionResponse>>> getFundTransactions(
             @PathVariable("id") Long id,
@@ -296,6 +308,27 @@ public class FundController {
             @PathVariable("id") Long id) {
         Long userId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success("OK", fundService.getDiscussions(id, userId)));
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<ApiResponse<Void>> internalTransfer(
+            @Valid @RequestBody InternalTransferRequest request) {
+        Long userId = getCurrentUserId();
+        fundService.internalTransfer(request, userId);
+        return ResponseEntity.ok(ApiResponse.success("Internal transfer successful"));
+    }
+
+    @PostMapping("/{id}/close")
+    public ResponseEntity<ApiResponse<FundResponse>> closeFund(
+            @PathVariable("id") Long id) {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success("Fund closed successfully", fundService.closeFund(id, userId)));
+    }
+
+    @GetMapping("/personal/dashboard")
+    public ResponseEntity<ApiResponse<PersonalFundDashboardResponse>> getPersonalDashboard() {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success("OK", fundService.getPersonalDashboard(userId)));
     }
 
     private Long getCurrentUserId() {

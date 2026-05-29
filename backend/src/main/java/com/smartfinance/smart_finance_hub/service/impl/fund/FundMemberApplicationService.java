@@ -15,6 +15,7 @@ import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.FundInvitationType;
 import com.smartfinance.smart_finance_hub.enums.FundRole;
 import com.smartfinance.smart_finance_hub.enums.FundStatus;
+import com.smartfinance.smart_finance_hub.enums.FundType;
 import com.smartfinance.smart_finance_hub.enums.InvitationStatus;
 import com.smartfinance.smart_finance_hub.repository.FundInvitationRepository;
 import com.smartfinance.smart_finance_hub.repository.FundMemberRepository;
@@ -54,6 +55,7 @@ public class FundMemberApplicationService {
     public FundInvitationResponse inviteMember(
             Long fundId, InviteMemberRequest request, Long inviterUserId) {
         Fund fund = access.requireActiveFund(fundId);
+        requireGroupFund(fund, "Cannot invite members to a personal fund");
         access.requireOwner(fundId, inviterUserId);
 
         String invitedEmail = request.getEmail().trim();
@@ -80,6 +82,9 @@ public class FundMemberApplicationService {
         FundInvitation saved = fundInvitationRepository.save(invitation);
 
         User inviter = access.requireUser(inviterUserId);
+        notifications.saveActivity(fund, inviter, "INVITE_MEMBER",
+                inviter.getDisplayName() + " invited " + invitedEmail + " to " + fund.getName(),
+                "#1890ff");
         notifications.afterCommit(() -> notifications.sendFundInvitationEmail(saved, invitedUser, inviter, fund),
                 "inviteMember:" + invitedEmail);
 
@@ -89,6 +94,7 @@ public class FundMemberApplicationService {
     @Transactional
     public FundInvitationResponse kickMember(Long fundId, KickMemberRequest request, Long ownerUserId) {
         Fund fund = access.requireActiveFund(fundId);
+        requireGroupFund(fund, "Cannot kick members from a personal fund");
         access.requireOwner(fundId, ownerUserId);
 
         String reason = access.normalizeRequired(request.getReason(), "Reason is required");
@@ -134,6 +140,7 @@ public class FundMemberApplicationService {
     @Transactional
     public void leaveFund(Long fundId, Long userId) {
         Fund fund = access.requireActiveFund(fundId);
+        requireGroupFund(fund, "Cannot leave a personal fund");
         FundMember member = access.requireMember(fundId, userId);
 
         if (FundRole.OWNER.name().equals(member.getFundRole())) {
@@ -148,6 +155,9 @@ public class FundMemberApplicationService {
         String leavingName = user.getDisplayName();
 
         fundMemberRepository.delete(member);
+        notifications.saveActivity(fund, user, "LEAVE_FUND",
+                leavingName + " left fund " + fundName,
+                "#ff4d4f");
 
         if (owner != null) {
             notifications.afterCommit(() -> notifications.sendFundNotificationEmail(
@@ -180,6 +190,7 @@ public class FundMemberApplicationService {
     public DisbandStatusResponse proposeDisbandFund(
             Long fundId, DisbandFundRequest request, Long ownerUserId) {
         Fund fund = access.requireActiveFund(fundId);
+        requireGroupFund(fund, "Cannot disband a personal fund. Use close instead");
         access.requireOwner(fundId, ownerUserId);
 
         boolean hasPendingDisband = !fundInvitationRepository.findByFundIdAndTypeAndStatus(
@@ -199,6 +210,9 @@ public class FundMemberApplicationService {
         if (nonOwnerMembers.isEmpty()) {
             fund.setStatus(FundStatus.DISBANDED.name());
             fundRepository.save(fund);
+            notifications.saveActivity(fund, owner, "DISBAND_FUND",
+                    owner.getDisplayName() + " disbanded fund " + fund.getName(),
+                    "#ff4d4f");
             return DisbandStatusResponse.builder()
                     .fundId(fundId)
                     .fundName(fund.getName())
@@ -232,6 +246,9 @@ public class FundMemberApplicationService {
 
         String fundName = fund.getName();
         String ownerName = owner.getDisplayName();
+        notifications.saveActivity(fund, owner, "REQUEST_DISBAND",
+                ownerName + " requested disbanding fund " + fundName,
+                "#faad14");
         notifications.afterCommit(() -> {
             for (DisbandProposalEmail email : proposalEmails) {
                 notifications.sendDisbandProposalEmail(
@@ -378,6 +395,10 @@ public class FundMemberApplicationService {
                     .fundRole(FundRole.MEMBER.name())
                     .build();
             fundMemberRepository.save(newMember);
+            notifications.saveSystemMessage(fund, respondUser.getDisplayName() + " joined fund " + fund.getName());
+            notifications.saveActivity(fund, respondUser, "JOIN_FUND",
+                    respondUser.getDisplayName() + " joined fund " + fund.getName(),
+                    "#52c41a");
         } else {
             invitation.setStatus(InvitationStatus.REJECTED.name());
             fundInvitationRepository.save(invitation);
@@ -405,6 +426,10 @@ public class FundMemberApplicationService {
             FundMember member = access.requireMember(fund.getId(), respondUser.getId());
             access.cancelPendingInvitationsForEmail(fund.getId(), respondUser.getEmail());
             fundMemberRepository.delete(member);
+            notifications.saveSystemMessage(fund, respondUser.getDisplayName() + " left fund " + fund.getName());
+            notifications.saveActivity(fund, respondUser, "LEAVE_FUND",
+                    respondUser.getDisplayName() + " left fund " + fund.getName(),
+                    "#ff4d4f");
 
             notifications.notifyOwnerAfterCommit(fund, "Member left fund",
                     respondUser.getDisplayName() + " accepted the kick proposal for " + fund.getName());
@@ -429,6 +454,9 @@ public class FundMemberApplicationService {
             if (remainingPending.isEmpty()) {
                 fund.setStatus(FundStatus.DISBANDED.name());
                 fundRepository.save(fund);
+                notifications.saveActivity(fund, respondUser, "DISBAND_FUND",
+                        "Fund " + fund.getName() + " was disbanded",
+                        "#ff4d4f");
 
                 List<FundAccessService.Recipient> recipients = fundMemberRepository.findByFundId(fund.getId())
                         .stream()
@@ -482,6 +510,12 @@ public class FundMemberApplicationService {
 
         String getToken() {
             return token;
+        }
+    }
+
+    private void requireGroupFund(Fund fund, String message) {
+        if (FundType.PERSONAL.name().equals(fund.getFundType())) {
+            throw new IllegalStateException(message);
         }
     }
 }

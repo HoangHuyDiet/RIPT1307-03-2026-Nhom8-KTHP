@@ -53,6 +53,13 @@ public class Fund {
     @Column(name = "theme_color", length = 20)
     private String themeColor;
 
+    @Column(name = "fund_type", nullable = false, length = 20)
+    @Builder.Default
+    private String fundType = "GROUP";
+
+    @Column(name = "wallet_type", length = 30)
+    private String walletType;
+
     @Version
     @Column(name = "version")
     private Long version;

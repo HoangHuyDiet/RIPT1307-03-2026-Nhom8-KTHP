@@ -6,6 +6,7 @@ import com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionReque
 import com.smartfinance.smart_finance_hub.dto.request.DisbandFundRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundChatMessageRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.InternalTransferRequest;
 import com.smartfinance.smart_finance_hub.dto.request.InviteMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.KickMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RespondByTokenRequest;
@@ -23,6 +24,7 @@ import com.smartfinance.smart_finance_hub.dto.response.FundMemberResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundStatisticsResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundTransactionResponse;
+import com.smartfinance.smart_finance_hub.dto.response.PersonalFundDashboardResponse;
 import com.smartfinance.smart_finance_hub.dto.response.TopContributorResponse;
 import com.smartfinance.smart_finance_hub.service.FundService;
 import com.smartfinance.smart_finance_hub.service.impl.fund.FundChatApplicationService;
@@ -60,8 +62,18 @@ public class FundServiceImpl implements FundService {
     }
 
     @Override
+    public List<FundResponse> getMyFunds(Long userId, String fundTypeFilter) {
+        return coreService.getMyFunds(userId, fundTypeFilter);
+    }
+
+    @Override
     public List<FeFundListResponse> getFrontendFundList(Long userId) {
         return coreService.getFrontendFundList(userId);
+    }
+
+    @Override
+    public List<FeFundListResponse> getFrontendFundList(Long userId, String fundTypeFilter) {
+        return coreService.getFrontendFundList(userId, fundTypeFilter);
     }
 
     @Override
@@ -82,6 +94,16 @@ public class FundServiceImpl implements FundService {
     @Override
     public FundResponse renameFund(Long fundId, String newName, Long userId) {
         return coreService.renameFund(fundId, newName, userId);
+    }
+
+    @Override
+    public FundResponse closeFund(Long fundId, Long userId) {
+        return coreService.closeFund(fundId, userId);
+    }
+
+    @Override
+    public PersonalFundDashboardResponse getPersonalDashboard(Long userId) {
+        return coreService.getPersonalDashboard(userId);
     }
 
     @Override
@@ -175,6 +197,11 @@ public class FundServiceImpl implements FundService {
     }
 
     @Override
+    public List<FeFundTransactionResponse> getPendingTransactionRequests(Long fundId, Long userId) {
+        return transactionService.getPendingTransactionRequests(fundId, userId);
+    }
+
+    @Override
     public List<TopContributorResponse> getTopContributors(Long fundId, Long userId) {
         return transactionService.getTopContributors(fundId, userId);
     }
@@ -197,5 +224,10 @@ public class FundServiceImpl implements FundService {
     @Override
     public FundStatisticsResponse getFundStatistics(Long fundId, Long userId) {
         return transactionService.getFundStatistics(fundId, userId);
+    }
+
+    @Override
+    public void internalTransfer(InternalTransferRequest request, Long userId) {
+        transactionService.internalTransfer(request, userId);
     }
 }

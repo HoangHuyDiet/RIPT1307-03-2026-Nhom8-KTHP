@@ -65,6 +65,16 @@ public class Transaction {
     @Column(name = "bank_name", length = 100)
     private String bankName;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedByUser;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
+
     @NotNull
     @Column(nullable = false)
     private LocalDate date;

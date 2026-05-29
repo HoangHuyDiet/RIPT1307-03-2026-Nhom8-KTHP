@@ -6,6 +6,7 @@ import com.smartfinance.smart_finance_hub.dto.request.DisbandFundRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ApproveFundTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundChatMessageRequest;
 import com.smartfinance.smart_finance_hub.dto.request.FundTransactionRequest;
+import com.smartfinance.smart_finance_hub.dto.request.InternalTransferRequest;
 import com.smartfinance.smart_finance_hub.dto.request.InviteMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.KickMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RespondByTokenRequest;
@@ -24,6 +25,7 @@ import com.smartfinance.smart_finance_hub.dto.response.FundNotificationResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundStatisticsResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundTransactionResponse;
+import com.smartfinance.smart_finance_hub.dto.response.PersonalFundDashboardResponse;
 import com.smartfinance.smart_finance_hub.dto.response.TopContributorResponse;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -37,7 +39,11 @@ public interface FundService {
 
     List<FundResponse> getMyFunds(Long userId);
 
+    List<FundResponse> getMyFunds(Long userId, String fundTypeFilter);
+
     List<FeFundListResponse> getFrontendFundList(Long userId);
+
+    List<FeFundListResponse> getFrontendFundList(Long userId, String fundTypeFilter);
 
     List<FeFundStatResponse> getFrontendFundStats(Long userId);
 
@@ -46,6 +52,10 @@ public interface FundService {
     FundResponse updateFund(Long fundId, UpdateFundRequest request, Long userId);
 
     FundResponse renameFund(Long fundId, String newName, Long userId);
+
+    FundResponse closeFund(Long fundId, Long userId);
+
+    PersonalFundDashboardResponse getPersonalDashboard(Long userId);
 
     List<FundMemberResponse> getMembers(Long fundId, Long userId);
 
@@ -83,6 +93,8 @@ public interface FundService {
 
     List<FeFundTransactionResponse> getFrontendFundTransactions(Long fundId, Long userId);
 
+    List<FeFundTransactionResponse> getPendingTransactionRequests(Long fundId, Long userId);
+
     List<TopContributorResponse> getTopContributors(Long fundId, Long userId);
 
     List<BudgetChartResponse> getBudgetChart(Long fundId, Long userId);
@@ -92,6 +104,6 @@ public interface FundService {
     FundDiscussionResponse sendChatMessage(Long fundId, FundChatMessageRequest request, Long userId);
 
     FundStatisticsResponse getFundStatistics(Long fundId, Long userId);
+
+    void internalTransfer(InternalTransferRequest request, Long userId);
 }
-
-

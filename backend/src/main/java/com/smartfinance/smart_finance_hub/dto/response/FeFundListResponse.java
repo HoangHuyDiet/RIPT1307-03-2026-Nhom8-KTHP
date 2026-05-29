@@ -18,6 +18,8 @@ public class FeFundListResponse {
     private BigDecimal balance;
     private BigDecimal target;
     private String status;
+    private String fundType;
+    private String walletType;
     private int membersCount;
     private String themeColor;
     private List<MemberSummary> members;

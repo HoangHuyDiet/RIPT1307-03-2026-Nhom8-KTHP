@@ -37,6 +37,10 @@ public class CreateFundRequest {
     private BigDecimal initialContribution;
 
     private String createdBy;
+
+    private String fundType;
+
+    private String walletType;
 }
 
 
