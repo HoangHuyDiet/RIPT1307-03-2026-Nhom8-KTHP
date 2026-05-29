@@ -153,17 +153,20 @@ public class SharedFundController {
     @PostMapping("/{id}/request-delete-fund")
     public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> requestDeleteFund(
             @PathVariable("id") Long fundId) {
+        Long userId = getCurrentUserId();
+        String msg = sharedFundService.deleteFund(fundId, userId);
+
         java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put("requestId", "del-req-" + System.currentTimeMillis());
-        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã gửi yêu cầu xóa quỹ thành công!", data));
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg, data));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> deleteFund(
             @PathVariable("id") Long fundId) {
         Long userId = getCurrentUserId();
-        sharedFundService.deleteFund(fundId, userId);
-        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Xóa quỹ thành công!"));
+        String msg = sharedFundService.deleteFund(fundId, userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
     }
 
     @GetMapping("/transactions")
@@ -385,8 +388,8 @@ public class SharedFundController {
         log.info("verifyInvitationToken param: token={}", token);
 
         Long currentUserId = getCurrentUserId();
-        sharedFundService.verifyInvitationToken(token, currentUserId);
+        String msg = sharedFundService.verifyInvitationToken(token, currentUserId);
 
-        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Chúc mừng! Bạn đã tham gia quỹ nhóm thành công."));
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
     }
 }

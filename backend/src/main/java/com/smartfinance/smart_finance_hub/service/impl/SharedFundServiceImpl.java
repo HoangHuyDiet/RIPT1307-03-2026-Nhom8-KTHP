@@ -32,6 +32,7 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final FundMessageRepository fundMessageRepository;
+    private final FundActivityRepository fundActivityRepository;
     private final MailService mailService;
 
     @Override
@@ -56,7 +57,6 @@ public class SharedFundServiceImpl implements SharedFundService {
 
         for (FundInvitation existing : pendingInvitations) {
             if (existing.getInvitedEmail().equalsIgnoreCase(request.getEmail())) {
-                // Hủy lời mời cũ và tạo lời mời mới
                 existing.setStatus("CANCELLED");
                 fundInvitationRepository.save(existing);
                 log.info("Đã hủy lời mời cũ (id={}) cho email: {}", existing.getId(), request.getEmail());
@@ -75,23 +75,28 @@ public class SharedFundServiceImpl implements SharedFundService {
         FundInvitation saved = fundInvitationRepository.save(invitation);
         log.info("inviteMember success: invitationId={}", saved.getId());
 
-        // Gửi email mời tham gia quỹ nhóm
-        try {
-            User inviter = userRepository.findById(inviterUserId).orElse(null);
-            String inviterName = inviter != null ? (inviter.getDisplayName() != null ? inviter.getDisplayName() : inviter.getEmail()) : "Thành viên";
-            String invitedName = invitedUser.getDisplayName() != null ? invitedUser.getDisplayName() : invitedUser.getEmail();
-            mailService.sendFundInvitationEmail(
-                    invitedUser.getEmail(),
-                    invitedName,
-                    inviterName,
-                    fund.getName(),
-                    invitation.getInvitationToken(),
-                    7
-            );
-            log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedUser.getEmail());
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi email mời tham gia quỹ nhóm đến {}: {}", invitedUser.getEmail(), e.getMessage());
-        }
+        String invitedEmail = invitedUser.getEmail();
+        String finalInvitedName = invitedUser.getDisplayName() != null ? invitedUser.getDisplayName() : invitedUser.getEmail();
+        User inviter = userRepository.findById(inviterUserId).orElse(null);
+        String finalInviterName = inviter != null ? (inviter.getDisplayName() != null ? inviter.getDisplayName() : inviter.getEmail()) : "Thành viên";
+        String finalFundName = fund.getName();
+        String token = invitation.getInvitationToken();
+
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendFundInvitationEmail(
+                        invitedEmail,
+                        finalInvitedName,
+                        finalInviterName,
+                        finalFundName,
+                        token,
+                        7
+                );
+                log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedEmail);
+            } catch (Exception e) {
+                log.error("Lỗi khi gửi email mời tham gia quỹ nhóm đến {}: {}", invitedEmail, e.getMessage());
+            }
+        });
 
         return saved;
     }
@@ -371,9 +376,20 @@ public class SharedFundServiceImpl implements SharedFundService {
         fundMemberRepository.delete(targetMember);
     }
 
+    private void cleanupFundData(Long fundId) {
+        java.util.List<FundMessage> messages = fundMessageRepository.findByShareFundIdOrderByCreatedAtAsc(fundId);
+        fundMessageRepository.deleteAllInBatch(messages);
+
+        java.util.List<FundActivity> activities = fundActivityRepository.findByShareFundId(fundId);
+        fundActivityRepository.deleteAllInBatch(activities);
+
+        java.util.List<Transaction> transactions = transactionRepository.findByShareFundId(fundId);
+        transactionRepository.deleteAllInBatch(transactions);
+    }
+
     @Override
     @Transactional
-    public void deleteFund(Long fundId, Long userId) {
+    public String deleteFund(Long fundId, Long userId) {
         ShareFund fund = shareFundRepository.findById(fundId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ!"));
 
@@ -381,24 +397,66 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Chỉ người tạo quỹ mới được quyền xóa quỹ!");
         }
 
-        // Lấy danh sách thành viên trước khi xóa để gửi thông báo
+        String fundName = fund.getName();
+        User owner = fund.getCreatedByUser();
+        String ownerName = owner.getDisplayName() != null ? owner.getDisplayName() : owner.getEmail();
+
         List<FundMember> members = fundMemberRepository.findByShareFundId(fundId);
-
-        shareFundRepository.delete(fund);
-
-        // Gửi email thông báo giải tán quỹ cho tất cả thành viên khác
+        java.util.List<java.util.Map<String, String>> membersToNotify = new java.util.ArrayList<>();
         for (FundMember member : members) {
             User memberUser = member.getUser();
             if (memberUser != null && !memberUser.getId().equals(userId)) {
-                try {
-                    String memberName = memberUser.getDisplayName() != null ? memberUser.getDisplayName() : memberUser.getEmail();
-                    mailService.sendDisbandConfirmationEmail(memberUser.getEmail(), memberName, fund.getName());
-                    log.info("Đã gửi email thông báo giải tán quỹ {} đến {}", fund.getName(), memberUser.getEmail());
-                } catch (Exception e) {
-                    log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", memberUser.getEmail(), e.getMessage());
-                }
+                java.util.Map<String, String> info = new java.util.HashMap<>();
+                info.put("email", memberUser.getEmail());
+                info.put("name", memberUser.getDisplayName() != null ? memberUser.getDisplayName() : memberUser.getEmail());
+                membersToNotify.add(info);
             }
         }
+
+        if (membersToNotify.isEmpty()) {
+            cleanupFundData(fundId);
+            shareFundRepository.delete(fund);
+            return "Quỹ nhóm đã được giải tán thành công!";
+        }
+
+        List<FundInvitation> existingDisbandProposals = fundInvitationRepository.findByShareFundId(fundId)
+                .stream()
+                .filter(inv -> "DISBAND_PROPOSAL".equals(inv.getType()))
+                .collect(java.util.stream.Collectors.toList());
+        for (FundInvitation oldInv : existingDisbandProposals) {
+            if ("PENDING".equals(oldInv.getStatus())) {
+                oldInv.setStatus("CANCELLED");
+                fundInvitationRepository.save(oldInv);
+            }
+        }
+
+        for (java.util.Map<String, String> memberInfo : membersToNotify) {
+            String email = memberInfo.get("email");
+            String name = memberInfo.get("name");
+
+            FundInvitation invitation = FundInvitation.builder()
+                    .shareFund(fund)
+                    .invitedEmail(email)
+                    .invitationToken(java.util.UUID.randomUUID().toString())
+                    .status("PENDING")
+                    .type("DISBAND_PROPOSAL")
+                    .expiresAt(LocalDateTime.now().plusDays(7))
+                    .build();
+
+            fundInvitationRepository.save(invitation);
+
+            String tokenVal = invitation.getInvitationToken();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    mailService.sendDisbandProposalEmail(email, name, fundName, ownerName, "Yêu cầu giải tán quỹ nhóm từ chủ quỹ", tokenVal);
+                    log.info("Đã gửi email đề xuất giải tán quỹ {} đến {}", fundName, email);
+                } catch (Exception e) {
+                    log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", email, e.getMessage());
+                }
+            });
+        }
+
+        return "Đã gửi yêu cầu giải tán quỹ nhóm đến tất cả thành viên. Quỹ sẽ được xóa sau khi tất cả thành viên xác nhận đồng ý.";
     }
 
     @Override
@@ -547,7 +605,7 @@ public class SharedFundServiceImpl implements SharedFundService {
 
     @Override
     @Transactional
-    public void verifyInvitationToken(String token, Long userId) {
+    public String verifyInvitationToken(String token, Long userId) {
         FundInvitation invitation = fundInvitationRepository.findByInvitationToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lời mời với mã xác nhận đã cho!"));
 
@@ -568,20 +626,93 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Bạn không phải người được mời!");
         }
 
-        // Accept the invitation
-        invitation.setStatus(InvitationStatus.ACCEPTED.name());
-        fundInvitationRepository.save(invitation);
+        if ("MEMBER_INVITE".equals(invitation.getType())) {
+            invitation.setStatus(InvitationStatus.ACCEPTED.name());
+            fundInvitationRepository.save(invitation);
 
-        // Add user as member to the fund
-        boolean alreadyMember = fundMemberRepository.existsByShareFundIdAndUserId(
-                invitation.getShareFund().getId(), respondUser.getId());
-        if (!alreadyMember) {
-            FundMember newMember = FundMember.builder()
-                    .shareFund(invitation.getShareFund())
-                    .user(respondUser)
-                    .fundRole(FundRole.MEMBER.name())
-                    .build();
-            fundMemberRepository.save(newMember);
+            boolean alreadyMember = fundMemberRepository.existsByShareFundIdAndUserId(
+                    invitation.getShareFund().getId(), respondUser.getId());
+            if (!alreadyMember) {
+                FundMember newMember = FundMember.builder()
+                        .shareFund(invitation.getShareFund())
+                        .user(respondUser)
+                        .fundRole(FundRole.MEMBER.name())
+                        .build();
+                fundMemberRepository.save(newMember);
+            }
+            return "Chúc mừng! Bạn đã tham gia quỹ nhóm thành công.";
+        } else if ("DISBAND_PROPOSAL".equals(invitation.getType())) {
+            ShareFund fund = invitation.getShareFund();
+            String fundName = fund.getName();
+
+            List<FundMember> currentMembers = fundMemberRepository.findByShareFundId(fund.getId());
+            java.util.List<String> otherMemberEmails = new java.util.ArrayList<>();
+            java.util.List<java.util.Map<String, String>> membersToNotify = new java.util.ArrayList<>();
+            
+            for (FundMember m : currentMembers) {
+                User memberUser = m.getUser();
+                if (memberUser != null) {
+                    java.util.Map<String, String> info = new java.util.HashMap<>();
+                    info.put("email", memberUser.getEmail());
+                    info.put("name", memberUser.getDisplayName() != null ? memberUser.getDisplayName() : memberUser.getEmail());
+                    membersToNotify.add(info);
+                    
+                    if (!memberUser.getId().equals(fund.getCreatedByUser().getId())) {
+                        otherMemberEmails.add(memberUser.getEmail().toLowerCase());
+                    }
+                }
+            }
+
+            List<FundInvitation> disbandInvitations = fundInvitationRepository.findByShareFundId(fund.getId())
+                    .stream()
+                    .filter(inv -> "DISBAND_PROPOSAL".equals(inv.getType())
+                            && !"CANCELLED".equals(inv.getStatus())
+                            && !"EXPIRED".equals(inv.getStatus()))
+                    .collect(java.util.stream.Collectors.toList());
+
+            boolean allAccepted = true;
+            for (String email : otherMemberEmails) {
+                boolean accepted = false;
+                for (FundInvitation inv : disbandInvitations) {
+                    if (inv.getInvitedEmail().equalsIgnoreCase(email)) {
+                        if (inv.getId().equals(invitation.getId())) {
+                            accepted = true;
+                        } else if ("ACCEPTED".equals(inv.getStatus())) {
+                            accepted = true;
+                        }
+                    }
+                }
+                if (!accepted) {
+                    allAccepted = false;
+                    break;
+                }
+            }
+
+            if (allAccepted) {
+                cleanupFundData(fund.getId());
+                shareFundRepository.delete(fund);
+
+                java.util.List<java.util.Map<String, String>> finalMembersToNotify = membersToNotify;
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    for (java.util.Map<String, String> memberInfo : finalMembersToNotify) {
+                        String email = memberInfo.get("email");
+                        String name = memberInfo.get("name");
+                        try {
+                            mailService.sendDisbandConfirmationEmail(email, name, fundName);
+                            log.info("Đã gửi email thông báo giải tán quỹ {} đến {}", fundName, email);
+                        } catch (Exception e) {
+                            log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", email, e.getMessage());
+                        }
+                    }
+                });
+                return "Tất cả thành viên đã đồng ý giải tán. Quỹ nhóm \"" + fundName + "\" đã được giải tán thành công!";
+            } else {
+                invitation.setStatus(InvitationStatus.ACCEPTED.name());
+                fundInvitationRepository.save(invitation);
+                return "Bạn đã xác nhận đồng ý giải tán quỹ nhóm \"" + fundName + "\". Đang chờ phản hồi của các thành viên khác.";
+            }
+        } else {
+            throw new IllegalArgumentException("Loại mã xác thực không hợp lệ!");
         }
     }
 }

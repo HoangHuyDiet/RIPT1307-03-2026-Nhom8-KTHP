@@ -281,7 +281,7 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
           try {
             const data = await request.post(`/funds/${group.id}/request-delete-fund`, { email: user.email });
             if (data.success) {
-              message.success('Đã gửi yêu cầu xóa quỹ. Vui lòng kiểm tra email để xác nhận.');
+              message.success(data.message || 'Đã gửi yêu cầu xóa quỹ. Vui lòng kiểm tra email để xác nhận.');
             } else {
               message.error(data.message || 'Lỗi yêu cầu xóa quỹ');
             }
