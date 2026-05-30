@@ -135,14 +135,14 @@ public class PersonalFundServiceImpl implements PersonalFundService {
     @Transactional
     public void internalTransfer(Long userId, InternalTransferRequest request) {
         log.info("internalTransfer: userId={}, from={}, to={}, amount={}",
-                userId, request.getFromFundId(), request.getToFundId(), request.getAmount());
+                userId, request.getSourceId(), request.getTargetId(), request.getAmount());
 
-        if (request.getFromFundId().equals(request.getToFundId())) {
+        if (request.getSourceId().equals(request.getTargetId())) {
             throw new IllegalArgumentException("Quỹ nguồn và quỹ đích không được trùng nhau!");
         }
 
-        PersonalFund sourceFund = findUserFund(userId, request.getFromFundId());
-        PersonalFund destFund = findUserFund(userId, request.getToFundId());
+        PersonalFund sourceFund = findUserFund(userId, request.getSourceId());
+        PersonalFund destFund = findUserFund(userId, request.getTargetId());
 
         validateFundActive(sourceFund);
         validateFundActive(destFund);
