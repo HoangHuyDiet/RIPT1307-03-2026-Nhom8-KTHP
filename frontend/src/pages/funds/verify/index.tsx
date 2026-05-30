@@ -31,9 +31,9 @@ export default function VerifyFundAction() {
         setStatus('error');
         setMessage(res.message || 'Xác nhận thất bại hoặc mã đã hết hạn.');
       }
-    } catch (error) {
+    } catch (error: any) {
       setStatus('error');
-      setMessage('Không thể kết nối đến máy chủ.');
+      setMessage(error?.response?.data?.message || 'Không thể kết nối đến máy chủ.');
     }
   };
 

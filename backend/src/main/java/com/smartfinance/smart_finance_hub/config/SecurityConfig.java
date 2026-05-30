@@ -23,6 +23,7 @@ public class SecurityConfig {
   private static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/**",
       "/api/2fa/**",
+      "/api/funds/verify-token",
       "/ws/**",
       "/error"
   };

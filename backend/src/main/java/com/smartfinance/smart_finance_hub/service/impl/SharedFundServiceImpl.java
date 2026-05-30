@@ -404,6 +404,25 @@ public class SharedFundServiceImpl implements SharedFundService {
                 .build();
 
         fundMemberRepository.save(ownerMember);
+
+        BigDecimal initialAmount = initialContribution != null ? initialContribution : BigDecimal.ZERO;
+        if (initialAmount.compareTo(BigDecimal.ZERO) > 0) {
+            Transaction initialTransaction = Transaction.builder()
+                    .user(user)
+                    .shareFund(savedFund)
+                    .amount(initialAmount)
+                    .type(TransactionType.INCOME.name())
+                    .description("Đóng góp ban đầu")
+                    .date(java.time.LocalDate.now())
+                    .isApproved(true)
+                    .status("APPROVED")
+                    .approvedByUser(user)
+                    .approvedAt(LocalDateTime.now())
+                    .build();
+
+            transactionRepository.save(initialTransaction);
+        }
+
         return savedFund;
     }
 
@@ -714,7 +733,11 @@ public class SharedFundServiceImpl implements SharedFundService {
 
     @Override
     @Transactional
-    public String verifyInvitationToken(String token, Long userId) {
+    public String verifyInvitationToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã xác nhận không hợp lệ!");
+        }
+
         FundInvitation invitation = fundInvitationRepository.findByInvitationToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lời mời với mã xác nhận đã cho!"));
 
@@ -728,12 +751,8 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalStateException("Lời mời đã hết hạn!");
         }
 
-        User respondUser = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
-
-        if (!respondUser.getEmail().equalsIgnoreCase(invitation.getInvitedEmail())) {
-            throw new IllegalArgumentException("Bạn không phải người được mời!");
-        }
+        User respondUser = userRepository.findByEmail(invitation.getInvitedEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng được mời!"));
 
         if ("MEMBER_INVITE".equals(invitation.getType())) {
             invitation.setStatus(InvitationStatus.ACCEPTED.name());

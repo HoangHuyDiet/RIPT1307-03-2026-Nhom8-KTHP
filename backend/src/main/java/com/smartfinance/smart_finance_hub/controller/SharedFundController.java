@@ -389,8 +389,7 @@ public class SharedFundController {
         }
         log.info("verifyInvitationToken param: token={}", token);
 
-        Long currentUserId = getCurrentUserId();
-        String msg = sharedFundService.verifyInvitationToken(token, currentUserId);
+        String msg = sharedFundService.verifyInvitationToken(token);
 
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
     }
