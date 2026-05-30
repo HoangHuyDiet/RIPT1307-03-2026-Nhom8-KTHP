@@ -29,6 +29,7 @@ public class SharedFundController {
     private final SharedFundService sharedFundService;
     private final com.smartfinance.smart_finance_hub.repository.CategoryRepository categoryRepository;
     private final com.smartfinance.smart_finance_hub.repository.UserRepository userRepository;
+    private final com.smartfinance.smart_finance_hub.repository.TransactionRepository transactionRepository;
 
     @GetMapping("/list")
     public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> listFunds() {
@@ -78,6 +79,35 @@ public class SharedFundController {
         Long userId = getCurrentUserId();
         java.util.List<java.util.Map<String, Object>> activities = sharedFundService.getActivitiesForUser(userId);
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy lịch sử hoạt động thành công!", activities));
+    }
+
+    @GetMapping("/my-notifications")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getMyNotifications() {
+        Long userId = getCurrentUserId();
+        java.util.List<Transaction> rejectedTransactions =
+                transactionRepository.findSharedFundTransactionsByUserIdAndStatusWithDetails(userId, "REJECTED");
+
+        java.util.List<java.util.Map<String, Object>> notifications = new java.util.ArrayList<>();
+        for (Transaction tx : rejectedTransactions) {
+            java.util.Map<String, Object> n = new java.util.HashMap<>();
+            n.put("id", "rejected_" + tx.getId());
+            n.put("type", "INCOME".equalsIgnoreCase(tx.getType()) ? "DEPOSIT_REJECTED" : "WITHDRAW_REJECTED");
+            n.put("fundId", tx.getShareFund() != null ? tx.getShareFund().getId() : null);
+            n.put("fundName", tx.getShareFund() != null ? tx.getShareFund().getName() : "");
+            n.put("amount", tx.getAmount());
+            n.put("description", tx.getRejectReason() != null && !tx.getRejectReason().isBlank()
+                    ? "Ly do tu choi: " + tx.getRejectReason()
+                    : "Chu quy khong neu ly do");
+            n.put("requesterName", tx.getUser() != null && tx.getUser().getDisplayName() != null
+                    ? tx.getUser().getDisplayName()
+                    : "Nguoi dung");
+            n.put("date", tx.getUpdatedAt() != null ? tx.getUpdatedAt().toString() : (tx.getDate() != null ? tx.getDate().toString() : ""));
+            n.put("read", false);
+            n.put("targetRole", "MEMBER");
+            notifications.add(n);
+        }
+
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lay thong bao thanh cong!", notifications));
     }
 
     @PostMapping
@@ -182,10 +212,16 @@ public class SharedFundController {
             m.put("type", tx.getType());
             m.put("amount", tx.getAmount());
             m.put("description", tx.getDescription());
-            m.put("date", tx.getDate().toString());
-            m.put("user_display_name", tx.getUser().getDisplayName());
+            m.put("date", tx.getDate() != null ? tx.getDate().toString() : null);
+            m.put("user_id", tx.getUser() != null ? tx.getUser().getId() : null);
+            m.put("user_display_name", tx.getUser() != null ? tx.getUser().getDisplayName() : "Nguoi dung");
+            m.put("user_email", tx.getUser() != null ? tx.getUser().getEmail() : null);
             m.put("category_name", tx.getCategory() != null ? tx.getCategory().getName() : "Khác");
-            m.put("is_approved", tx.getIsApproved());
+            m.put("is_approved", Boolean.TRUE.equals(tx.getIsApproved()));
+            m.put("status", tx.getStatus() != null ? tx.getStatus() : "PENDING");
+            m.put("reject_reason", tx.getRejectReason());
+            m.put("bank_account", tx.getBankAccount());
+            m.put("bank_name", tx.getBankName());
             list.add(m);
         }
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy danh sách giao dịch thành công!", list));

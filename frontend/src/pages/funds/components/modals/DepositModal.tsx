@@ -2,7 +2,6 @@ import React from 'react';
 import { Modal, Form, Input, Space, Button, message } from 'antd';
 import request from '@/utils/request';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useNotificationStore } from '@/store/useNotificationStore';
 import { GroupFund } from '../../types';
 
 interface DepositModalProps {
@@ -14,7 +13,6 @@ interface DepositModalProps {
 export default function DepositModal({ isOpen, onClose, selectedGroup }: DepositModalProps) {
   const [depositForm] = Form.useForm();
   const user = useAuthStore(state => state.user);
-  const addNotification = useNotificationStore(state => state.addNotification);
 
   const handleDeposit = async (values: any) => {
     if (!selectedGroup) return;
@@ -32,18 +30,6 @@ export default function DepositModal({ isOpen, onClose, selectedGroup }: Deposit
           message.success('Đã nạp tiền vào quỹ thành công!');
           window.dispatchEvent(new Event('transaction-approved'));
         } else {
-          addNotification({
-            id: data.data.requestId,
-            type: 'DEPOSIT_REQUEST',
-            fundId: selectedGroup.id,
-            fundName: selectedGroup.name,
-            amount,
-            description: values.description || 'Đóng góp vào quỹ',
-            requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
-            date: new Date().toISOString().slice(0, 10),
-            read: false,
-            targetRole: 'OWNER'
-          });
           message.success('Đã gửi yêu cầu nạp tiền! Chờ chủ quỹ duyệt.');
         }
         onClose();
