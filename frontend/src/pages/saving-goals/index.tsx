@@ -155,10 +155,8 @@ export default function SavingGoals() {
   const [goalForm] = Form.useForm();
   const [depositForm] = Form.useForm();
 
-  const formatCurrency = (val: number, currency: 'VND' | 'USD' = 'VND') =>
-    currency === 'VND'
-      ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val)
-      : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val);
 
   const handleOpenAddModal = () => {
     setEditingGoal(null);
@@ -190,7 +188,7 @@ export default function SavingGoals() {
       name: values.name,
       targetAmount: targetAmt,
       currentAmount: currentAmt,
-      currency: values.currency || 'VND',
+      currency: 'VND',
       dueDate: values.dueDate ? values.dueDate.format('YYYY-MM-DD') : '',
       status: isCompleted ? ('COMPLETED' as const) : (editingGoal ? (editingGoal.status === 'COMPLETED' ? ('ON_TRACK' as const) : editingGoal.status) : ('ON_TRACK' as const)),
       category: values.category,
@@ -331,9 +329,9 @@ export default function SavingGoals() {
                     const { percent, displayPercent, displayStatus } = getGoalDisplayDetails(goal);
                       return (
                         <div
-                          key={goal.id}
-                          className={styles.pinnedItem}
-                          onClick={() => scrollToGoal(goal.id)}
+                           key={goal.id}
+                           className={styles.pinnedItem}
+                           onClick={() => scrollToGoal(goal.id)}
                         >
                           <div className={styles.pinnedItemTop}>
                             <div className={`${styles.pinnedIconWrapper} ${styles[goal.category]}`}>
@@ -459,7 +457,7 @@ export default function SavingGoals() {
                                 {goal.name}
                               </h3>
                               <div className={styles.amountText}>
-                                {formatCurrency(goal.currentAmount, goal.currency)} / {formatCurrency(goal.targetAmount, goal.currency)}
+                                {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
                               </div>
                             </div>
 
@@ -562,21 +560,7 @@ export default function SavingGoals() {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={6}>
-              <Form.Item
-                name="currency"
-                label="Tiền tệ"
-                rules={[{ required: true }]}
-              >
-                <Select
-                  options={[
-                    { value: 'VND', label: 'đ (VND)' },
-                    { value: 'USD', label: '$ (USD)' }
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={9}>
+            <Col span={12}>
               <Form.Item
                 name="targetAmount"
                 label="Số tiền mục tiêu"
@@ -591,7 +575,7 @@ export default function SavingGoals() {
                 />
               </Form.Item>
             </Col>
-            <Col span={9}>
+            <Col span={12}>
               <Form.Item
                 name="currentAmount"
                 label="Số tiền hiện có"
@@ -626,7 +610,7 @@ export default function SavingGoals() {
       </Modal>
 
       <Modal
-        title={`Gửi tiền tiết kiệm tích lũy (${(goals.find(g => g.id === activeGoalId)?.currency || 'VND') === 'VND' ? 'đ' : '$'})`}
+        title="Gửi tiền tiết kiệm tích lũy (đ)"
         open={isDepositModalOpen}
         onCancel={() => setIsDepositModalOpen(false)}
         footer={null}
@@ -645,8 +629,8 @@ export default function SavingGoals() {
               { required: true, message: 'Vui lòng nhập số tiền muốn nạp!' },
               { 
                 type: 'number', 
-                min: (goals.find(g => g.id === activeGoalId)?.currency || 'VND') === 'USD' ? 1 : 1000, 
-                message: (goals.find(g => g.id === activeGoalId)?.currency || 'VND') === 'USD' ? 'Số tiền nạp tối thiểu là $1!' : 'Số tiền nạp tối thiểu là 1,000 đ!' 
+                min: 1000, 
+                message: 'Số tiền nạp tối thiểu là 1,000 đ!' 
               }
             ]}
           >

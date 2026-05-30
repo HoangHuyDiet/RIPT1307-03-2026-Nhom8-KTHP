@@ -53,6 +53,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
+
+    Page<Transaction> findByPersonalFundId(Long personalFundId, Pageable pageable);
+
+    List<Transaction> findByPersonalFundIdAndDateBetweenOrderByDateAsc(
+            Long personalFundId, LocalDate startDate, LocalDate endDate);
+
+    Page<Transaction> findByPersonalFundIdAndType(Long personalFundId, String type, Pageable pageable);
 }
 
 

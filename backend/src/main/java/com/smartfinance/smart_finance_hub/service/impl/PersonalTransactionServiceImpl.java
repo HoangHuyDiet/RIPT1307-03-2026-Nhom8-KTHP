@@ -4,10 +4,13 @@ import com.smartfinance.smart_finance_hub.dto.request.CreateTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.UpdateTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.response.TransactionResponse;
 import com.smartfinance.smart_finance_hub.entity.Category;
+import com.smartfinance.smart_finance_hub.entity.PersonalFund;
 import com.smartfinance.smart_finance_hub.entity.Transaction;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.enums.FundStatus;
 import com.smartfinance.smart_finance_hub.enums.TransactionType;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
+import com.smartfinance.smart_finance_hub.repository.PersonalFundRepository;
 import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.PersonalTransactionService;
@@ -27,6 +30,7 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final PersonalFundRepository personalFundRepository;
 
     @Override
     @Transactional
@@ -45,10 +49,33 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
         TransactionType transactionType = parseTransactionType(request.getType());
         validateCategoryType(category, transactionType.name());
 
+        PersonalFund personalFund = null;
+        if (request.getPersonalFundId() != null) {
+            personalFund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
+
+            if (personalFund.getStatus() != FundStatus.ACTIVE) {
+                throw new IllegalArgumentException("Quỹ '" + personalFund.getName() + "' đã bị đóng!");
+            }
+
+            if (transactionType == TransactionType.INCOME) {
+                personalFund.setBalance(personalFund.getBalance().add(request.getAmount()));
+            } else {
+                if (personalFund.getBalance().compareTo(request.getAmount()) < 0) {
+                    throw new IllegalArgumentException(
+                            "Số dư quỹ '" + personalFund.getName() + "' không đủ!");
+                }
+                personalFund.setBalance(personalFund.getBalance().subtract(request.getAmount()));
+            }
+            personalFundRepository.save(personalFund);
+        }
+
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
                 .shareFund(null)
+                .personalFund(personalFund)
                 .amount(request.getAmount())
                 .type(transactionType.name())
                 .description(request.getDescription())
