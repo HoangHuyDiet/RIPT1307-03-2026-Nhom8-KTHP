@@ -28,4 +28,6 @@ public class CreateTransactionRequest {
 
     @NotNull(message = "Danh mục không được để trống")
     private Long categoryId;
+
+    private Long personalFundId;
 }

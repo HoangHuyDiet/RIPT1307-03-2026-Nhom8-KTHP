@@ -1,6 +1,6 @@
 -- ============================================================
 -- SMART FINANCE HUB - DATABASE SCHEMA
--- 19 tables | MySQL 8.0+
+-- 20 tables | MySQL 8.0+
 -- ============================================================
 -- Run:
 --   mysql -u root -p < data/schema.sql
@@ -222,12 +222,31 @@ CREATE TABLE IF NOT EXISTS fund_activities (
     INDEX idx_fund_activities_type (type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Shared fund activity log';
 
+CREATE TABLE IF NOT EXISTS personal_funds (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    name            VARCHAR(100)    NOT NULL,
+    fund_type       VARCHAR(20)     NOT NULL COMMENT 'CASH / BANK_ACCOUNT / CREDIT_CARD / E_WALLET / INVESTMENT',
+    balance         DECIMAL(19,4)   NOT NULL DEFAULT 0.0000,
+    currency        VARCHAR(3)      NULL DEFAULT 'VND',
+    description     VARCHAR(500)    NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / DISBANDED / CLOSED',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_personal_funds_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_personal_funds_user (user_id),
+    INDEX idx_personal_funds_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Personal funds';
+
 CREATE TABLE IF NOT EXISTS transactions (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     category_id     BIGINT          NULL,
     fund_id         BIGINT          NULL,
     saving_goal_id  BIGINT          NULL,
+    personal_fund_id BIGINT         NULL,
+    linked_transaction_id BIGINT    NULL,
     amount          DECIMAL(19,4)   NOT NULL,
     type            VARCHAR(20)     NOT NULL COMMENT 'INCOME / EXPENSE / TRANSFER',
     description     VARCHAR(500)    NULL,
@@ -246,11 +265,13 @@ CREATE TABLE IF NOT EXISTS transactions (
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     CONSTRAINT fk_transactions_fund FOREIGN KEY (fund_id) REFERENCES share_funds(id) ON DELETE SET NULL,
     CONSTRAINT fk_transactions_saving_goal FOREIGN KEY (saving_goal_id) REFERENCES saving_goals(id) ON DELETE CASCADE,
+    CONSTRAINT fk_transactions_personal_fund FOREIGN KEY (personal_fund_id) REFERENCES personal_funds(id) ON DELETE SET NULL,
     CONSTRAINT fk_transactions_approved_by FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_transactions_user (user_id),
     INDEX idx_transactions_category (category_id),
     INDEX idx_transactions_fund (fund_id),
     INDEX idx_transactions_saving_goal (saving_goal_id),
+    INDEX idx_transactions_personal_fund (personal_fund_id),
     INDEX idx_transactions_date (date),
     INDEX idx_transactions_fund_status (fund_id, status),
     INDEX idx_transactions_fund_approved_date (fund_id, is_approved, date),

@@ -87,6 +87,9 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<FundMember> fundMemberships;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<PersonalFund> personalFunds;
 }
 
 

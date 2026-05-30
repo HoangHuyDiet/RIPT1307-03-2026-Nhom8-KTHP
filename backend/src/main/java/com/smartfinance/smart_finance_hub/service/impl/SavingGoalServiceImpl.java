@@ -5,16 +5,20 @@ import com.smartfinance.smart_finance_hub.dto.request.GoalTransactionRequest;
 import com.smartfinance.smart_finance_hub.dto.request.PinGoalRequest;
 import com.smartfinance.smart_finance_hub.dto.request.UpdateSavingGoalRequest;
 import com.smartfinance.smart_finance_hub.entity.Category;
+import com.smartfinance.smart_finance_hub.entity.PersonalFund;
 import com.smartfinance.smart_finance_hub.entity.Transaction;
 import com.smartfinance.smart_finance_hub.entity.SavingGoal;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.enums.FundStatus;
 import com.smartfinance.smart_finance_hub.enums.SavingGoalStatus;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
+import com.smartfinance.smart_finance_hub.repository.PersonalFundRepository;
 import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import com.smartfinance.smart_finance_hub.repository.SavingGoalRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.SavingGoalService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +27,14 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SavingGoalServiceImpl implements SavingGoalService {
 
     private final SavingGoalRepository savingGoalRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final PersonalFundRepository personalFundRepository;
 
     @Override
     public List<SavingGoal> getAllGoals(Long userId) {
@@ -96,8 +102,27 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     @Override
     @Transactional
     public SavingGoal depositGoal(Long userId, Long goalId, GoalTransactionRequest request) {
+        log.info("depositGoal: userId={}, goalId={}, fundId={}, amount={}",
+                userId, goalId, request.getPersonalFundId(), request.getAmount());
+
         SavingGoal goal = savingGoalRepository.findByIdAndUserIdAndDeletedAtIsNull(goalId, userId)
                 .orElseThrow(() -> new RuntimeException("Saving goal not found"));
+
+        PersonalFund fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
+
+        if (fund.getStatus() != FundStatus.ACTIVE) {
+            throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+        }
+
+        if (fund.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException(
+                    "Số dư quỹ '" + fund.getName() + "' không đủ! Số dư hiện tại: " + fund.getBalance());
+        }
+
+        fund.setBalance(fund.getBalance().subtract(request.getAmount()));
+        personalFundRepository.save(fund);
 
         goal.setCurrentAmount(goal.getCurrentAmount().add(request.getAmount()));
 
@@ -111,14 +136,67 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                 .user(goal.getUser())
                 .category(goal.getCategory())
                 .savingGoal(goal)
+                .personalFund(fund)
                 .amount(request.getAmount())
-                .type("EXPENSE") // Represents money going out of main wallet to the goal
-                .description("Nạp tiền vào mục tiêu: " + goal.getName())
+                .type("EXPENSE")
+                .description("Nạp tiền vào mục tiêu: " + goal.getName() + " (từ quỹ " + fund.getName() + ")")
                 .date(java.time.LocalDate.now())
                 .isApproved(true)
                 .build();
         transactionRepository.save(transaction);
 
+        log.info("depositGoal success: goalId={}, newAmount={}", goalId, goal.getCurrentAmount());
+        return goal;
+    }
+
+    @Override
+    @Transactional
+    public SavingGoal withdrawGoal(Long userId, Long goalId, GoalTransactionRequest request) {
+        log.info("withdrawGoal: userId={}, goalId={}, fundId={}, amount={}",
+                userId, goalId, request.getPersonalFundId(), request.getAmount());
+
+        SavingGoal goal = savingGoalRepository.findByIdAndUserIdAndDeletedAtIsNull(goalId, userId)
+                .orElseThrow(() -> new RuntimeException("Saving goal not found"));
+
+        if (goal.getCurrentAmount().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException(
+                    "Số dư mục tiêu không đủ để rút! Số dư hiện tại: " + goal.getCurrentAmount());
+        }
+
+        PersonalFund fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
+
+        if (fund.getStatus() != FundStatus.ACTIVE) {
+            throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+        }
+
+        goal.setCurrentAmount(goal.getCurrentAmount().subtract(request.getAmount()));
+
+        if (goal.getStatus() == SavingGoalStatus.COMPLETED
+                && goal.getCurrentAmount().compareTo(goal.getTargetAmount()) < 0) {
+            goal.setStatus(SavingGoalStatus.IN_PROGRESS);
+        }
+
+        savingGoalRepository.save(goal);
+
+        fund.setBalance(fund.getBalance().add(request.getAmount()));
+        personalFundRepository.save(fund);
+
+        Transaction transaction = Transaction.builder()
+                .user(goal.getUser())
+                .category(goal.getCategory())
+                .savingGoal(goal)
+                .personalFund(fund)
+                .amount(request.getAmount())
+                .type("INCOME")
+                .description("Rút tiền từ mục tiêu: " + goal.getName() + " (về quỹ " + fund.getName() + ")")
+                .date(java.time.LocalDate.now())
+                .isApproved(true)
+                .build();
+        transactionRepository.save(transaction);
+
+        log.info("withdrawGoal success: goalId={}, remainingAmount={}", goalId, goal.getCurrentAmount());
         return goal;
     }
 

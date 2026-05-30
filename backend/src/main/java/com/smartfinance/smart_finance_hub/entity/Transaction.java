@@ -44,6 +44,13 @@ public class Transaction {
     @JoinColumn(name = "saving_goal_id")
     private SavingGoal savingGoal;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "personal_fund_id")
+    private PersonalFund personalFund;
+
+    @Column(name = "linked_transaction_id")
+    private Long linkedTransactionId;
+
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal amount;

@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionResponse {
-
     private Long id;
     private BigDecimal amount;
     private String type;
@@ -26,20 +25,35 @@ public class TransactionResponse {
     private LocalDateTime createdAt;
     private Long savingGoalId;
     private String savingGoalName;
+    private Long personalFundId;
+    private String personalFundName;
+    private Long linkedTransactionId;
+
+    
+    private String category;
+    private String fund;
 
     public static TransactionResponse from(Transaction transaction) {
+        String categoryVal = transaction.getCategory() != null ? transaction.getCategory().getName() : null;
+        String fundVal = transaction.getPersonalFund() != null ? transaction.getPersonalFund().getName() : null;
+
         return TransactionResponse.builder()
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
                 .type(transaction.getType())
                 .description(transaction.getDescription())
                 .date(transaction.getDate())
-                .categoryName(transaction.getCategory() != null ? transaction.getCategory().getName() : null)
+                .categoryName(categoryVal)
                 .categoryId(transaction.getCategory() != null ? transaction.getCategory().getId() : null)
                 .isApproved(transaction.getIsApproved())
                 .createdAt(transaction.getCreatedAt())
                 .savingGoalId(transaction.getSavingGoal() != null ? transaction.getSavingGoal().getId() : null)
                 .savingGoalName(transaction.getSavingGoal() != null ? transaction.getSavingGoal().getName() : null)
+                .personalFundId(transaction.getPersonalFund() != null ? transaction.getPersonalFund().getId() : null)
+                .personalFundName(fundVal)
+                .linkedTransactionId(transaction.getLinkedTransactionId())
+                .category(categoryVal)
+                .fund(fundVal)
                 .build();
     }
 }

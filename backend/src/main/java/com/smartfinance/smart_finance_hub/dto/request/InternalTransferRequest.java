@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 public class InternalTransferRequest {
 
     @NotNull(message = "Source fund ID is required")
-    private Long fromFundId;
+    private Long sourceId;
 
     @NotNull(message = "Destination fund ID is required")
-    private Long toFundId;
+    private Long targetId;
 
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be greater than 0")
