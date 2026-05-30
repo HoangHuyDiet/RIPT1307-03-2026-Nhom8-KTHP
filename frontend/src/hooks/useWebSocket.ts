@@ -2,14 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-export const useWebSocket = (fundId: number) => {
+export const useWebSocket = (fundId: number, onMessageReceived?: (msg: any) => void) => {
   const [stompClient, setStompClient] = useState<Client | null>(null);
+  const messageCallbackRef = useRef(onMessageReceived);
+
+  useEffect(() => {
+    messageCallbackRef.current = onMessageReceived;
+  }, [onMessageReceived]);
 
   useEffect(() => {
     const client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
       connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        Authorization: `Bearer ${localStorage.getItem('token') || localStorage.getItem('access_token')}`
       },
       debug: (str) => console.log('STOMP:', str),
       
@@ -19,6 +24,9 @@ export const useWebSocket = (fundId: number) => {
         client.subscribe(`/topic/funds/${fundId}/chat`, (message) => {
           const newChatMsg = JSON.parse(message.body);
           console.log("Có tin nhắn mới:", newChatMsg);
+          if (messageCallbackRef.current) {
+            messageCallbackRef.current(newChatMsg);
+          }
         });
 
         client.subscribe(`/user/queue/notifications`, (message) => {

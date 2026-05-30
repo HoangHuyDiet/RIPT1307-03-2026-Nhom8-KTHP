@@ -34,22 +34,26 @@ export default function WithdrawModal({ isOpen, onClose, selectedGroup }: Withdr
         requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh'
       });
       if (data.success) {
-        addNotification({
-          id: data.requestId,
-          type: 'WITHDRAW_REQUEST',
-          fundId: selectedGroup.id,
-          fundName: selectedGroup.name,
-          amount,
-          description: values.reason || 'Rút tiền từ quỹ',
-          requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
-          bankAccount: values.bankAccount,
-          bankName: values.bankName,
-          date: new Date().toISOString().slice(0, 10),
-          read: false,
-          targetRole: 'OWNER'
-        });
-
-        message.success('Đã gửi yêu cầu rút tiền! Chờ chủ quỹ duyệt.');
+        if (data.data.isApproved) {
+          message.success('Đã rút tiền từ quỹ thành công!');
+          window.dispatchEvent(new Event('transaction-approved'));
+        } else {
+          addNotification({
+            id: data.data.requestId,
+            type: 'WITHDRAW_REQUEST',
+            fundId: selectedGroup.id,
+            fundName: selectedGroup.name,
+            amount,
+            description: values.reason || 'Rút tiền từ quỹ',
+            requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
+            bankAccount: values.bankAccount,
+            bankName: values.bankName,
+            date: new Date().toISOString().slice(0, 10),
+            read: false,
+            targetRole: 'OWNER'
+          });
+          message.success('Đã gửi yêu cầu rút tiền! Chờ chủ quỹ duyệt.');
+        }
         onClose();
         withdrawForm.resetFields();
       }

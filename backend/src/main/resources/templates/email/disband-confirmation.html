@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Fund disbanded</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+    <h2 th:text="${fundName} + ' has been disbanded'">Fund disbanded</h2>
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+    <p>The shared fund has been disbanded after all required members accepted the proposal.</p>
+    <p>Regards,<br><span th:text="${appName}">Smart Finance Hub</span></p>
+</body>
+</html>

@@ -18,7 +18,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByShareFundId(Long fundId);
 
+    Page<Transaction> findByShareFundId(Long fundId, Pageable pageable);
+
+    Page<Transaction> findByShareFundIdAndType(Long fundId, String type, Pageable pageable);
+
     List<Transaction> findByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
+
+    List<Transaction> findByShareFundIdAndStatus(Long fundId, String status);
+
+    List<Transaction> findByShareFundIdInAndStatus(List<Long> fundIds, String status);
+
+    long countByShareFundId(Long fundId);
+
+    long countByShareFundIdAndIsApproved(Long fundId, Boolean isApproved);
+
+    List<Transaction> findByShareFundIdAndIsApprovedAndDateBetween(
+            Long fundId, Boolean isApproved, LocalDate startDate, LocalDate endDate);
+
+    List<Transaction> findByShareFundIdInAndIsApprovedAndDateBetween(
+            List<Long> fundIds, Boolean isApproved, LocalDate startDate, LocalDate endDate);
 
     List<Transaction> findByCategoryId(Long categoryId);
 
@@ -36,3 +54,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 }
+
+

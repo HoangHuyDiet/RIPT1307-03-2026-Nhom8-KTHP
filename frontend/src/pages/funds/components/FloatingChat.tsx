@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import styles from '../index.less';
 import { GroupFund } from '../types';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface FloatingChatProps {
   group: GroupFund;
@@ -20,6 +21,7 @@ export default function FloatingChat({ group, discussions, sendMessage }: Floati
   const [isOpen, setIsOpen] = useState(false);
   const [messageText, setMessageText] = useState('');
   const chatAreaRef = useRef<HTMLDivElement | null>(null);
+  const user = useAuthStore(state => state.user);
 
   const groupDiscussions = discussions.filter(item => item.groupId === group.id);
 
@@ -97,21 +99,23 @@ export default function FloatingChat({ group, discussions, sendMessage }: Floati
             );
           }
 
+          const isMe = item.isMe || (user && (item.senderName === user.display_name || item.senderName === user.email || item.senderName === user.email.split('@')[0]));
+
           return (
             <div
               key={item.id}
-              className={`${styles.chatMessageRow} ${item.isMe ? styles.chatRowMe : styles.chatRowOther}`}
+              className={`${styles.chatMessageRow} ${isMe ? styles.chatRowMe : styles.chatRowOther}`}
             >
-              {!item.isMe && (
+              {!isMe && (
                 <Avatar className={styles.chatAvatarLeft}>
                   {getInitials(item.senderName || '')}
                 </Avatar>
               )}
-              <div className={item.isMe ? styles.bubbleMe : styles.bubbleOther}>
+              <div className={isMe ? styles.bubbleMe : styles.bubbleOther}>
                 <div className={styles.msgText}>{item.text}</div>
-                <span className={item.isMe ? styles.msgTimeMe : styles.msgTimeOther}>{item.time}</span>
+                <span className={isMe ? styles.msgTimeMe : styles.msgTimeOther}>{item.time}</span>
               </div>
-              {item.isMe && (
+              {isMe && (
                 <Avatar className={styles.chatAvatarRight}>
                   {getInitials(item.senderName || '')}
                 </Avatar>

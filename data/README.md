@@ -1,58 +1,60 @@
-# 🗄️ Database - Smart Finance Hub
+# Database - Smart Finance Hub
 
-## Yêu cầu
-- **MySQL** 8.0+
+## Requirements
+
+- MySQL 8.0+
 - Charset: `utf8mb4`
 
-## Hướng dẫn setup
+## Setup
 
-### 1. Tạo database
+### 1. Create database
+
 ```sql
 CREATE DATABASE smart_finance_hub
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 ```
 
-### 2. Chạy schema (tạo bảng)
+### 2. Run schema
+
 ```bash
-mysql -u root -p smart_finance_hub < database/schema.sql
+mysql -u root -p smart_finance_hub < data/schema.sql
 ```
 
-### 3. Chạy seed (dữ liệu mẫu)
+### 3. Run seed data
+
 ```bash
-mysql -u root -p smart_finance_hub < database/seed.sql
+mysql -u root -p smart_finance_hub < data/seed.sql
 ```
 
-### 4. Cấu hình backend
-Sửa file `backend/src/main/resources/application.properties`:
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/smart_finance_hub
-spring.datasource.username=root
-spring.datasource.password=YOUR_PASSWORD
-```
+## Files
 
-## Cấu trúc file
-| File | Mô tả |
+| File | Description |
 |---|---|
-| `schema.sql` | DDL - Tạo 16 bảng (15 bảng core + 1 bảng otp_tokens cho 2FA) |
-| `seed.sql` | DML - Dữ liệu mặc định (roles, permissions, categories) |
+| `schema.sql` | DDL for 19 backend tables |
+| `seed.sql` | Default roles, permissions, admin user, and categories |
+| `seed_admin.sql` | Admin seed helper |
 
-## Danh sách bảng (16 bảng)
-| # | Bảng | Module | Mô tả |
-|---|------|--------|-------|
-| 1 | `users` | Auth | Người dùng |
-| 2 | `roles` | Auth | Vai trò |
-| 3 | `user_role` | Auth | Trung gian User ↔ Role |
-| 4 | `permissions` | Auth | Quyền hạn |
-| 5 | `role_permissions` | Auth | Trung gian Role ↔ Permission |
-| 6 | `categories` | Core | Danh mục thu/chi |
-| 7 | `transactions` | Core | Giao dịch |
-| 8 | `saving_goals` | Core | Mục tiêu tiết kiệm |
-| 9 | `monthly_statements` | Core | Báo cáo tháng |
-| 10 | `share_funds` | Funds | Quỹ chung |
-| 11 | `fund_members` | Funds | Thành viên quỹ |
-| 12 | `fund_invitation` | Funds | Lời mời tham gia quỹ |
-| 13 | `support_tickets` | Support | Ticket hỗ trợ |
-| 14 | `audit_logs` | System | Nhật ký thao tác |
-| 15 | `external_integrations` | System | Tích hợp bên ngoài |
-| 16 | `otp_tokens` | 2FA | Lưu trữ mã OTP tạm thời |
+## Tables
+
+| # | Table | Module | Description |
+|---|---|---|---|
+| 1 | `users` | Auth | Application users |
+| 2 | `roles` | Auth | Roles |
+| 3 | `user_role` | Auth | User-role mapping |
+| 4 | `permissions` | Auth | Permissions |
+| 5 | `role_permissions` | Auth | Role-permission mapping |
+| 6 | `otp_tokens` | Auth/2FA | OTP verification tokens |
+| 7 | `categories` | Core | Income/expense categories |
+| 8 | `funds` | Funds | Personal and group funds |
+| 9 | `transactions` | Core/Funds | Personal and fund transactions |
+| 10 | `saving_goals` | Core | Saving goals |
+| 11 | `monthly_statements` | Core | Monthly reports |
+| 12 | `fund_members` | Funds | Fund members |
+| 13 | `fund_invitation` | Funds | Fund invitations and proposals |
+| 14 | `fund_messages` | Funds | Fund chat messages |
+| 15 | `fund_activities` | Funds | Fund activity log |
+| 16 | `support_tickets` | Support | Support tickets |
+| 17 | `audit_logs` | System | Audit logs |
+| 18 | `external_integrations` | System | External integration configs |
+| 19 | `recurring_settings` | Scheduler | Recurring transaction settings |

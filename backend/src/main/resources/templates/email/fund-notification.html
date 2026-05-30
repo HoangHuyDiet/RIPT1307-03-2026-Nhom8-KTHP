@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Fund notification</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+    <h2 th:text="${fundName}">Fund notification</h2>
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+    <p th:text="${notificationContent}">Notification content</p>
+    <p>Regards,<br><span th:text="${appName}">Smart Finance Hub</span></p>
+</body>
+</html>

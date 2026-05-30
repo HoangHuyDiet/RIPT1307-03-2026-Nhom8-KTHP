@@ -27,6 +27,263 @@ import java.util.Map;
 public class SharedFundController {
 
     private final SharedFundService sharedFundService;
+    private final com.smartfinance.smart_finance_hub.repository.CategoryRepository categoryRepository;
+    private final com.smartfinance.smart_finance_hub.repository.UserRepository userRepository;
+
+    @GetMapping("/list")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> listFunds() {
+        try {
+            Long userId = getCurrentUserId();
+            java.util.List<com.smartfinance.smart_finance_hub.entity.ShareFund> funds = sharedFundService.getFundsForUser(userId);
+            
+            java.util.List<java.util.Map<String, Object>> responseList = new java.util.ArrayList<>();
+            for (com.smartfinance.smart_finance_hub.entity.ShareFund fund : funds) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", fund.getId());
+                map.put("name", fund.getName());
+                map.put("description", fund.getDescription());
+                map.put("balance", fund.getBalance());
+                map.put("target", java.math.BigDecimal.valueOf(10000000));
+                map.put("status", "ACTIVE".equalsIgnoreCase(fund.getStatus()) ? "active" : "settled");
+                
+                String[] colors = {"#1A73E8", "#52C41A", "#FA8C16", "#EA4335", "#722ED1"};
+                map.put("themeColor", colors[(int)(fund.getId() % colors.length)]);
+                
+                java.util.List<java.util.Map<String, Object>> membersList = new java.util.ArrayList<>();
+                if (fund.getMembers() != null) {
+                    for (com.smartfinance.smart_finance_hub.entity.FundMember member : fund.getMembers()) {
+                        java.util.Map<String, Object> m = new java.util.HashMap<>();
+                        m.put("name", member.getUser().getDisplayName());
+                        m.put("email", member.getUser().getEmail());
+                        m.put("avatar", "https://api.dicebear.com/7.x/notionists/svg?seed=" + member.getUser().getDisplayName());
+                        m.put("role", member.getFundRole());
+                        membersList.add(m);
+                    }
+                }
+                map.put("members", membersList);
+                map.put("membersCount", membersList.size());
+                
+                responseList.add(map);
+            }
+            
+            return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy danh sách quỹ thành công!", responseList));
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy danh sách quỹ nhóm: {}", e.getMessage(), e);
+            return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.error("Lỗi lấy danh sách quỹ: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/activities")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getActivities() {
+        Long userId = getCurrentUserId();
+        java.util.List<java.util.Map<String, Object>> activities = sharedFundService.getActivitiesForUser(userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy lịch sử hoạt động thành công!", activities));
+    }
+
+    @PostMapping
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> createFund(
+            @RequestBody java.util.Map<String, Object> body) {
+        try {
+            Long userId = getCurrentUserId();
+            String name = (String) body.get("name");
+            
+            java.math.BigDecimal target = java.math.BigDecimal.ZERO;
+            if (body.get("target") != null) {
+                target = new java.math.BigDecimal(body.get("target").toString());
+            }
+            
+            java.math.BigDecimal initialContribution = java.math.BigDecimal.ZERO;
+            if (body.get("initialContribution") != null) {
+                initialContribution = new java.math.BigDecimal(body.get("initialContribution").toString());
+            }
+            
+            com.smartfinance.smart_finance_hub.entity.ShareFund fund = sharedFundService.createFund(name, target, initialContribution, userId);
+            com.smartfinance.smart_finance_hub.entity.User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+
+            java.util.List<java.util.Map<String, Object>> membersList = new java.util.ArrayList<>();
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("name", user.getDisplayName());
+            m.put("email", user.getEmail());
+            m.put("avatar", "https://api.dicebear.com/7.x/notionists/svg?seed=" + user.getDisplayName());
+            m.put("role", "OWNER");
+            membersList.add(m);
+            
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("id", fund.getId());
+            data.put("name", fund.getName());
+            data.put("balance", fund.getBalance());
+            data.put("target", target);
+            data.put("status", "active");
+            data.put("themeColor", "#1A73E8");
+            data.put("members", membersList);
+            data.put("membersCount", 1);
+            
+            return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Tạo quỹ thành công!", data), HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo quỹ nhóm: {}", e.getMessage(), e);
+            return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.error("Lỗi tạo quỹ: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/rename")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> renameFund(
+            @RequestBody java.util.Map<String, Object> body) {
+        Long userId = getCurrentUserId();
+        Long fundId = Long.valueOf(body.get("fundId").toString());
+        String newName = (String) body.get("newName");
+        
+        com.smartfinance.smart_finance_hub.entity.ShareFund fund = sharedFundService.renameFund(fundId, newName, userId);
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("id", fund.getId());
+        data.put("name", fund.getName());
+        
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đổi tên quỹ thành công!", data));
+    }
+
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> leaveFund(
+            @PathVariable("id") Long fundId) {
+        Long userId = getCurrentUserId();
+        sharedFundService.leaveFund(fundId, userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Rời khỏi quỹ thành công!"));
+    }
+
+    @PostMapping("/{id}/request-delete-fund")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> requestDeleteFund(
+            @PathVariable("id") Long fundId) {
+        Long userId = getCurrentUserId();
+        String msg = sharedFundService.deleteFund(fundId, userId);
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("requestId", "del-req-" + System.currentTimeMillis());
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg, data));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> deleteFund(
+            @PathVariable("id") Long fundId) {
+        Long userId = getCurrentUserId();
+        String msg = sharedFundService.deleteFund(fundId, userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getTransactions(
+            @RequestParam("fundId") Long fundId) {
+        Long userId = getCurrentUserId();
+        java.util.List<com.smartfinance.smart_finance_hub.entity.Transaction> txs = sharedFundService.getFundTransactions(fundId, userId);
+        
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        for (com.smartfinance.smart_finance_hub.entity.Transaction tx : txs) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("id", tx.getId());
+            m.put("type", tx.getType());
+            m.put("amount", tx.getAmount());
+            m.put("description", tx.getDescription());
+            m.put("date", tx.getDate().toString());
+            m.put("user_display_name", tx.getUser().getDisplayName());
+            m.put("category_name", tx.getCategory() != null ? tx.getCategory().getName() : "Khác");
+            m.put("is_approved", tx.getIsApproved());
+            list.add(m);
+        }
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy danh sách giao dịch thành công!", list));
+    }
+
+    @PostMapping("/transaction-request")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> createTransactionRequest(
+            @RequestBody java.util.Map<String, Object> body) {
+        
+        Long userId = getCurrentUserId();
+        Long fundId = Long.valueOf(body.get("fundId").toString());
+        String type = (String) body.get("type");
+        java.math.BigDecimal amount = new java.math.BigDecimal(body.get("amount").toString());
+        String description = (String) body.get("description");
+        
+        com.smartfinance.smart_finance_hub.entity.Category category = categoryRepository.findAll().stream()
+                .filter(c -> type.equalsIgnoreCase(c.getType()))
+                .findFirst()
+                .orElse(categoryRepository.findAll().stream().findFirst().orElse(null));
+                
+        if (category == null) {
+            throw new IllegalArgumentException("Vui lòng tạo ít nhất một danh mục thu/chi trong hệ thống!");
+        }
+
+        com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest req = 
+                new com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest(
+                        amount, type, description, java.time.LocalDate.now(), category.getId());
+
+        com.smartfinance.smart_finance_hub.entity.Transaction tx = 
+                sharedFundService.createFundTransaction(fundId, req, userId);
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("requestId", tx.getId().toString());
+        data.put("isApproved", tx.getIsApproved());
+        data.put("status", tx.getStatus());
+        
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Gửi yêu cầu giao dịch thành công!", data));
+    }
+
+    @GetMapping("/{id}/discussions")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getDiscussions(
+            @PathVariable("id") Long fundId) {
+        try {
+            Long userId = getCurrentUserId();
+            com.smartfinance.smart_finance_hub.entity.User currentUser = userRepository.findById(userId).orElse(null);
+            String currentUserName = currentUser != null ? currentUser.getDisplayName() : "";
+
+            java.util.List<com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse> discussions = 
+                    sharedFundService.getDiscussions(fundId, userId);
+            
+            java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+            for (com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse disc : discussions) {
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("id", disc.getId());
+                m.put("groupId", fundId);
+                m.put("type", disc.getType());
+                m.put("senderName", disc.getSenderName());
+                m.put("senderAvatar", "https://api.dicebear.com/7.x/notionists/svg?seed=" + disc.getSenderName());
+                m.put("text", disc.getText());
+                m.put("time", disc.getTime());
+                m.put("isMe", currentUserName.equals(disc.getSenderName()));
+                list.add(m);
+            }
+            return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy tin nhắn thảo luận thành công!", list));
+        } catch (Exception e) {
+            log.error("Lỗi lấy tin nhắn thảo luận: {}", e.getMessage(), e);
+            return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.error("Lỗi: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/{id}/budget-chart")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getBudgetChart(
+            @PathVariable("id") Long fundId) {
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        String[] months = {"T12", "T1", "T2", "T3", "T4", "Tháng này"};
+        int[] amounts = {200000, 150000, 50000, 100000, 50000, 2500000};
+        for (int i = 0; i < months.length; i++) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("month", months[i]);
+            m.put("amount", amounts[i]);
+            list.add(m);
+        }
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lấy biểu đồ ngân sách thành công!", list));
+    }
+
+    @PostMapping("/remove-request")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.Map<String, Object>>> removeRequest(
+            @RequestBody java.util.Map<String, Object> body) {
+        Long userId = getCurrentUserId();
+        Long fundId = Long.valueOf(body.get("fundId").toString());
+        String memberEmail = (String) body.get("memberEmail");
+        
+        sharedFundService.removeMember(fundId, memberEmail, userId);
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("requestId", "rem-req-" + System.currentTimeMillis());
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã xóa thành viên khỏi quỹ thành công!", data));
+    }
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -38,7 +295,7 @@ public class SharedFundController {
     }
 
     @PostMapping("/{id}/invite")
-    public ResponseEntity<Map<String, Object>> inviteMember(
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Map<String, Object>>> inviteMember(
             @PathVariable("id") Long fundId,
             @Valid @RequestBody InviteMemberRequest request) {
 
@@ -53,16 +310,11 @@ public class SharedFundController {
         data.put("status", invitation.getStatus());
         data.put("expiresAt", invitation.getExpiresAt().toString());
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.CREATED.value());
-        response.put("message", "Đã gửi lời mời thành công đến " + request.getEmail());
-        response.put("data", data);
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã gửi lời mời thành công đến " + request.getEmail(), data), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/respond")
-    public ResponseEntity<Map<String, Object>> respondToInvitation(
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> respondToInvitation(
             @PathVariable("id") Long fundId,
             @Valid @RequestBody RespondInvitationRequest request) {
 
@@ -71,11 +323,7 @@ public class SharedFundController {
         Long currentUserId = getCurrentUserId();
         sharedFundService.respondToInvitation(fundId, request, currentUserId);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.OK.value());
-        response.put("message", "Đã xử lý phản hồi lời mời: " + request.getAction().toUpperCase());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã xử lý phản hồi lời mời: " + request.getAction().toUpperCase()));
     }
 
     @PostMapping("/{id}/transactions")
@@ -122,5 +370,60 @@ public class SharedFundController {
         response.put("data", data);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/verify-token")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> verifyInvitationToken(
+            @RequestBody Map<String, Object> body) {
+        String token = null;
+        if (body.containsKey("data")) {
+            Object dataObj = body.get("data");
+            if (dataObj instanceof Map) {
+                token = (String) ((Map<String, Object>) dataObj).get("token");
+            } else if (dataObj instanceof String) {
+                token = (String) dataObj;
+            }
+        } else {
+            token = (String) body.get("token");
+        }
+        log.info("verifyInvitationToken param: token={}", token);
+
+        Long currentUserId = getCurrentUserId();
+        String msg = sharedFundService.verifyInvitationToken(token, currentUserId);
+
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(msg));
+    }
+
+    @PostMapping("/approve-transaction")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Map<String, Object>>> approveOrRejectTransaction(
+            @RequestBody Map<String, Object> body) {
+        Long currentUserId = getCurrentUserId();
+        
+        Object reqIdObj = body.get("requestId");
+        if (reqIdObj == null || "undefined".equals(reqIdObj.toString().trim())) {
+            throw new IllegalArgumentException("Mã yêu cầu (requestId) không hợp lệ hoặc bằng undefined!");
+        }
+        
+        Long requestId;
+        try {
+            requestId = Long.valueOf(reqIdObj.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Mã yêu cầu (requestId) phải là dạng số nguyên!");
+        }
+        
+        String action = (String) body.get("action");
+        String rejectReason = (String) body.get("rejectReason");
+
+        log.info("approveOrRejectTransaction endpoint param: requestId={}, action={}", requestId, action);
+        Transaction tx = sharedFundService.approveOrRejectTransaction(requestId, action, rejectReason, currentUserId);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("id", tx.getId());
+        data.put("status", tx.getStatus());
+        data.put("isApproved", tx.getIsApproved());
+
+        String successMsg = "approved".equalsIgnoreCase(action) ? "Đã duyệt giao dịch thành công!" : "Đã từ chối giao dịch thành công!";
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success(successMsg, data));
     }
 }

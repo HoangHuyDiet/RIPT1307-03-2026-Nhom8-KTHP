@@ -33,8 +33,14 @@ interface GroupDetailViewProps {
 
 export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameGroup, onDeleteGroup }: GroupDetailViewProps) {
   const user = useAuthStore(state => state.user);
-  const { sendMessage } = useWebSocket(group.id);
   const [discussions, setDiscussions] = useState<any[]>([]);
+  
+  const { sendMessage } = useWebSocket(group.id, (newMsg) => {
+    setDiscussions((prev) => {
+      if (prev.some((d) => d.id === newMsg.id)) return prev;
+      return [...prev, newMsg];
+    });
+  });
   const [chartData, setChartData] = useState<any[]>([]);
   const [fundTransactions, setFundTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
@@ -275,7 +281,7 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
           try {
             const data = await request.post(`/funds/${group.id}/request-delete-fund`, { email: user.email });
             if (data.success) {
-              message.success('Đã gửi yêu cầu xóa quỹ. Vui lòng kiểm tra email để xác nhận.');
+              message.success(data.message || 'Đã gửi yêu cầu xóa quỹ. Vui lòng kiểm tra email để xác nhận.');
             } else {
               message.error(data.message || 'Lỗi yêu cầu xóa quỹ');
             }

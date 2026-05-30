@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Kick proposal</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+    <h2 th:text="'Kick proposal in ' + ${fundName}">Kick proposal</h2>
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+    <p><strong th:text="${kickedByName}">Owner</strong> proposed that you leave this shared fund.</p>
+    <p><strong>Reason:</strong> <span th:text="${reason}">Reason</span></p>
+    <p>
+        <a th:href="${actionUrl}" style="background:#dc2626;color:#ffffff;padding:10px 16px;text-decoration:none;border-radius:4px;display:inline-block;">
+            Respond to proposal
+        </a>
+    </p>
+    <p>Regards,<br><span th:text="${appName}">Smart Finance Hub</span></p>
+</body>
+</html>

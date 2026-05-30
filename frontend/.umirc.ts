@@ -22,6 +22,7 @@ export default defineConfig({
         { path: '/dashboard', component: '@/pages/dashboard' },
         { path: '/personal-funds', component: '@/pages/personal-funds' },
         { path: '/funds', component: '@/pages/funds' },
+        { path: '/funds/verify', component: '@/pages/funds/verify' },
         { path: '/saving-goals', component: '@/pages/saving-goals' },
         { path: '/transactions', component: '@/pages/transactions' },
       ],
