@@ -67,6 +67,15 @@ public class SavingGoalController {
         return ResponseEntity.ok(ApiResponse.success("Nạp tiền vào mục tiêu thành công", goal));
     }
 
+    @PatchMapping("/{id}/withdraw")
+    public ResponseEntity<ApiResponse<SavingGoal>> withdrawGoal(
+            @PathVariable("id") Long goalId,
+            @Valid @RequestBody GoalTransactionRequest request) {
+        Long userId = getCurrentUserId();
+        SavingGoal goal = savingGoalService.withdrawGoal(userId, goalId, request);
+        return ResponseEntity.ok(ApiResponse.success("Rút tiền từ mục tiêu thành công", goal));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteGoal(@PathVariable("id") Long goalId) {
         Long userId = getCurrentUserId();

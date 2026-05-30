@@ -331,3 +331,31 @@ CREATE TABLE IF NOT EXISTS recurring_settings (
     INDEX idx_recurring_next_run (next_run_date),
     INDEX idx_recurring_active (is_active)
 ) ENGINE=InnoDB COMMENT='Cau hinh thu chi dinh ky';
+
+-- ============================================================
+-- MODULE 8: QUỸ CÁ NHÂN - PERSONAL FUNDS (1 bảng)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS personal_funds (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    name            VARCHAR(100)    NOT NULL COMMENT 'Tên quỹ: Tiền mặt, VCB, Momo...',
+    fund_type       VARCHAR(20)     NOT NULL COMMENT 'CASH / BANK_ACCOUNT / CREDIT_CARD / E_WALLET / INVESTMENT',
+    balance         DECIMAL(19,4)   NOT NULL DEFAULT 0.0000 COMMENT 'Số dư hiện tại',
+    currency        VARCHAR(3)      NULL DEFAULT 'VND' COMMENT 'Đơn vị tiền tệ',
+    description     VARCHAR(500)    NULL COMMENT 'Mô tả quỹ',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / CLOSED',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_personal_funds_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_personal_funds_user (user_id),
+    INDEX idx_personal_funds_status (status)
+) ENGINE=InnoDB COMMENT='Bảng quỹ cá nhân';
+
+-- Thêm cột personal_fund_id và linked_transaction_id vào bảng transactions
+ALTER TABLE transactions
+    ADD COLUMN personal_fund_id BIGINT NULL COMMENT 'Quỹ cá nhân liên quan' AFTER saving_goal_id,
+    ADD COLUMN linked_transaction_id BIGINT NULL COMMENT 'Giao dịch đối ứng (dùng cho chuyển khoản nội bộ)' AFTER personal_fund_id,
+    ADD CONSTRAINT fk_transactions_personal_fund FOREIGN KEY (personal_fund_id) REFERENCES personal_funds(id) ON DELETE SET NULL,
+    ADD INDEX idx_transactions_personal_fund (personal_fund_id);
