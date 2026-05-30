@@ -159,7 +159,7 @@ export default function PersonalFundManagement() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
 
-  // States for refactored Modals
+  
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositForm] = Form.useForm();
   const [depositGoals, setDepositGoals] = useState<any[]>([]);
@@ -172,7 +172,7 @@ export default function PersonalFundManagement() {
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [selectedFundForStatement, setSelectedFundForStatement] = useState<any | null>(null);
 
-  // Direct deposit state
+  
   const [isDirectDepositModalOpen, setIsDirectDepositModalOpen] = useState(false);
   const [directDepositingFund, setDirectDepositingFund] = useState<any | null>(null);
   const [directDepositForm] = Form.useForm();
@@ -1063,7 +1063,7 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {/* Modal Nạp tiền vào Mục tiêu */}
+      {}
       <Modal
         title={
           <Space>
@@ -1159,7 +1159,7 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {/* Modal Sửa thông tin quỹ */}
+      {}
       <Modal
         title="Sửa thông tin quỹ"
         open={isEditModalOpen}
@@ -1226,7 +1226,7 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {/* Modal Xuất sao kê giao dịch */}
+      {}
       <Modal
         title={`Sao kê giao dịch: ${selectedFundForStatement?.name || ''}`}
         open={isStatementModalOpen}
@@ -1288,7 +1288,7 @@ export default function PersonalFundManagement() {
         />
       </Modal>
 
-      {/* Modal Nạp tiền trực tiếp vào quỹ */}
+      {}
       <Modal
         title={`Nạp tiền vào quỹ: ${directDepositingFund?.name || ''}`}
         open={isDirectDepositModalOpen}

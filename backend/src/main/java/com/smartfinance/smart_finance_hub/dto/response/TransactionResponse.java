@@ -29,7 +29,7 @@ public class TransactionResponse {
     private String personalFundName;
     private Long linkedTransactionId;
 
-    // Frontend fields
+    
     private String category;
     private String fund;
 

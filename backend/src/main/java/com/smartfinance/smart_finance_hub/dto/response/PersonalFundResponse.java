@@ -25,7 +25,7 @@ public class PersonalFundResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Frontend fields
+    
     private String type;
     private String icon;
     private boolean isNegative;
