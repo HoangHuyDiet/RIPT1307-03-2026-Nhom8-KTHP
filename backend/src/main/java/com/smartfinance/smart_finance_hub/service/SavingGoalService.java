@@ -19,5 +19,7 @@ public interface SavingGoalService {
 
     SavingGoal depositGoal(Long userId, Long goalId, GoalTransactionRequest request);
 
+    SavingGoal withdrawGoal(Long userId, Long goalId, GoalTransactionRequest request);
+
     void deleteGoal(Long userId, Long goalId);
 }
