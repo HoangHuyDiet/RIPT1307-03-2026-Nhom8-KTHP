@@ -172,6 +172,12 @@ export default function PersonalFundManagement() {
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [selectedFundForStatement, setSelectedFundForStatement] = useState<any | null>(null);
 
+  // Direct deposit state
+  const [isDirectDepositModalOpen, setIsDirectDepositModalOpen] = useState(false);
+  const [directDepositingFund, setDirectDepositingFund] = useState<any | null>(null);
+  const [directDepositForm] = Form.useForm();
+  const [directDepositLoading, setDirectDepositLoading] = useState(false);
+
   const fetchFundsData = async () => {
     setLoading(true);
 
@@ -280,6 +286,26 @@ export default function PersonalFundManagement() {
     } catch (err: any) {
       console.error(err);
       message.error(err.response?.data?.message || 'Cập nhật thông tin quỹ thất bại!');
+    }
+  };
+
+  const handleDirectDeposit = async (values: any) => {
+    if (!directDepositingFund) return;
+    setDirectDepositLoading(true);
+    try {
+      await api.post(`/personal-funds/${directDepositingFund.id}/deposit`, {
+        amount: Number(values.amount),
+        description: values.description || 'Nạp tiền từ chuyển khoản ngoài'
+      });
+      message.success('Nạp tiền vào quỹ thành công!');
+      fetchFundsData();
+      setIsDirectDepositModalOpen(false);
+      directDepositForm.resetFields();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.response?.data?.message || 'Nạp tiền thất bại!');
+    } finally {
+      setDirectDepositLoading(false);
     }
   };
 
@@ -594,13 +620,9 @@ export default function PersonalFundManagement() {
                   ).map((act: any) => {
                     const buttonHandler = () => {
                       if (act.key === 'deposit') {
-                        Modal.confirm({
-                          title: `Nạp tiền vào quỹ ${fund.name}`,
-                          content: `Bạn muốn nạp thêm tiền mặt hay nhận chuyển khoản vào quỹ này?`,
-                          okText: 'Nhận chuyển khoản',
-                          cancelText: 'Hủy',
-                          onOk: () => openTransferWithSource(fund.id)
-                        });
+                        setDirectDepositingFund(fund);
+                        directDepositForm.resetFields();
+                        setIsDirectDepositModalOpen(true);
                       } else if (act.key === 'withdraw' || act.key === 'spend') {
                         openPayBillWithFund(fund.id);
                       } else if (act.key === 'repay') {
@@ -1264,6 +1286,86 @@ export default function PersonalFundManagement() {
           ]}
           pagination={{ pageSize: 5 }}
         />
+      </Modal>
+
+      {/* Modal Nạp tiền trực tiếp vào quỹ */}
+      <Modal
+        title={`Nạp tiền vào quỹ: ${directDepositingFund?.name || ''}`}
+        open={isDirectDepositModalOpen}
+        onCancel={() => {
+          setIsDirectDepositModalOpen(false);
+          directDepositForm.resetFields();
+        }}
+        footer={null}
+        destroyOnClose
+        width={450}
+      >
+        <Form
+          form={directDepositForm}
+          layout="vertical"
+          onFinish={handleDirectDeposit}
+          className={styles.modalForm}
+        >
+          <Form.Item
+            name="amount"
+            label={<span style={{ fontWeight: 600, color: '#202124', fontSize: '13px' }}>Số tiền muốn nạp (đ)</span>}
+            rules={[
+              { required: true, message: 'Vui lòng nhập số tiền nạp!' },
+              { type: 'number', min: 1000, message: 'Số tiền tối thiểu nạp là 1,000 đ!' }
+            ]}
+          >
+            <InputNumber
+              className={styles.amountInputNumber}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
+              placeholder="Nhập số tiền nạp (VND)"
+              style={{ width: '100%', borderRadius: 8 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label={<span style={{ fontWeight: 600, color: '#202124', fontSize: '13px' }}>Mô tả giao dịch</span>}
+            initialValue="Nạp tiền từ chuyển khoản ngoài"
+          >
+            <Input
+              placeholder="Nhập mô tả nạp tiền..."
+              style={{
+                borderRadius: 8,
+                backgroundColor: '#F1F4F7',
+                border: 'none',
+                padding: '10px 14px',
+                fontSize: '13px'
+              }}
+            />
+          </Form.Item>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center', marginTop: 24 }}>
+            <Button
+              type="text"
+              onClick={() => setIsDirectDepositModalOpen(false)}
+              style={{ color: '#5F6368', fontWeight: 600, fontSize: '13px', height: 38 }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={directDepositLoading}
+              style={{
+                backgroundColor: '#1A73E8',
+                borderRadius: 8,
+                height: 38,
+                padding: '0 24px',
+                fontWeight: 600,
+                fontSize: '13px',
+                border: 'none'
+              }}
+            >
+              Xác nhận nạp
+            </Button>
+          </div>
+        </Form>
       </Modal>
     </>
   );

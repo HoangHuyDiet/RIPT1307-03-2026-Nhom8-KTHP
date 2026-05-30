@@ -385,6 +385,33 @@ public class PersonalFundServiceImpl implements PersonalFundService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void deposit(Long userId, Long fundId, BigDecimal amount, String description) {
+        log.info("deposit: userId={}, fundId={}, amount={}", userId, fundId, amount);
+        PersonalFund fund = findUserFund(userId, fundId);
+        validateFundActive(fund);
+
+        fund.setBalance(fund.getBalance().add(amount));
+        personalFundRepository.save(fund);
+
+        Category category = categoryRepository.findByUserIdAndType(userId, "INCOME")
+                .stream().findFirst().orElse(null);
+
+        Transaction tx = Transaction.builder()
+                .user(fund.getUser())
+                .personalFund(fund)
+                .category(category)
+                .amount(amount)
+                .type("INCOME")
+                .description(description != null && !description.isBlank() ? description : "Nạp tiền vào quỹ (Chuyển khoản ngoài)")
+                .date(LocalDate.now())
+                .isApproved(true)
+                .build();
+
+        transactionRepository.save(tx);
+    }
+
     private PersonalFund findUserFund(Long userId, Long fundId) {
         return personalFundRepository.findByIdAndUserId(fundId, userId)
                 .orElseThrow(() -> new IllegalArgumentException(

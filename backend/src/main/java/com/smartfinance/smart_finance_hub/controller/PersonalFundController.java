@@ -5,6 +5,7 @@ import com.smartfinance.smart_finance_hub.dto.request.CreatePersonalFundRequestW
 import com.smartfinance.smart_finance_hub.dto.request.InternalTransferRequest;
 import com.smartfinance.smart_finance_hub.dto.request.UpdatePersonalFundRequest;
 import com.smartfinance.smart_finance_hub.dto.request.PayBillRequest;
+import com.smartfinance.smart_finance_hub.dto.request.DepositRequest;
 import com.smartfinance.smart_finance_hub.dto.response.ApiResponse;
 import com.smartfinance.smart_finance_hub.dto.response.AssetAllocationResponse;
 import com.smartfinance.smart_finance_hub.dto.response.FundBalanceHistoryResponse;
@@ -199,6 +200,15 @@ public class PersonalFundController {
     @PostMapping("/reminder")
     public ResponseEntity<ApiResponse<Void>> reminder() {
         return ResponseEntity.ok(ApiResponse.success("Lên lịch nhắc thanh toán thành công!"));
+    }
+
+    @PostMapping("/{id}/deposit")
+    public ResponseEntity<ApiResponse<Void>> deposit(
+            @PathVariable("id") Long fundId,
+            @RequestBody DepositRequest request) {
+        Long userId = getCurrentUserId();
+        personalFundService.deposit(userId, fundId, request.getAmount(), request.getDescription());
+        return ResponseEntity.ok(ApiResponse.success("Nạp tiền vào quỹ thành công!"));
     }
 
     private Long getCurrentUserId() {

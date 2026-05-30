@@ -47,4 +47,6 @@ public interface PersonalFundService {
     List<FundBalanceHistoryResponse> getGlobalBalanceHistory(Long userId, LocalDate startDate, LocalDate endDate);
 
     List<TransactionResponse> getRecentTransactions(Long userId);
+
+    void deposit(Long userId, Long fundId, BigDecimal amount, String description);
 }
