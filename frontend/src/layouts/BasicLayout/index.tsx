@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'umi';
 import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Input, Badge, Popover, List, Tag, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
@@ -19,7 +19,10 @@ import {
 } from '@ant-design/icons';
 import styles from './index.less';
 import { useNotificationStore, FundNotification } from '@/store/useNotificationStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import request from '@/utils/request';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 
 const { Header, Sider, Content } = Layout;
@@ -50,15 +53,120 @@ const PiggyBankIcon = (props: any) => (
 export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
   const notifications = useNotificationStore((s) => s.notifications);
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const removeNotification = useNotificationStore((s) => s.removeNotification);
   const addNotification = useNotificationStore((s) => s.addNotification);
+  const [serverRequests, setServerRequests] = useState<FundNotification[]>([]);
+  const [serverMemberNotifications, setServerMemberNotifications] = useState<FundNotification[]>([]);
 
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectingItem, setRejectingItem] = useState<FundNotification | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  const fetchPendingFundRequests = async () => {
+    if (!user?.email) {
+      setServerRequests([]);
+      setServerMemberNotifications([]);
+      return;
+    }
+
+    try {
+      const fundsRes = await request.get('/funds/list');
+      const funds = fundsRes.data || [];
+      const ownedFunds = funds.filter((fund: any) =>
+        (fund.members || []).some((member: any) =>
+          member.email === user.email && member.role === 'OWNER'
+        )
+      );
+      const txLists = await Promise.all(
+        ownedFunds.map(async (fund: any) => {
+          try {
+            const txRes = await request.get('/funds/transactions', { params: { fundId: fund.id } });
+            return (txRes.data || [])
+              .filter((tx: any) => tx.is_approved === false && tx.status !== 'REJECTED')
+              .map((tx: any) => ({
+                id: String(tx.id),
+                type: tx.type === 'INCOME' ? 'DEPOSIT_REQUEST' : 'WITHDRAW_REQUEST',
+                fundId: fund.id,
+                fundName: fund.name,
+                amount: Number(tx.amount),
+                description: tx.description || '',
+                requesterName: tx.user_display_name || 'Người dùng',
+                bankAccount: tx.bank_account,
+                bankName: tx.bank_name,
+                date: tx.date,
+                read: false,
+                targetRole: 'OWNER'
+              } as FundNotification));
+          } catch (error) {
+            console.warn(`Khong the tai yeu cau cho duyet cua quy ${fund.id}:`, error);
+            return [];
+          }
+        })
+      );
+
+      setServerRequests(txLists.flat());
+
+      const myNotificationsRes = await request.get('/funds/my-notifications');
+      setServerMemberNotifications(myNotificationsRes.data || []);
+    } catch (error) {
+      console.error('Lỗi tải yêu cầu quỹ chờ duyệt:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingFundRequests();
+    window.addEventListener('transaction-approved', fetchPendingFundRequests);
+    const timer = window.setInterval(fetchPendingFundRequests, 30000);
+
+    return () => {
+      window.removeEventListener('transaction-approved', fetchPendingFundRequests);
+      window.clearInterval(timer);
+    };
+  }, [user?.email]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+    if (!user?.email || !token) return;
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS('/ws'),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      onConnect: () => {
+        client.subscribe('/user/queue/notifications', (frame) => {
+          const notification = JSON.parse(frame.body);
+          addNotification({
+            ...notification,
+            id: String(notification.id || `ws_${Date.now()}`),
+            read: false,
+          });
+        });
+      },
+      onStompError: (frame) => {
+        console.error('Loi Socket STOMP:', frame.headers.message);
+      },
+    });
+
+    client.activate();
+
+    return () => {
+      if (client.active) {
+        client.deactivate();
+      }
+    };
+  }, [user?.email, addNotification]);
+
+  const visibleNotifications = [
+    ...serverRequests,
+    ...serverMemberNotifications,
+    ...notifications.filter((n) => !(n.targetRole === 'OWNER' && n.type.includes('REQUEST')))
+  ];
+
+  const visibleUnreadCount = visibleNotifications.filter((n) => !n.read).length;
 
   const handleApproveRequest = async (req: FundNotification, action: 'approved' | 'rejected', reason?: string) => {
     try {
@@ -70,24 +178,14 @@ export default function BasicLayout() {
       if (data.success) {
         if (action === 'approved') {
           message.success(`Đã duyệt thành công!`);
+          fetchPendingFundRequests();
           window.dispatchEvent(new Event('transaction-approved'));
         } else {
           message.info(`Đã từ chối yêu cầu.`);
-          addNotification({
-            id: `rej_${Date.now()}`,
-            type: req.type === 'DEPOSIT_REQUEST' ? 'DEPOSIT_REJECTED' : 'WITHDRAW_REJECTED',
-            fundId: req.fundId,
-            fundName: req.fundName,
-            amount: req.amount,
-            description: reason ? `Lý do: ${reason}` : 'Trưởng nhóm không nêu lý do',
-            requesterName: req.requesterName,
-            date: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            read: false,
-            targetRole: 'MEMBER'
-          });
         }
 
         removeNotification(req.id);
+        fetchPendingFundRequests();
       }
     } catch {
       message.error('Lỗi xử lý duyệt yêu cầu!');
@@ -193,13 +291,13 @@ export default function BasicLayout() {
               title={<span style={{ fontWeight: 700 }}>Thông báo</span>}
               content={
                 <div style={{ width: 380, maxHeight: 400, overflowY: 'auto' }}>
-                  {notifications.length === 0 ? (
+                  {visibleNotifications.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: 24, color: '#8c98a5' }}>
                       Không có thông báo
                     </div>
                   ) : (
                     <List
-                      dataSource={notifications}
+                      dataSource={visibleNotifications}
                       renderItem={(item: FundNotification) => {
                         const isRequest = item.type === 'DEPOSIT_REQUEST' || item.type === 'WITHDRAW_REQUEST';
                         return (
@@ -237,7 +335,7 @@ export default function BasicLayout() {
                               )}
                               {item.description && (
                                 <div style={{ fontSize: 12, color: '#8c98a5', marginTop: 2 }}>
-                                  {item.type === 'SYSTEM_INFO' ? item.description : (item.type.includes('WITHDRAW') ? `Lý do: ${item.description}` : `Nội dung: ${item.description}`)}
+                                  {item.type === 'SYSTEM_INFO' || item.type.includes('REJECTED') ? item.description : (item.type.includes('WITHDRAW') ? `Lý do: ${item.description}` : `Nội dung: ${item.description}`)}
                                 </div>
                               )}
                               {item.bankAccount && (
@@ -279,7 +377,7 @@ export default function BasicLayout() {
                 </div>
               }
             >
-              <Badge count={unreadCount()} size="small" offset={[-2, 2]}>
+              <Badge count={visibleUnreadCount} size="small" offset={[-2, 2]}>
                 <BellOutlined className={styles.bellIcon} />
               </Badge>
             </Popover>

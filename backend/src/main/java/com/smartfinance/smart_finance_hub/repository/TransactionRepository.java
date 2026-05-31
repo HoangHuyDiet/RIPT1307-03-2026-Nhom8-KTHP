@@ -4,6 +4,8 @@ import com.smartfinance.smart_finance_hub.entity.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -18,6 +20,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByShareFundId(Long fundId);
 
+    @Query("""
+            select t from Transaction t
+            left join fetch t.user
+            left join fetch t.category
+            where t.shareFund.id = :fundId
+            order by t.date desc, t.id desc
+            """)
+    List<Transaction> findByShareFundIdWithDetails(@Param("fundId") Long fundId);
+
     Page<Transaction> findByShareFundId(Long fundId, Pageable pageable);
 
     Page<Transaction> findByShareFundIdAndType(Long fundId, String type, Pageable pageable);
@@ -27,6 +38,19 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByShareFundIdAndStatus(Long fundId, String status);
 
     List<Transaction> findByShareFundIdInAndStatus(List<Long> fundIds, String status);
+
+    @Query("""
+            select t from Transaction t
+            left join fetch t.shareFund
+            left join fetch t.user
+            where t.user.id = :userId
+              and t.status = :status
+              and t.shareFund is not null
+            order by t.updatedAt desc, t.id desc
+            """)
+    List<Transaction> findSharedFundTransactionsByUserIdAndStatusWithDetails(
+            @Param("userId") Long userId,
+            @Param("status") String status);
 
     long countByShareFundId(Long fundId);
 

@@ -12,6 +12,7 @@ import com.smartfinance.smart_finance_hub.service.SharedFundService;
 import com.smartfinance.smart_finance_hub.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final FundMessageRepository fundMessageRepository;
     private final FundActivityRepository fundActivityRepository;
     private final MailService mailService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -339,12 +341,41 @@ public class SharedFundServiceImpl implements SharedFundService {
             transaction.setIsApproved(false);
             transaction.setStatus("REJECTED");
             transaction.setRejectReason(rejectReason);
+            sendTransactionRejectedNotification(transaction, fund, rejectReason);
             log.info("TRANSACTION REJECTED: transactionId={}", transactionId);
         } else {
             throw new IllegalArgumentException("Hành động không hợp lệ! Chỉ chấp nhận approved hoặc rejected.");
         }
 
         return transactionRepository.save(transaction);
+    }
+
+    private void sendTransactionRejectedNotification(Transaction transaction, ShareFund fund, String rejectReason) {
+        User requester = transaction.getUser();
+        if (requester == null || requester.getEmail() == null) {
+            return;
+        }
+
+        String type = TransactionType.INCOME.name().equalsIgnoreCase(transaction.getType())
+                ? "DEPOSIT_REJECTED"
+                : "WITHDRAW_REJECTED";
+        String reason = rejectReason != null && !rejectReason.isBlank()
+                ? rejectReason.trim()
+                : "Chu quy khong neu ly do";
+
+        java.util.Map<String, Object> notification = new java.util.HashMap<>();
+        notification.put("id", "tx_rejected_" + transaction.getId());
+        notification.put("type", type);
+        notification.put("fundId", fund.getId());
+        notification.put("fundName", fund.getName());
+        notification.put("amount", transaction.getAmount());
+        notification.put("description", "Ly do tu choi: " + reason);
+        notification.put("requesterName", requester.getDisplayName() != null ? requester.getDisplayName() : requester.getEmail());
+        notification.put("date", java.time.LocalDateTime.now().toString());
+        notification.put("read", false);
+        notification.put("targetRole", "MEMBER");
+
+        messagingTemplate.convertAndSendToUser(requester.getEmail(), "/queue/notifications", notification);
     }
 
     @Override
@@ -404,6 +435,25 @@ public class SharedFundServiceImpl implements SharedFundService {
                 .build();
 
         fundMemberRepository.save(ownerMember);
+
+        BigDecimal initialAmount = initialContribution != null ? initialContribution : BigDecimal.ZERO;
+        if (initialAmount.compareTo(BigDecimal.ZERO) > 0) {
+            Transaction initialTransaction = Transaction.builder()
+                    .user(user)
+                    .shareFund(savedFund)
+                    .amount(initialAmount)
+                    .type(TransactionType.INCOME.name())
+                    .description("Đóng góp ban đầu")
+                    .date(java.time.LocalDate.now())
+                    .isApproved(true)
+                    .status("APPROVED")
+                    .approvedByUser(user)
+                    .approvedAt(LocalDateTime.now())
+                    .build();
+
+            transactionRepository.save(initialTransaction);
+        }
+
         return savedFund;
     }
 
@@ -583,7 +633,7 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Bạn không có quyền truy cập giao dịch của quỹ này!");
         }
 
-        return transactionRepository.findByShareFundId(fundId);
+        return transactionRepository.findByShareFundIdWithDetails(fundId);
     }
 
     @Override
@@ -714,7 +764,11 @@ public class SharedFundServiceImpl implements SharedFundService {
 
     @Override
     @Transactional
-    public String verifyInvitationToken(String token, Long userId) {
+    public String verifyInvitationToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã xác nhận không hợp lệ!");
+        }
+
         FundInvitation invitation = fundInvitationRepository.findByInvitationToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lời mời với mã xác nhận đã cho!"));
 
@@ -728,12 +782,8 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalStateException("Lời mời đã hết hạn!");
         }
 
-        User respondUser = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
-
-        if (!respondUser.getEmail().equalsIgnoreCase(invitation.getInvitedEmail())) {
-            throw new IllegalArgumentException("Bạn không phải người được mời!");
-        }
+        User respondUser = userRepository.findByEmail(invitation.getInvitedEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng được mời!"));
 
         if ("MEMBER_INVITE".equals(invitation.getType())) {
             invitation.setStatus(InvitationStatus.ACCEPTED.name());

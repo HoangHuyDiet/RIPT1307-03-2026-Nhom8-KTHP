@@ -2,7 +2,6 @@ import React from 'react';
 import { Modal, Form, Input, Space, Button, message } from 'antd';
 import request from '@/utils/request';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useNotificationStore } from '@/store/useNotificationStore';
 import { GroupFund } from '../../types';
 
 interface WithdrawModalProps {
@@ -14,7 +13,6 @@ interface WithdrawModalProps {
 export default function WithdrawModal({ isOpen, onClose, selectedGroup }: WithdrawModalProps) {
   const [withdrawForm] = Form.useForm();
   const user = useAuthStore(state => state.user);
-  const addNotification = useNotificationStore(state => state.addNotification);
 
   const handleWithdraw = async (values: any) => {
     if (!selectedGroup) return;
@@ -38,20 +36,6 @@ export default function WithdrawModal({ isOpen, onClose, selectedGroup }: Withdr
           message.success('Đã rút tiền từ quỹ thành công!');
           window.dispatchEvent(new Event('transaction-approved'));
         } else {
-          addNotification({
-            id: data.data.requestId,
-            type: 'WITHDRAW_REQUEST',
-            fundId: selectedGroup.id,
-            fundName: selectedGroup.name,
-            amount,
-            description: values.reason || 'Rút tiền từ quỹ',
-            requesterName: user?.display_name || user?.email || 'Người dùng ẩn danh',
-            bankAccount: values.bankAccount,
-            bankName: values.bankName,
-            date: new Date().toISOString().slice(0, 10),
-            read: false,
-            targetRole: 'OWNER'
-          });
           message.success('Đã gửi yêu cầu rút tiền! Chờ chủ quỹ duyệt.');
         }
         onClose();

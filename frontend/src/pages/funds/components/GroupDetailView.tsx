@@ -180,6 +180,62 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
       .slice(0, 3);
   }, [fundTransactions]);
 
+  const topContributorsDataV2 = React.useMemo(() => {
+    const contributors = new Map<string, {
+      id: string;
+      name: string;
+      email?: string;
+      amount: number;
+    }>();
+
+    fundTransactions.forEach((tx) => {
+      const isApproved = tx.status === 'APPROVED' || tx.is_approved === true;
+      if (tx.type !== 'INCOME' || !isApproved) return;
+
+      const key = String(tx.user_id || tx.user_email || tx.user_display_name || tx.id);
+      const name = tx.user_display_name || tx.user_email || 'Khach';
+      const current = contributors.get(key) || {
+        id: key,
+        name,
+        email: tx.user_email,
+        amount: 0
+      };
+
+      current.name = current.name || name;
+      current.email = current.email || tx.user_email;
+      current.amount += Number(tx.amount || 0);
+      contributors.set(key, current);
+    });
+
+    group.members.forEach((member) => {
+      const key = member.email || member.name;
+      if (!contributors.has(key)) {
+        contributors.set(key, {
+          id: key,
+          name: member.name || member.email || 'Thanh vien',
+          email: member.email,
+          amount: 0
+        });
+      }
+    });
+
+    const colors = ['#595959', '#1A73E8', '#8C8C8C', '#FA8C16', '#52C41A'];
+
+    return Array.from(contributors.values())
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3)
+      .map((item, index) => {
+        const initials = item.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+        return {
+          id: item.id,
+          name: item.name,
+          avatarInitials: initials,
+          avatarColor: colors[index % colors.length],
+          amount: item.amount
+        };
+      });
+  }, [fundTransactions, group.members]);
+
   const fetchFundTransactions = async (fundId: number) => {
     setLoadingTx(true);
     try {
@@ -661,7 +717,7 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
               </div>
               
               <div className={styles.contributorsList} style={{ marginTop: 16 }}>
-                {topContributorsData.map((c, idx) => (
+                {topContributorsDataV2.map((c, idx) => (
                   <div className={styles.contributorItem} key={c.id}>
                     <Space size="middle">
                       <span className={styles.rankText}>{idx + 1}</span>

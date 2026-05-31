@@ -38,5 +38,5 @@ public interface SharedFundService {
 
     java.util.List<com.smartfinance.smart_finance_hub.dto.response.FundDiscussionResponse> getDiscussions(Long fundId, Long userId);
 
-    String verifyInvitationToken(String token, Long userId);
+    String verifyInvitationToken(String token);
 }
