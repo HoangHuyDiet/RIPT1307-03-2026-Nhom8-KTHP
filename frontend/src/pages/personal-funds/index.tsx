@@ -256,8 +256,13 @@ export default function PersonalFundManagement() {
   const handleDepositToGoal = async (values: any) => {
     const { goalId, amount, sourceId } = values;
     setDepositLoading(true);
+    const isExternal = sourceId === 'external';
     try {
-      await api.patch(`/saving-goals/${goalId}/deposit`, { amount: Number(amount), sourceId });
+      await api.patch(`/saving-goals/${goalId}/deposit`, {
+        amount: Number(amount),
+        sourceId: isExternal ? undefined : sourceId,
+        personalFundId: isExternal ? null : Number(sourceId)
+      });
       message.success('Nạp tiền vào mục tiêu tiết kiệm thành công!');
       fetchFundsData();
       setIsDepositModalOpen(false);
@@ -1098,7 +1103,10 @@ export default function PersonalFundManagement() {
               >
                 <Select
                   placeholder="Chọn tài khoản nguồn"
-                  options={funds.map(f => ({ value: f.id, label: `${f.name} (${formatCurrency(f.balance)})` }))}
+                  options={[
+                    { value: 'external', label: 'Nạp từ bên ngoài (Không trích quỹ)' },
+                    ...funds.map(f => ({ value: f.id, label: `${f.name} (${formatCurrency(f.balance)})` }))
+                  ]}
                 />
               </Form.Item>
             </Col>

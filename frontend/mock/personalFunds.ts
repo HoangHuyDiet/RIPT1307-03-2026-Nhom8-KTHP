@@ -598,6 +598,54 @@ export const MOCK_SAVINGS_GOALS_API = [
   }
 ];
 
+export const MOCK_NOTIFICATIONS = [
+  {
+    id: 'notif_1',
+    title: 'Nhắc thanh toán hóa đơn',
+    content: 'Hóa đơn tiền điện tháng 05 của bạn trị giá 1,250,000 đ sẽ đến hạn thanh toán trong 3 ngày tới.',
+    type: 'BILL_REMINDER',
+    isRead: false,
+    createdAt: '2026-05-29T10:00:00.000Z',
+    link_action: '/transactions'
+  },
+  {
+    id: 'notif_2',
+    title: 'Mục tiêu sắp đạt',
+    content: 'Chúc mừng! Bạn đã hoàn thành 82% mục tiêu tiết kiệm "Du lịch Châu Âu".',
+    type: 'GOAL_ALERT',
+    isRead: false,
+    createdAt: '2026-05-28T09:15:00.000Z',
+    link_action: '/saving-goals'
+  },
+  {
+    id: 'notif_3',
+    title: 'Yêu cầu đóng góp quỹ nhóm',
+    content: 'Thành viên Bùi Minh đã gửi yêu cầu nạp 500,000 đ vào quỹ "Du Lịch Gia Đình".',
+    type: 'FUND_REQUEST',
+    isRead: true,
+    createdAt: '2026-05-27T14:30:00.000Z',
+    link_action: '/funds'
+  },
+  {
+    id: 'notif_4',
+    title: 'Báo cáo hàng tháng đã sẵn sàng',
+    content: 'Báo cáo tổng kết tài chính cá nhân tháng 05/2026 của bạn đã được khởi tạo thành công.',
+    type: 'REPORT_ALERT',
+    isRead: false,
+    createdAt: '2026-05-26T08:00:00.000Z',
+    link_action: '/dashboard'
+  },
+  {
+    id: 'notif_5',
+    title: 'Thiết bị đăng nhập mới',
+    content: 'Tài khoản của bạn đã được đăng nhập từ một thiết bị Windows mới vào lúc 16:24.',
+    type: 'SECURITY_ALERT',
+    isRead: true,
+    createdAt: '2026-05-25T16:24:00.000Z',
+    link_action: '/admin/users'
+  }
+];
+
 export default {
   'GET /api/personal-funds/summary': (req: any, res: any) => {
     const fundsSum = MOCK_FUNDS_LIST.reduce((acc, f) => acc + f.balance, 0);
@@ -682,17 +730,18 @@ export default {
   },
   'PATCH /api/saving-goals/:id/deposit': (req: any, res: any) => {
     const { id } = req.params;
-    const { amount, sourceId } = req.body;
+    const { amount, sourceId, personalFundId } = req.body;
+    const effectiveSourceId = sourceId || (personalFundId ? personalFundId.toString() : undefined);
     const goal = MOCK_SAVINGS_GOALS_API.find(g => g.id === parseInt(id));
     if (goal) {
       goal.currentAmount += amount;
-      if (sourceId) {
-        const fund = MOCK_FUNDS_LIST.find(f => f.id === sourceId);
+      if (effectiveSourceId) {
+        const fund = MOCK_FUNDS_LIST.find(f => f.id === effectiveSourceId);
         if (fund) {
           fund.balance -= amount;
         }
       }
-      res.json({ success: true, message: `Đã nạp ${amount.toLocaleString('vi-VN')} đ vào mục tiêu "${goal.name}" thành công!` });
+      res.json({ success: true, message: `Đã nạp ${amount.toLocaleString('vi-VN')} đ vào mục tiêu "${goal.name}" thành công!`, data: goal });
     } else {
       res.status(404).json({ success: false, message: 'Không tìm thấy mục tiêu!' });
     }
@@ -717,5 +766,30 @@ export default {
     } else {
       res.status(404).json({ success: false, message: 'Không tìm thấy quỹ!' });
     }
+  },
+  'POST /api/personal-funds/:id/deposit': (req: any, res: any) => {
+    const { id } = req.params;
+    const { amount, description } = req.body;
+    const depositAmount = Number(amount);
+    const fund = MOCK_FUNDS_LIST.find(f => f.id === id);
+    if (fund) {
+      fund.balance += depositAmount;
+      const newTx = {
+        key: Date.now().toString(),
+        date: new Date().toISOString(),
+        description: description || 'Nạp tiền vào quỹ',
+        category: 'Thu nhập',
+        fund: fund.name,
+        amount: depositAmount,
+        type: 'INCOME'
+      };
+      MOCK_RECENT_TRANSACTIONS.unshift(newTx);
+      res.json({ success: true, message: 'Nạp tiền vào quỹ thành công', data: fund });
+    } else {
+      res.status(404).json({ success: false, message: 'Không tìm thấy quỹ!' });
+    }
+  },
+  'GET /api/notifications': (req: any, res: any) => {
+    res.json({ success: true, data: MOCK_NOTIFICATIONS });
   },
 };

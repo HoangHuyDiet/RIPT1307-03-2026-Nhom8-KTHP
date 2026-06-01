@@ -141,9 +141,9 @@ export default function SavingGoals() {
       });
   }, []);
 
-  const [highlightedGoalId, setHighlightedGoalId] = useState<number | null>(null);
-
   const pinnedGoals = goals.filter(g => g.isPinned).slice(0, 5);
+
+  const [highlightedGoalId, setHighlightedGoalId] = useState<number | null>(null);
 
   const scrollToGoal = (goalId: number) => {
     const element = document.getElementById(`goal-card-${goalId}`);
@@ -158,9 +158,19 @@ export default function SavingGoals() {
   const [editingGoal, setEditingGoal] = useState<SavingGoal | null>(null);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [activeGoalId, setActiveGoalId] = useState<number | null>(null);
+  const [personalFunds, setPersonalFunds] = useState<any[]>([]);
 
   const [goalForm] = Form.useForm();
   const [depositForm] = Form.useForm();
+
+  useEffect(() => {
+    api.get('/personal-funds/list')
+      .then(res => {
+        const data = res.data?.data || res.data || [];
+        setPersonalFunds(Array.isArray(data) ? data : []);
+      })
+      .catch(err => console.error('Failed to fetch personal funds', err));
+  }, []);
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val);
@@ -273,19 +283,34 @@ export default function SavingGoals() {
   const handleOpenDepositModal = (goalId: number) => {
     setActiveGoalId(goalId);
     depositForm.resetFields();
+    api.get('/personal-funds/list')
+      .then(res => {
+        const data = res.data?.data || res.data || [];
+        setPersonalFunds(Array.isArray(data) ? data : []);
+      })
+      .catch(err => console.error('Failed to fetch personal funds', err));
     setIsDepositModalOpen(true);
   };
 
-  const handleDepositSubmit = async (values: { amount: number }) => {
+  const handleDepositSubmit = async (values: { amount: number; personalFundId: any }) => {
     if (activeGoalId === null) return;
     const addAmount = Number(values.amount);
+    const fundId = values.personalFundId;
+    const isExternal = fundId === 'external';
 
     let updated: SavingGoal[] = goals;
     try {
-      const res = await api.patch(`/saving-goals/${activeGoalId}/deposit`, { amount: addAmount });
+      const res = await api.patch(`/saving-goals/${activeGoalId}/deposit`, {
+        amount: addAmount,
+        personalFundId: isExternal ? null : Number(fundId),
+        sourceId: isExternal ? undefined : fundId.toString()
+      });
       const saved: SavingGoal = res.data.data;
       updated = goals.map(g => g.id === activeGoalId ? saved : g);
-    } catch {
+      message.success('Gửi tiền vào mục tiêu tiết kiệm thành công!');
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.response?.data?.message || 'Gửi tiền vào mục tiêu tiết kiệm thất bại!');
       updated = goals.map(g => {
         if (g.id === activeGoalId) {
           const updatedAmount = g.currentAmount + addAmount;
@@ -297,7 +322,6 @@ export default function SavingGoals() {
 
     setGoals(updated);
     syncCache(updated);
-    message.success('Gửi tiền vào quỹ tiết kiệm thành công!');
     setIsDepositModalOpen(false);
     setActiveGoalId(null);
   };
@@ -637,6 +661,23 @@ export default function SavingGoals() {
           className={styles.modalForm}
         >
           <Form.Item
+            name="personalFundId"
+            label="Nguồn trích tiền (Quỹ cá nhân)"
+            rules={[{ required: true, message: 'Vui lòng chọn quỹ nguồn để trích tiền!' }]}
+          >
+            <Select
+              placeholder="Chọn quỹ cá nhân trích tiền..."
+              options={[
+                { value: 'external', label: 'Nạp từ bên ngoài (Không trích quỹ)' },
+                ...personalFunds.map((f: any) => ({
+                  value: f.id,
+                  label: `${f.name} (Số dư: ${new Intl.NumberFormat('vi-VN').format(f.balance)} đ)`,
+                }))
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
             name="amount"
             label="Số tiền muốn tích lũy thêm"
             rules={[
@@ -653,6 +694,7 @@ export default function SavingGoals() {
               formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={value => value!.replace(/(,*)/g, '') as any}
               placeholder="Nhập số tiền gửi"
+              style={{ width: '100%' }}
             />
           </Form.Item>
 
