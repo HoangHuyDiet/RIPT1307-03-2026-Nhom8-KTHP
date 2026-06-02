@@ -44,6 +44,7 @@ import { history } from 'umi';
 import dayjs from 'dayjs';
 import styles from './index.less';
 import api from '../../utils/api';
+import { exportTransactionsToExcel, exportTransactionsToPDF } from '../../utils/exportUtils';
 
 const WalletIcon = () => (
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1063,7 +1064,6 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {}
       <Modal
         title={
           <Space>
@@ -1159,7 +1159,6 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {}
       <Modal
         title="Sửa thông tin quỹ"
         open={isEditModalOpen}
@@ -1226,17 +1225,22 @@ export default function PersonalFundManagement() {
         </Form>
       </Modal>
 
-      {}
       <Modal
         title={`Sao kê giao dịch: ${selectedFundForStatement?.name || ''}`}
         open={isStatementModalOpen}
         onCancel={() => setIsStatementModalOpen(false)}
         width={800}
         footer={[
-          <Button key="pdf" type="primary" danger onClick={() => message.success('Xuất sao kê PDF thành công!')}>
+          <Button key="pdf" type="primary" danger onClick={() => {
+            exportTransactionsToPDF(fundTransactions, selectedFundForStatement?.name);
+            message.success('Đang tải file PDF sao kê...');
+          }}>
             Xuất PDF
           </Button>,
-          <Button key="excel" type="primary" style={{ backgroundColor: '#34A853', borderColor: '#34A853' }} onClick={() => message.success('Xuất sao kê Excel thành công!')}>
+          <Button key="excel" type="primary" style={{ backgroundColor: '#34A853', borderColor: '#34A853' }} onClick={() => {
+            exportTransactionsToExcel(fundTransactions, selectedFundForStatement?.name);
+            message.success('Đang tải file Excel sao kê...');
+          }}>
             Xuất Excel
           </Button>,
           <Button key="close" onClick={() => setIsStatementModalOpen(false)}>
@@ -1288,7 +1292,6 @@ export default function PersonalFundManagement() {
         />
       </Modal>
 
-      {}
       <Modal
         title={`Nạp tiền vào quỹ: ${directDepositingFund?.name || ''}`}
         open={isDirectDepositModalOpen}
@@ -1411,9 +1414,11 @@ export default function PersonalFundManagement() {
                   ],
                   onClick: ({ key }) => {
                     if (key === 'excel') {
-                      message.success('Xuất file Excel thành công!');
+                      exportTransactionsToExcel(filteredTransactions, 'Tất cả quỹ', 'giao-dich-gan-day');
+                      message.success('Đang tải file Excel...');
                     } else if (key === 'pdf') {
-                      message.success('Xuất file PDF thành công!');
+                      exportTransactionsToPDF(filteredTransactions, 'Tất cả quỹ', 'giao-dich-gan-day');
+                      message.success('Đang tải file PDF...');
                     }
                   }
                 }}
