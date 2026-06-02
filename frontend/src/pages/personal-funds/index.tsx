@@ -96,7 +96,7 @@ const columns = [
     dataIndex: 'date',
     key: 'date',
     width: '18%',
-    render: (text: string) => formatTransactionDate(text),
+    render: (text: string, record: any) => formatTransactionDate(record.createdAt || text),
   },
   {
     title: 'Mô tả',
