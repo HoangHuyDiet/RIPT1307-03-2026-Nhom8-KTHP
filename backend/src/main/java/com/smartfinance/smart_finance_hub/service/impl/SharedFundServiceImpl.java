@@ -36,6 +36,7 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final FundActivityRepository fundActivityRepository;
     private final MailService mailService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final PersonalFundRepository personalFundRepository;
 
     @Override
     @Transactional
@@ -197,10 +198,19 @@ public class SharedFundServiceImpl implements SharedFundService {
 
         boolean autoApprove = (members.size() <= 1);
 
+        PersonalFund selectedPersonalFund = null;
+        if (request.getPersonalFundId() != null) {
+            selectedPersonalFund = personalFundRepository.findById(request.getPersonalFundId()).orElse(null);
+            if (selectedPersonalFund != null && selectedPersonalFund.getBalance().compareTo(request.getAmount()) < 0) {
+                throw new IllegalArgumentException("Số dư trong quỹ cá nhân không đủ để nạp tiền!");
+            }
+        }
+
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
                 .shareFund(fund)
+                .personalFund(selectedPersonalFund)
                 .amount(request.getAmount())
                 .type(transactionType.name())
                 .description(request.getDescription())
@@ -215,6 +225,38 @@ public class SharedFundServiceImpl implements SharedFundService {
             java.math.BigDecimal currentBalance = fund.getBalance() != null ? fund.getBalance() : java.math.BigDecimal.ZERO;
             if (TransactionType.INCOME == transactionType) {
                 fund.setBalance(currentBalance.add(request.getAmount()));
+                
+                if (transaction.getPersonalFund() != null) {
+                    PersonalFund pFund = transaction.getPersonalFund();
+                    pFund.setBalance(pFund.getBalance().subtract(request.getAmount()));
+                    personalFundRepository.save(pFund);
+                    
+                    Category unclassifiedCategory = categoryRepository.findByUserIdAndType(user.getId(), "EXPENSE")
+                            .stream()
+                            .filter(c -> "Chưa phân loại".equalsIgnoreCase(c.getName()))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                Category newCat = Category.builder()
+                                        .name("Chưa phân loại")
+                                        .type("EXPENSE")
+                                        .user(user)
+                                        .build();
+                                return categoryRepository.save(newCat);
+                            });
+
+                    Transaction personalTx = Transaction.builder()
+                            .user(user)
+                            .personalFund(pFund)
+                            .category(unclassifiedCategory)
+                            .amount(request.getAmount())
+                            .type("EXPENSE")
+                            .description("Nạp tiền vào quỹ " + fund.getName())
+                            .date(request.getDate())
+                            .isApproved(true)
+                            .status("APPROVED")
+                            .build();
+                    transactionRepository.save(personalTx);
+                }
             } else if (TransactionType.EXPENSE == transactionType) {
                 fund.setBalance(currentBalance.subtract(request.getAmount()));
             }
@@ -332,6 +374,38 @@ public class SharedFundServiceImpl implements SharedFundService {
             if (TransactionType.INCOME == txType) {
                 fund.setBalance(currentBalance.add(transaction.getAmount()));
                 log.info("INCOME APPROVED: balance +{} -> new balance={}", transaction.getAmount(), fund.getBalance());
+                
+                if (transaction.getPersonalFund() != null) {
+                    PersonalFund pFund = transaction.getPersonalFund();
+                    pFund.setBalance(pFund.getBalance().subtract(transaction.getAmount()));
+                    personalFundRepository.save(pFund);
+                    
+                    Category unclassifiedCategory = categoryRepository.findByUserIdAndType(transaction.getUser().getId(), "EXPENSE")
+                            .stream()
+                            .filter(c -> "Chưa phân loại".equalsIgnoreCase(c.getName()))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                Category newCat = Category.builder()
+                                        .name("Chưa phân loại")
+                                        .type("EXPENSE")
+                                        .user(transaction.getUser())
+                                        .build();
+                                return categoryRepository.save(newCat);
+                            });
+
+                    Transaction personalTx = Transaction.builder()
+                            .user(transaction.getUser())
+                            .personalFund(pFund)
+                            .category(unclassifiedCategory)
+                            .amount(transaction.getAmount())
+                            .type("EXPENSE")
+                            .description("Nạp tiền vào quỹ " + fund.getName())
+                            .date(java.time.LocalDate.now())
+                            .isApproved(true)
+                            .status("APPROVED")
+                            .build();
+                    transactionRepository.save(personalTx);
+                }
             } else if (TransactionType.EXPENSE == txType) {
                 fund.setBalance(currentBalance.subtract(transaction.getAmount()));
                 log.info("EXPENSE APPROVED: balance -{} -> new balance={}", transaction.getAmount(), fund.getBalance());

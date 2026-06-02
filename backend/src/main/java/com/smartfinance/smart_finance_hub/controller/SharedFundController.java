@@ -246,9 +246,19 @@ public class SharedFundController {
             throw new IllegalArgumentException("Vui lòng tạo ít nhất một danh mục thu/chi trong hệ thống!");
         }
 
+        Long personalFundId = null;
+        if (body.get("personalFundId") != null) {
+            personalFundId = Long.valueOf(body.get("personalFundId").toString());
+        }
+
         com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest req = 
-                new com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest(
-                        amount, type, description, java.time.LocalDate.now(), category.getId());
+                new com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest();
+        req.setAmount(amount);
+        req.setType(type);
+        req.setDescription(description);
+        req.setDate(java.time.LocalDate.now());
+        req.setCategoryId(category.getId());
+        req.setPersonalFundId(personalFundId);
 
         com.smartfinance.smart_finance_hub.entity.Transaction tx = 
                 sharedFundService.createFundTransaction(fundId, req, userId);

@@ -605,7 +605,6 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
                       </Space>
                       <div style={{ textAlign: 'right' }}>
                         <div className={styles.amountGreen}>+{tx.amount.toLocaleString('vi-VN')} đ</div>
-                        <Tag color="success" className={styles.methodTag}>{tx.category_name}</Tag>
                       </div>
                     </div>
                   ))
