@@ -8,6 +8,7 @@ import com.smartfinance.smart_finance_hub.entity.Role;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.entity.UserRole;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
+import com.smartfinance.smart_finance_hub.exception.business.EmailDeliveryException;
 import com.smartfinance.smart_finance_hub.exception.business.UserAlreadyExistsException;
 import com.smartfinance.smart_finance_hub.repository.RoleRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
@@ -19,6 +20,7 @@ import com.smartfinance.smart_finance_hub.service.TwoFactorAuthService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,9 +72,9 @@ public class AuthServiceImpl implements AuthService {
         try {
             twoFactorAuthService.sendOtp(request.getEmail());
             log.info("Đã tạo tài khoản và gửi mã OTP cho: {}", newUser.getEmail());
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error("Lỗi hệ thống khi gửi email OTP đến {}: {}", newUser.getEmail(), e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+            throw new EmailDeliveryException("Không thể gửi mã OTP lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
         }
     }
 
@@ -102,9 +104,9 @@ public class AuthServiceImpl implements AuthService {
         try {
             twoFactorAuthService.resendOtp(email);
             log.info("Đã gửi lại mã OTP cho: {}", email);
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error("Lỗi gửi lại email OTP cho {}: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi lại email OTP, vui lòng thử lại sau!");
+            throw new EmailDeliveryException("Không thể gửi lại mã OTP lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
         }
     }
 
@@ -163,9 +165,9 @@ public class AuthServiceImpl implements AuthService {
         try {
             twoFactorAuthService.sendOtp(request.getEmail());
             log.info("Đã gửi mã OTP đặt lại mật khẩu cho: {}", request.getEmail());
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error("Lỗi gửi email OTP reset password cho {}: {}", request.getEmail(), e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+            throw new EmailDeliveryException("Không thể gửi mã OTP lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
         }
     }
 

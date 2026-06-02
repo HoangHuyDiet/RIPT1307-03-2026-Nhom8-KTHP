@@ -52,7 +52,9 @@ export default function Register() {
 
     } catch (error: any) {
       console.error('Registration failed:', error);
-      const errorMsg = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!';
+      const fieldErrors = error.response?.data?.data;
+      const firstFieldError = fieldErrors && Object.values(fieldErrors)[0];
+      const errorMsg = firstFieldError || error.response?.data?.message || 'Registration failed, please try again!';
       message.error(errorMsg);
     } finally {
       setLoading(false);
@@ -83,7 +85,8 @@ export default function Register() {
           label={<span className={styles.inputLabel}>Họ và tên</span>}
           name="name"
           rules={[
-            { required: true, message: 'Vui lòng nhập họ và tên của bạn!' }
+            { required: true, message: 'Please enter your full name!' },
+            { min: 3, max: 20, message: 'Full name must be 3-20 characters!' },
           ]}
         >
           <Input prefix={<UserOutlined className={styles.inputIcon} />} placeholder="Nhập họ và tên của bạn" />

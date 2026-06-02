@@ -9,6 +9,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -79,6 +80,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 ApiResponse.error("Unable to send email. Please try again later."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMail(MailException ex) {
+        log.error("handleMail: {}", ex.getMessage(), ex);
+        return new ResponseEntity<>(
+                ApiResponse.error("Không thể gửi email. Vui lòng kiểm tra cấu hình MAIL_USERNAME và MAIL_PASSWORD."),
+                HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(Exception.class)

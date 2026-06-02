@@ -1,5 +1,6 @@
 package com.smartfinance.smart_finance_hub.service.impl;
 
+import com.smartfinance.smart_finance_hub.exception.business.EmailDeliveryException;
 import com.smartfinance.smart_finance_hub.service.MailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -25,6 +27,18 @@ public class MailServiceImpl implements MailService {
     @Value("${app.mail.from-email:no-reply@smartfinance.com}")
     private String fromEmail;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${spring.mail.password:}")
+    private String mailPassword;
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
+    @Value("${app.mail.local-otp-fallback:false}")
+    private boolean localOtpFallbackEnabled;
+
     @Value("${app.mail.from-name}")
     private String fromName;
 
@@ -35,6 +49,11 @@ public class MailServiceImpl implements MailService {
     public void sendOtpEmail(String toEmail, String userName, String otpCode, int expiryMinutes)
             throws MessagingException {
         log.info("sendOtpEmail param: toEmail={}", toEmail);
+
+        if (canUseLocalOtpFallback()) {
+            log.warn("LOCAL OTP fallback - email was not sent. Use this OTP for {}: {}", toEmail, otpCode);
+            return;
+        }
 
         Context context = new Context();
         context.setVariable("userName", userName);
@@ -168,14 +187,17 @@ public class MailServiceImpl implements MailService {
 
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)
             throws MessagingException {
+        validateMailConfig();
+        String senderEmail = getSenderEmail();
+
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
-            helper.setFrom(fromEmail, fromName);
+            helper.setFrom(senderEmail, fromName);
         } catch (UnsupportedEncodingException e) {
             log.warn("setFrom fallback: {}", e.getMessage());
-            helper.setFrom(fromEmail);
+            helper.setFrom(senderEmail);
         }
 
         helper.setTo(toEmail);
@@ -186,24 +208,54 @@ public class MailServiceImpl implements MailService {
 
     private void sendHtmlEmailWithSender(String toEmail, String subject, String htmlContent, String senderEmail, String senderName)
             throws MessagingException {
+        validateMailConfig();
+        String systemSenderEmail = getSenderEmail();
+
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
             // Gmail SMTP only allows sending from the authenticated account
-            helper.setFrom(fromEmail, fromName);
+            helper.setFrom(systemSenderEmail, fromName);
             // Set replyTo so replies go to the actual person
             if (senderEmail != null && !senderEmail.trim().isEmpty()) {
                 helper.setReplyTo(senderEmail);
             }
         } catch (UnsupportedEncodingException e) {
             log.warn("setFrom fallback: {}", e.getMessage());
-            helper.setFrom(fromEmail);
+            helper.setFrom(systemSenderEmail);
         }
 
         helper.setTo(toEmail);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
         mailSender.send(message);
+    }
+
+    private void validateMailConfig() {
+        if (isPlaceholderMailConfig()) {
+            throw new EmailDeliveryException("Không thể gửi mã OTP lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
+        }
+
+        if (!StringUtils.hasText(mailUsername) || !StringUtils.hasText(mailPassword)) {
+            throw new EmailDeliveryException("Không thể gửi mã OTP lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
+        }
+    }
+
+    private boolean canUseLocalOtpFallback() {
+        return localOtpFallbackEnabled && isLocalProfile() && isPlaceholderMailConfig();
+    }
+
+    private boolean isLocalProfile() {
+        return activeProfiles != null && activeProfiles.toLowerCase().contains("local");
+    }
+
+    private boolean isPlaceholderMailConfig() {
+        return "your-email@gmail.com".equalsIgnoreCase(mailUsername.trim())
+                || "your-app-password".equals(mailPassword.trim());
+    }
+
+    private String getSenderEmail() {
+        return mailUsername.trim();
     }
 }

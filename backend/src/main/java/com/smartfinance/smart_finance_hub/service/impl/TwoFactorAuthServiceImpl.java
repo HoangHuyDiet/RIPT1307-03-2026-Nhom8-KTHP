@@ -3,6 +3,7 @@ package com.smartfinance.smart_finance_hub.service.impl;
 import com.smartfinance.smart_finance_hub.entity.OtpToken;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
+import com.smartfinance.smart_finance_hub.exception.business.EmailDeliveryException;
 import com.smartfinance.smart_finance_hub.repository.OtpTokenRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.MailService;
@@ -11,6 +12,7 @@ import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,12 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
     @Value("${app.2fa.otp-expiry-seconds}")
     private int otpExpirySeconds;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
+    @Value("${app.mail.local-otp-fallback:false}")
+    private boolean localOtpFallbackEnabled;
+
     @Override
     @Transactional
     public void sendOtp(String email) throws MessagingException {
@@ -43,7 +51,7 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
 
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
-        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        sendOtpEmailOrLogLocalFallback(email, user.getDisplayName(), otpCode, expiryMinutes);
 
         log.info("sendOtp success: {}", email);
     }
@@ -92,7 +100,7 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
 
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
-        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        sendOtpEmailOrLogLocalFallback(email, user.getDisplayName(), otpCode, expiryMinutes);
 
         log.info("resendOtp success: {}", email);
     }
@@ -155,5 +163,24 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
             otp.append(random.nextInt(10));
         }
         return otp.toString();
+    }
+
+    private void sendOtpEmailOrLogLocalFallback(String email, String displayName, String otpCode, int expiryMinutes)
+            throws MessagingException {
+        try {
+            mailService.sendOtpEmail(email, displayName, otpCode, expiryMinutes);
+        } catch (EmailDeliveryException | MailException | MessagingException e) {
+            if (isLocalOtpFallbackEnabled()) {
+                log.warn("Email OTP could not be sent in local profile. Use this OTP for {}: {}", email, otpCode);
+                return;
+            }
+            throw e;
+        }
+    }
+
+    private boolean isLocalOtpFallbackEnabled() {
+        return localOtpFallbackEnabled
+                && activeProfiles != null
+                && activeProfiles.toLowerCase().contains("local");
     }
 }
