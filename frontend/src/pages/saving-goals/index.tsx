@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Space, Button, Progress, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Skeleton, Pagination } from 'antd';
-import { PlusOutlined, HomeOutlined, CarOutlined, SafetyOutlined, CompassOutlined, LineChartOutlined, FolderOpenOutlined, RobotOutlined, DeleteOutlined, EditOutlined, DollarCircleOutlined, FlagOutlined, PushpinOutlined, PushpinFilled, MedicineBoxOutlined, BookOutlined, ShoppingOutlined, AppstoreOutlined, LaptopOutlined } from '@ant-design/icons';
+import { PlusOutlined, HomeOutlined, CarOutlined, SafetyOutlined, CompassOutlined, LineChartOutlined, FolderOpenOutlined, RobotOutlined, DeleteOutlined, EditOutlined, DollarCircleOutlined, FlagOutlined, PushpinOutlined, PushpinFilled, MedicineBoxOutlined, BookOutlined, ShoppingOutlined, AppstoreOutlined, LaptopOutlined, BankOutlined, GoldOutlined, GiftOutlined, TrophyOutlined, HeartOutlined, CoffeeOutlined, RocketOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import styles from './index.less';
 import api from '../../utils/api';
@@ -10,10 +10,10 @@ export interface SavingGoal {
   name: string;
   targetAmount: number;
   currentAmount: number;
-  currency?: 'VND' | 'USD';
+  currency?: 'VND';
   dueDate: string;
   status: 'ON_TRACK' | 'AT_RISK' | 'COMPLETED';
-  category: 'housing' | 'car' | 'emergency' | 'travel' | 'investment' | 'medical' | 'education' | 'shopping' | 'furniture' | 'electronics' | 'other';
+  category: 'housing' | 'car' | 'emergency' | 'travel' | 'investment' | 'medical' | 'education' | 'shopping' | 'furniture' | 'electronics' | 'bank' | 'gold' | 'gift' | 'trophy' | 'heart' | 'coffee' | 'rocket' | 'other';
   customCategory?: string;
   isPinned?: boolean;
 }
@@ -29,6 +29,13 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   shopping: <ShoppingOutlined />,
   furniture: <AppstoreOutlined />,
   electronics: <LaptopOutlined />,
+  bank: <BankOutlined />,
+  gold: <GoldOutlined />,
+  gift: <GiftOutlined />,
+  trophy: <TrophyOutlined />,
+  heart: <HeartOutlined />,
+  coffee: <CoffeeOutlined />,
+  rocket: <RocketOutlined />,
   other: <FolderOpenOutlined />,
 };
 
@@ -163,7 +170,7 @@ export default function SavingGoals() {
     goalForm.resetFields();
     goalForm.setFieldsValue({
       status: 'ON_TRACK',
-      category: 'other',
+      category: undefined,
       currentAmount: 0,
       currency: 'VND',
     });
@@ -188,7 +195,7 @@ export default function SavingGoals() {
       name: values.name,
       targetAmount: targetAmt,
       currentAmount: currentAmt,
-      currency: 'VND',
+      currency: 'VND' as const,
       dueDate: values.dueDate ? values.dueDate.format('YYYY-MM-DD') : '',
       status: isCompleted ? ('COMPLETED' as const) : (editingGoal ? (editingGoal.status === 'COMPLETED' ? ('ON_TRACK' as const) : editingGoal.status) : ('ON_TRACK' as const)),
       category: values.category,
@@ -544,17 +551,24 @@ export default function SavingGoals() {
             <Select
               placeholder="Chọn danh mục"
               options={[
-                { value: 'housing', label: 'Mua nhà' },
-                { value: 'car', label: 'Mua xe' },
-                { value: 'emergency', label: 'Dự phòng khẩn cấp' },
-                { value: 'travel', label: 'Du lịch & Giải trí' },
-                { value: 'investment', label: 'Quỹ đầu tư' },
-                { value: 'medical', label: 'Y tế' },
-                { value: 'education', label: 'Học tập' },
-                { value: 'shopping', label: 'Mua sắm' },
-                { value: 'furniture', label: 'Nội thất' },
-                { value: 'electronics', label: 'Đồ điện tử' },
-                { value: 'other', label: 'Mục tiêu khác' }
+                { value: 'housing', label: <Space><HomeOutlined /><span>Mua nhà</span></Space> },
+                { value: 'car', label: <Space><CarOutlined /><span>Mua xe</span></Space> },
+                { value: 'emergency', label: <Space><SafetyOutlined /><span>Dự phòng khẩn cấp</span></Space> },
+                { value: 'travel', label: <Space><CompassOutlined /><span>Du lịch & Giải trí</span></Space> },
+                { value: 'investment', label: <Space><LineChartOutlined /><span>Quỹ đầu tư</span></Space> },
+                { value: 'medical', label: <Space><MedicineBoxOutlined /><span>Y tế</span></Space> },
+                { value: 'education', label: <Space><BookOutlined /><span>Học tập</span></Space> },
+                { value: 'shopping', label: <Space><ShoppingOutlined /><span>Mua sắm</span></Space> },
+                { value: 'furniture', label: <Space><AppstoreOutlined /><span>Nội thất</span></Space> },
+                { value: 'electronics', label: <Space><LaptopOutlined /><span>Đồ điện tử</span></Space> },
+                { value: 'bank', label: <Space><BankOutlined /><span>Tài khoản / Ngân hàng</span></Space> },
+                { value: 'gold', label: <Space><GoldOutlined /><span>Vàng & Kim loại quý</span></Space> },
+                { value: 'gift', label: <Space><GiftOutlined /><span>Quà tặng & Đám cưới</span></Space> },
+                { value: 'trophy', label: <Space><TrophyOutlined /><span>Mục tiêu lớn / Thành tựu</span></Space> },
+                { value: 'heart', label: <Space><HeartOutlined /><span>Sức khỏe & Từ thiện</span></Space> },
+                { value: 'coffee', label: <Space><CoffeeOutlined /><span>Ăn uống & Cà phê</span></Space> },
+                { value: 'rocket', label: <Space><RocketOutlined /><span>Khởi nghiệp & Dự án</span></Space> },
+                { value: 'other', label: <Space><FolderOpenOutlined /><span>Mục tiêu khác</span></Space> }
               ]}
             />
           </Form.Item>
@@ -570,7 +584,7 @@ export default function SavingGoals() {
                   min={1 as any}
                   className={styles.amountInputNumber}
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
+                  parser={value => value!.replace(/(,*)/g, '') as any}
                   placeholder="Nhập số tiền"
                 />
               </Form.Item>
@@ -584,7 +598,7 @@ export default function SavingGoals() {
                   min={0 as any}
                   className={styles.amountInputNumber}
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
+                  parser={value => value!.replace(/(,*)/g, '') as any}
                   placeholder="Mặc định là 0"
                 />
               </Form.Item>
@@ -637,7 +651,7 @@ export default function SavingGoals() {
             <InputNumber
               className={styles.amountInputNumber}
               formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
+              parser={value => value!.replace(/(,*)/g, '') as any}
               placeholder="Nhập số tiền gửi"
             />
           </Form.Item>
