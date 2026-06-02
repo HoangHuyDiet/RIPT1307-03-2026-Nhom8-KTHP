@@ -1,0 +1,273 @@
+:global {
+  .ant-popover.custom-notification-popover {
+    width: 420px !important;
+    max-width: none !important;
+    position: absolute !important;
+    left: auto !important;
+    right: 16px !important;
+
+    .ant-popover-inner {
+      width: 420px !important;
+      max-width: none !important;
+      padding: 0 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1) !important;
+      border: none !important;
+      overflow: hidden;
+      background-color: #ffffff;
+    }
+    .ant-popover-inner-content {
+      width: 420px !important;
+      max-width: none !important;
+      padding: 0 !important;
+    }
+    .ant-popover-content {
+      width: 420px !important;
+      max-width: none !important;
+    }
+  }
+}
+
+.bellBadge {
+  display: flex !important;
+  align-items: center;
+}
+
+.bellWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f1f4f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #e8eaed;
+  }
+}
+
+.bellIcon {
+  font-size: 19px;
+  color: #1f2937 !important;
+}
+
+.popoverTitleBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 16px 8px 16px;
+}
+
+.popoverTitleText {
+  margin: 0;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 28px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.popoverFilters {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px 16px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.filterPill {
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background-color: #f1f3f4;
+  color: #3c4043;
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: auto;
+  line-height: 1.4;
+
+  &:hover {
+    background-color: #e8eaed;
+  }
+
+  &.active {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+    font-weight: 700;
+  }
+}
+
+.popoverSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px 8px 16px;
+  background-color: #ffffff;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #050505;
+}
+
+.viewAllLink {
+  font-size: 13px;
+  color: #1877f2;
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.notificationList {
+  width: 420px;
+  max-height: 75vh;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.emptyNotifications {
+  text-align: center;
+  padding: 40px 24px;
+  color: #8c98a5;
+  font-size: 13px;
+}
+
+.notificationItem {
+  display: block !important;
+  margin: 10px 16px !important;
+  border-radius: 8px !important;
+  border: 1px solid #f1f3f4 !important;
+  background-color: #ffffff;
+  box-sizing: border-box !important;
+  padding: 12px 16px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+
+  &:hover {
+    background-color: #f8f9fa !important;
+    border-color: #dadce0 !important;
+  }
+
+  &.unread {
+    background-color: #f4f8fe !important;
+    border-color: #d2e3fc !important;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 18px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #1A73E8;
+    }
+  }
+}
+
+.notifContent {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.notifHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.notifTag {
+  border-radius: 8px;
+  font-size: 10px;
+  margin: 0;
+  padding: 0 6px;
+  line-height: 1.6;
+}
+
+.notifDate {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.notifSourceRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.notifSourceName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.notifDesc {
+  font-size: 14px;
+  color: #202124;
+  margin-top: 6px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  width: 100% !important;
+}
+
+.notifAmount {
+  font-size: 13px;
+  color: #202124;
+  font-weight: 500;
+  margin-top: 3px;
+  
+  .amountVal {
+    color: #1a73e8;
+    font-weight: 600;
+  }
+}
+
+.notifBank {
+  font-size: 13px;
+  color: #5f6368;
+  margin-top: 3px;
+}
+
+.notifSenderName {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 6px;
+}
+
+.notifActions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.menuItemSelected {
+  background-color: #e8f0fe !important;
+  color: #1a73e8 !important;
+  font-weight: 600 !important;
+}

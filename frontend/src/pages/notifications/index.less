@@ -1,0 +1,259 @@
+.container {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .titleSection {
+    .pageTitle {
+      font-size: 24px;
+      font-weight: 700;
+      color: #202124;
+      margin: 0 0 4px 0;
+    }
+
+    .pageSubtitle {
+      font-size: 13px;
+      color: #5f6368;
+      margin: 0;
+    }
+  }
+}
+
+.notificationsCard {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1), 0 4px 8px rgba(60, 64, 67, 0.05);
+  border: 1px solid #dadce0;
+  overflow: hidden;
+}
+
+.tabBarContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f3f4;
+  padding: 4px 24px 0 24px;
+  background-color: #fafbfb;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  :global(.ant-tabs-nav) {
+    margin-bottom: 0 !important;
+    &::before {
+      border-bottom: none !important;
+    }
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.notifList {
+  background: #ffffff;
+}
+
+.notifItem {
+  display: flex !important;
+  align-items: center;
+  padding: 16px 24px 16px 32px;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  gap: 16px;
+
+  &:hover {
+    background-color: #f8f9fa;
+  }
+
+  &.unreadItem {
+    background-color: #f4f8fe;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #1a73e8;
+    }
+
+    .notifTitle {
+      font-weight: 700;
+      color: #1a73e8;
+    }
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.iconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+
+  &.dashboard {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+  }
+
+  &.goals {
+    background-color: #fef7e0;
+    color: #f9ab00;
+  }
+
+  &.personalFunds {
+    background-color: #fce8e6;
+    color: #d93025;
+  }
+
+  &.funds {
+    background-color: #e6f4ea;
+    color: #137333;
+  }
+
+  &.transactions {
+    background-color: #f3e8fd;
+    color: #a142f4;
+  }
+}
+
+.notifContent {
+  width: 100%;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.notifTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.notifDate {
+  font-size: 11px;
+  color: #8c98a5;
+}
+
+.notifMessage {
+  font-size: 13px;
+  color: #5f6368;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.amountBox {
+  font-size: 13px;
+  color: #3c4043;
+  font-weight: 500;
+  margin-bottom: 4px;
+
+  .amountVal {
+    color: #1a73e8;
+    font-weight: 600;
+  }
+}
+
+.notifDetails {
+  font-size: 12px;
+  color: #8c98a5;
+}
+
+.notifActions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+
+  .emptyIcon {
+    font-size: 48px;
+    color: #dadce0;
+    margin-bottom: 16px;
+  }
+
+  .emptyTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #3c4043;
+    margin: 0 0 4px 0;
+  }
+
+  .emptyDesc {
+    font-size: 13px;
+    color: #70757a;
+    margin: 0;
+  }
+}
+.customPagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 24px 0;
+  background-color: #ffffff;
+  border-top: 1px solid #f1f3f4;
+  width: 100%;
+}
+
+.pageBtn {
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #5f6368 !important;
+  border: 1px solid #dadce0 !important;
+  background-color: #ffffff !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    color: #1a73e8 !important;
+    border-color: #1a73e8 !important;
+    background-color: #f4f8fe !important;
+  }
+
+  &.activePage {
+    color: #ffffff !important;
+    background-color: #1a73e8 !important;
+    border-color: #1a73e8 !important;
+  }
+}
