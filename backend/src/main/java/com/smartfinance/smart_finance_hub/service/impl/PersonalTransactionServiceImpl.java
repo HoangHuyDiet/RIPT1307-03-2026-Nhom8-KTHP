@@ -14,13 +14,15 @@ import com.smartfinance.smart_finance_hub.repository.PersonalFundRepository;
 import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.PersonalTransactionService;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -39,35 +41,16 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
                 userId, request.getType(), request.getAmount());
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay nguoi dung!"));
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Không tìm thấy danh mục với ID: " + request.getCategoryId()));
-
-        validateCategoryOwnership(category, userId);
         TransactionType transactionType = parseTransactionType(request.getType());
+        Category category = findUsableCategory(request.getCategoryId(), userId);
         validateCategoryType(category, transactionType.name());
 
         PersonalFund personalFund = null;
         if (request.getPersonalFundId() != null) {
-            personalFund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
-
-            if (personalFund.getStatus() != FundStatus.ACTIVE) {
-                throw new IllegalArgumentException("Quỹ '" + personalFund.getName() + "' đã bị đóng!");
-            }
-
-            if (transactionType == TransactionType.INCOME) {
-                personalFund.setBalance(personalFund.getBalance().add(request.getAmount()));
-            } else {
-                if (personalFund.getBalance().compareTo(request.getAmount()) < 0) {
-                    throw new IllegalArgumentException(
-                            "Số dư quỹ '" + personalFund.getName() + "' không đủ!");
-                }
-                personalFund.setBalance(personalFund.getBalance().subtract(request.getAmount()));
-            }
+            personalFund = findActiveUserFund(request.getPersonalFundId(), userId);
+            applyBalanceImpact(personalFund, transactionType.name(), request.getAmount());
             personalFundRepository.save(personalFund);
         }
 
@@ -91,36 +74,46 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
     @Override
     @Transactional(readOnly = true)
     public Page<TransactionResponse> getTransactions(
-            Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        log.info("getTransactions: userId={}, type={}, range=[{} - {}]",
-                userId, type, startDate, endDate);
+            Long userId,
+            String type,
+            Long categoryId,
+            Long personalFundId,
+            String search,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) {
+        log.info("getTransactions: userId={}, type={}, categoryId={}, personalFundId={}, search={}, range=[{} - {}]",
+                userId, type, categoryId, personalFundId, search, startDate, endDate);
 
-        boolean hasType = type != null && !type.isBlank();
-        String normalizedType = hasType ? parseTransactionType(type).name() : null;
+        String normalizedType = type != null && !type.isBlank()
+                ? parseTransactionType(type).name()
+                : null;
 
         if ((startDate == null) != (endDate == null)) {
-            throw new IllegalArgumentException(
-                    "Phải truyền cả startDate và endDate, hoặc không truyền cái nào!");
+            throw new IllegalArgumentException("Phai truyen ca startDate va endDate, hoac khong truyen cai nao!");
+        }
+        if (startDate != null && endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("endDate phai >= startDate!");
         }
 
-        boolean hasDateRange = startDate != null && endDate != null;
-        if (hasDateRange && endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("endDate phải >= startDate!");
+        if (categoryId != null) {
+            findUsableCategory(categoryId, userId);
+        }
+        if (personalFundId != null) {
+            findActiveUserFund(personalFundId, userId);
         }
 
-        Page<Transaction> page;
-        if (normalizedType != null && hasDateRange) {
-            page = transactionRepository.findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
-                    userId, normalizedType, startDate, endDate, pageable);
-        } else if (normalizedType != null) {
-            page = transactionRepository.findByUserIdAndTypeAndShareFundIsNull(
-                    userId, normalizedType, pageable);
-        } else if (hasDateRange) {
-            page = transactionRepository.findByUserIdAndDateBetweenAndShareFundIsNull(
-                    userId, startDate, endDate, pageable);
-        } else {
-            page = transactionRepository.findByUserIdAndShareFundIsNull(userId, pageable);
-        }
+        String normalizedSearch = search != null && !search.isBlank() ? search.trim() : null;
+
+        Page<Transaction> page = transactionRepository.searchPersonalTransactions(
+                userId,
+                normalizedType,
+                categoryId,
+                personalFundId,
+                normalizedSearch,
+                startDate,
+                endDate,
+                pageable);
 
         return page.map(TransactionResponse::from);
     }
@@ -139,6 +132,9 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
         log.info("updateTransaction: id={}, userId={}", transactionId, userId);
 
         Transaction transaction = findPersonalTransaction(transactionId, userId);
+        PersonalFund oldFund = transaction.getPersonalFund();
+        String oldType = transaction.getType();
+        BigDecimal oldAmount = transaction.getAmount();
 
         if (request.getAmount() != null) {
             transaction.setAmount(request.getAmount());
@@ -153,14 +149,22 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
             transaction.setDate(request.getDate());
         }
         if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Không tìm thấy danh mục với ID: " + request.getCategoryId()));
-            validateCategoryOwnership(category, userId);
-            transaction.setCategory(category);
+            transaction.setCategory(findUsableCategory(request.getCategoryId(), userId));
+        }
+        if (request.getPersonalFundId() != null) {
+            transaction.setPersonalFund(findActiveUserFund(request.getPersonalFundId(), userId));
         }
 
         validateCategoryType(transaction.getCategory(), transaction.getType());
+
+        if (oldFund != null) {
+            revertBalanceImpact(oldFund, oldType, oldAmount);
+            personalFundRepository.save(oldFund);
+        }
+        if (transaction.getPersonalFund() != null) {
+            applyBalanceImpact(transaction.getPersonalFund(), transaction.getType(), transaction.getAmount());
+            personalFundRepository.save(transaction.getPersonalFund());
+        }
 
         Transaction saved = transactionRepository.save(transaction);
         log.info("updateTransaction success: id={}", saved.getId());
@@ -172,6 +176,10 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
     public void deleteTransaction(Long transactionId, Long userId) {
         log.info("deleteTransaction: id={}, userId={}", transactionId, userId);
         Transaction transaction = findPersonalTransaction(transactionId, userId);
+        if (transaction.getPersonalFund() != null) {
+            revertBalanceImpact(transaction.getPersonalFund(), transaction.getType(), transaction.getAmount());
+            personalFundRepository.save(transaction.getPersonalFund());
+        }
         transactionRepository.delete(transaction);
         log.info("deleteTransaction success: id={}", transactionId);
     }
@@ -179,16 +187,56 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
     private Transaction findPersonalTransaction(Long transactionId, Long userId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Không tìm thấy giao dịch với ID: " + transactionId));
+                        "Khong tim thay giao dich voi ID: " + transactionId));
 
         if (!transaction.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Bạn không có quyền truy cập giao dịch này!");
+            throw new IllegalArgumentException("Ban khong co quyen truy cap giao dich nay!");
         }
         if (transaction.getShareFund() != null) {
             throw new IllegalArgumentException(
-                    "Giao dịch này thuộc quỹ chung, không phải giao dịch cá nhân!");
+                    "Giao dich nay thuoc quy chung, khong phai giao dich ca nhan!");
         }
         return transaction;
+    }
+
+    private Category findUsableCategory(Long categoryId, Long userId) {
+        Category category = categoryRepository.findByIdAndDeletedAtIsNull(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Khong tim thay danh muc voi ID: " + categoryId));
+        validateCategoryOwnership(category, userId);
+        return category;
+    }
+
+    private PersonalFund findActiveUserFund(Long personalFundId, Long userId) {
+        PersonalFund personalFund = personalFundRepository.findByIdAndUserId(personalFundId, userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Khong tim thay nguon tien voi ID: " + personalFundId));
+
+        if (personalFund.getStatus() != FundStatus.ACTIVE) {
+            throw new IllegalArgumentException("Nguon tien '" + personalFund.getName() + "' da bi dong!");
+        }
+        return personalFund;
+    }
+
+    private void applyBalanceImpact(PersonalFund personalFund, String type, BigDecimal amount) {
+        if (TransactionType.INCOME.name().equals(type)) {
+            personalFund.setBalance(personalFund.getBalance().add(amount));
+            return;
+        }
+
+        if (personalFund.getBalance().compareTo(amount) < 0) {
+            throw new IllegalArgumentException(
+                    "So du nguon tien '" + personalFund.getName() + "' khong du!");
+        }
+        personalFund.setBalance(personalFund.getBalance().subtract(amount));
+    }
+
+    private void revertBalanceImpact(PersonalFund personalFund, String type, BigDecimal amount) {
+        if (TransactionType.INCOME.name().equals(type)) {
+            personalFund.setBalance(personalFund.getBalance().subtract(amount));
+        } else {
+            personalFund.setBalance(personalFund.getBalance().add(amount));
+        }
     }
 
     private TransactionType parseTransactionType(String type) {
@@ -196,19 +244,19 @@ public class PersonalTransactionServiceImpl implements PersonalTransactionServic
             return TransactionType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-                    "Loại giao dịch không hợp lệ! Chỉ chấp nhận: INCOME, EXPENSE");
+                    "Loai giao dich khong hop le! Chi chap nhan: INCOME, EXPENSE");
         }
     }
 
     private void validateCategoryOwnership(Category category, Long userId) {
         if (category.getUser() != null && !category.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Bạn không có quyền dùng danh mục này!");
+            throw new IllegalArgumentException("Ban khong co quyen dung danh muc nay!");
         }
     }
 
     private void validateCategoryType(Category category, String transactionType) {
         if (category != null && !category.getType().equalsIgnoreCase(transactionType)) {
-            throw new IllegalArgumentException("Danh mục không khớp với loại giao dịch!");
+            throw new IllegalArgumentException("Danh muc khong khop voi loai giao dich!");
         }
     }
 }

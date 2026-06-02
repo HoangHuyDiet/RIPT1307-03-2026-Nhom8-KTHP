@@ -7,7 +7,6 @@ import com.smartfinance.smart_finance_hub.dto.response.TransactionResponse;
 import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
 import com.smartfinance.smart_finance_hub.service.PersonalTransactionService;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
@@ -45,14 +46,21 @@ public class PersonalTransactionController {
         Long userId = getCurrentUserId();
         TransactionResponse data = personalTransactionService.createTransaction(request, userId);
         return new ResponseEntity<>(
-                ApiResponse.success("Tạo giao dịch thành công!", data), HttpStatus.CREATED);
+                ApiResponse.success("Tao giao dich thanh cong!", data), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TransactionResponse>>> list(
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(name = "category_id", required = false) Long categoryIdSnake,
+            @RequestParam(required = false) Long personalFundId,
+            @RequestParam(name = "personal_fund_id", required = false) Long personalFundIdSnake,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateSnake,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(name = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateSnake,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Long userId = getCurrentUserId();
@@ -60,9 +68,21 @@ public class PersonalTransactionController {
         int safeSize = Math.min(Math.max(size, 1), 100);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("date").descending());
 
-        Page<TransactionResponse> data =
-                personalTransactionService.getTransactions(userId, type, startDate, endDate, pageable);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách giao dịch thành công!", data));
+        Long effectiveCategoryId = categoryId != null ? categoryId : categoryIdSnake;
+        Long effectivePersonalFundId = personalFundId != null ? personalFundId : personalFundIdSnake;
+        LocalDate effectiveStartDate = startDate != null ? startDate : startDateSnake;
+        LocalDate effectiveEndDate = endDate != null ? endDate : endDateSnake;
+
+        Page<TransactionResponse> data = personalTransactionService.getTransactions(
+                userId,
+                type,
+                effectiveCategoryId,
+                effectivePersonalFundId,
+                search,
+                effectiveStartDate,
+                effectiveEndDate,
+                pageable);
+        return ResponseEntity.ok(ApiResponse.success("Lay danh sach giao dich thanh cong!", data));
     }
 
     @GetMapping("/{id}")
@@ -70,7 +90,7 @@ public class PersonalTransactionController {
             @PathVariable("id") Long transactionId) {
         Long userId = getCurrentUserId();
         TransactionResponse data = personalTransactionService.getTransactionById(transactionId, userId);
-        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết giao dịch thành công!", data));
+        return ResponseEntity.ok(ApiResponse.success("Lay chi tiet giao dich thanh cong!", data));
     }
 
     @PutMapping("/{id}")
@@ -80,7 +100,7 @@ public class PersonalTransactionController {
         Long userId = getCurrentUserId();
         TransactionResponse data =
                 personalTransactionService.updateTransaction(transactionId, request, userId);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật giao dịch thành công!", data));
+        return ResponseEntity.ok(ApiResponse.success("Cap nhat giao dich thanh cong!", data));
     }
 
     @DeleteMapping("/{id}")
@@ -88,7 +108,7 @@ public class PersonalTransactionController {
             @PathVariable("id") Long transactionId) {
         Long userId = getCurrentUserId();
         personalTransactionService.deleteTransaction(transactionId, userId);
-        return ResponseEntity.ok(ApiResponse.success("Xóa giao dịch thành công!"));
+        return ResponseEntity.ok(ApiResponse.success("Xoa giao dich thanh cong!"));
     }
 
     private Long getCurrentUserId() {
@@ -96,6 +116,6 @@ public class PersonalTransactionController {
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
             return userDetails.getId();
         }
-        throw new IllegalStateException("Không thể xác thực người dùng hiện tại!");
+        throw new IllegalStateException("Khong the xac thuc nguoi dung hien tai!");
     }
 }

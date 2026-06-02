@@ -237,10 +237,12 @@ public class SharedFundController {
         java.math.BigDecimal amount = new java.math.BigDecimal(body.get("amount").toString());
         String description = (String) body.get("description");
         
-        com.smartfinance.smart_finance_hub.entity.Category category = categoryRepository.findAll().stream()
-                .filter(c -> type.equalsIgnoreCase(c.getType()))
+        String normalizedType = type != null ? type.toUpperCase() : null;
+        com.smartfinance.smart_finance_hub.entity.Category category = categoryRepository
+                .findSystemCategories(normalizedType)
+                .stream()
                 .findFirst()
-                .orElse(categoryRepository.findAll().stream().findFirst().orElse(null));
+                .orElse(categoryRepository.findSystemCategories(null).stream().findFirst().orElse(null));
                 
         if (category == null) {
             throw new IllegalArgumentException("Vui lòng tạo ít nhất một danh mục thu/chi trong hệ thống!");

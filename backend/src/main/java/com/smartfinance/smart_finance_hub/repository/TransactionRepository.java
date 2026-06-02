@@ -78,6 +78,29 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
+    @Query("""
+            select t from Transaction t
+            left join t.category c
+            left join t.personalFund pf
+            where t.user.id = :userId
+              and t.shareFund is null
+              and (:type is null or t.type = :type)
+              and (:categoryId is null or c.id = :categoryId)
+              and (:personalFundId is null or pf.id = :personalFundId)
+              and (:startDate is null or t.date >= :startDate)
+              and (:endDate is null or t.date <= :endDate)
+              and (:search is null or lower(t.description) like lower(concat('%', :search, '%')))
+            """)
+    Page<Transaction> searchPersonalTransactions(
+            @Param("userId") Long userId,
+            @Param("type") String type,
+            @Param("categoryId") Long categoryId,
+            @Param("personalFundId") Long personalFundId,
+            @Param("search") String search,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable);
+
     Page<Transaction> findByPersonalFundId(Long personalFundId, Pageable pageable);
 
     List<Transaction> findByPersonalFundIdAndDateBetweenOrderByDateAsc(

@@ -311,7 +311,7 @@ public class PersonalFundServiceImpl implements PersonalFundService {
             category = categoryRepository.findById(request.getCategoryId()).orElse(null);
         }
         if (category == null) {
-            category = categoryRepository.findByUserIdAndType(userId, "EXPENSE")
+            category = categoryRepository.findAvailableCategories(userId, "EXPENSE")
                     .stream().findFirst().orElse(null);
         }
 
@@ -395,7 +395,7 @@ public class PersonalFundServiceImpl implements PersonalFundService {
         fund.setBalance(fund.getBalance().add(amount));
         personalFundRepository.save(fund);
 
-        Category category = categoryRepository.findByUserIdAndType(userId, "INCOME")
+        Category category = categoryRepository.findAvailableCategories(userId, "INCOME")
                 .stream().findFirst().orElse(null);
 
         Transaction tx = Transaction.builder()
