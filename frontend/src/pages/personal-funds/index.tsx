@@ -177,6 +177,17 @@ export default function PersonalFundManagement() {
   const [directDepositingFund, setDirectDepositingFund] = useState<any | null>(null);
   const [directDepositForm] = Form.useForm();
   const [directDepositLoading, setDirectDepositLoading] = useState(false);
+  const directDepositAmount = Form.useWatch('amount', directDepositForm);
+
+  const incomeCategories = useMemo(
+    () => categories.filter((category) => category.type === 'INCOME'),
+    [categories],
+  );
+
+  const directDepositBalanceAfter = useMemo(() => {
+    if (!directDepositingFund || !directDepositAmount) return undefined;
+    return Number(directDepositingFund.balance || 0) + Number(directDepositAmount || 0);
+  }, [directDepositingFund, directDepositAmount]);
 
   const fetchFundsData = async () => {
     setLoading(true);
@@ -295,6 +306,8 @@ export default function PersonalFundManagement() {
     try {
       await api.post(`/personal-funds/${directDepositingFund.id}/deposit`, {
         amount: Number(values.amount),
+        categoryId: values.categoryId,
+        date: values.depositDate ? values.depositDate.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
         description: values.description || 'Nạp tiền từ chuyển khoản ngoài'
       });
       message.success('Nạp tiền vào quỹ thành công!');
@@ -622,6 +635,11 @@ export default function PersonalFundManagement() {
                       if (act.key === 'deposit') {
                         setDirectDepositingFund(fund);
                         directDepositForm.resetFields();
+                        directDepositForm.setFieldsValue({
+                          depositDate: dayjs(),
+                          categoryId: incomeCategories[0]?.id,
+                          description: 'Nạp tiền từ chuyển khoản ngoài',
+                        });
                         setIsDirectDepositModalOpen(true);
                       } else if (act.key === 'withdraw' || act.key === 'spend') {
                         openPayBillWithFund(fund.id);
@@ -1324,6 +1342,30 @@ export default function PersonalFundManagement() {
           </Form.Item>
 
           <Form.Item
+            name="categoryId"
+            label={<span style={{ fontWeight: 600, color: '#202124', fontSize: '13px' }}>Danh mục thu nhập</span>}
+            rules={[{ required: true, message: 'Vui lòng chọn danh mục thu nhập!' }]}
+          >
+            <Select
+              placeholder="Chọn danh mục thu nhập"
+              options={incomeCategories.map((category) => ({
+                value: category.id,
+                label: category.name,
+              }))}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="depositDate"
+            label={<span style={{ fontWeight: 600, color: '#202124', fontSize: '13px' }}>Ngày nạp</span>}
+            initialValue={dayjs()}
+            rules={[{ required: true, message: 'Vui lòng chọn ngày nạp!' }]}
+          >
+            <DatePicker format="DD/MM/YYYY" style={{ width: '100%', borderRadius: 8 }} />
+          </Form.Item>
+
+          <Form.Item
             name="description"
             label={<span style={{ fontWeight: 600, color: '#202124', fontSize: '13px' }}>Mô tả giao dịch</span>}
             initialValue="Nạp tiền từ chuyển khoản ngoài"
@@ -1339,6 +1381,29 @@ export default function PersonalFundManagement() {
               }}
             />
           </Form.Item>
+
+          {directDepositingFund && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 12,
+              padding: '12px 14px',
+              borderRadius: 12,
+              backgroundColor: '#F7FAFF',
+              border: '1px solid #E8EEF8'
+            }}>
+              <div>
+                <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>Số dư hiện tại</Text>
+                <Text strong>{formatCurrency(Number(directDepositingFund.balance || 0))}</Text>
+              </div>
+              <div>
+                <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>Sau khi nạp</Text>
+                <Text strong style={{ color: '#34A853' }}>
+                  {directDepositBalanceAfter !== undefined ? formatCurrency(directDepositBalanceAfter) : '-'}
+                </Text>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center', marginTop: 24 }}>
             <Button
