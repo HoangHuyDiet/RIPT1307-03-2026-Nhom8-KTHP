@@ -23,7 +23,7 @@ export default function AdminCategoriesPage() {
       const data = await categoryApi.adminList();
       setCategories(data);
     } catch (error: any) {
-      message.error(error.response?.data?.message || 'Khong the tai danh muc he thong');
+      message.error(error.response?.data?.message || 'Không thể tải danh mục hệ thống');
     } finally {
       setLoading(false);
     }
@@ -65,21 +65,21 @@ export default function AdminCategoriesPage() {
           name: values.name,
           description: values.description,
         });
-        message.success('Da cap nhat danh muc he thong');
+        message.success('Đã cập nhật danh mục hệ thống');
       } else {
         await categoryApi.adminCreate({
           name: values.name,
           type: activeType,
           description: values.description,
         });
-        message.success('Da tao danh muc he thong');
+        message.success('Đã tạo danh mục hệ thống');
       }
 
       setModalOpen(false);
       fetchCategories();
     } catch (error: any) {
       if (error.errorFields) return;
-      message.error(error.response?.data?.message || 'Khong the luu danh muc');
+      message.error(error.response?.data?.message || 'Không thể lưu danh mục');
     } finally {
       setSubmitting(false);
     }
@@ -87,18 +87,18 @@ export default function AdminCategoriesPage() {
 
   const handleDelete = (category: Category) => {
     Modal.confirm({
-      title: 'Xoa danh muc he thong',
-      content: `Ban co chac muon xoa danh muc "${category.name}"? Danh muc se khong hien trong lua chon moi.`,
-      okText: 'Xoa',
+      title: 'Xóa danh mục hệ thống',
+      content: `Bạn có chắc muốn xóa danh mục "${category.name}"? Danh mục sẽ không hiện trong lựa chọn mới.`,
+      okText: 'Xóa',
       okType: 'danger',
-      cancelText: 'Huy',
+      cancelText: 'Hủy',
       onOk: async () => {
         try {
           await categoryApi.adminRemove(category.id);
-          message.success('Da xoa danh muc he thong');
+          message.success('Đã xóa danh mục hệ thống');
           fetchCategories();
         } catch (error: any) {
-          message.error(error.response?.data?.message || 'Khong the xoa danh muc');
+          message.error(error.response?.data?.message || 'Không thể xóa danh mục');
         }
       },
     });
@@ -106,7 +106,7 @@ export default function AdminCategoriesPage() {
 
   const columns = [
     {
-      title: 'Ten danh muc',
+      title: 'Tên danh mục',
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record: Category) => (
@@ -117,37 +117,37 @@ export default function AdminCategoriesPage() {
       ),
     },
     {
-      title: 'Loai',
+      title: 'Loại',
       dataIndex: 'type',
       key: 'type',
       width: 140,
       render: (type: CategoryType) => (
         <Tag color={type === 'INCOME' ? 'success' : 'processing'}>
-          {type === 'INCOME' ? 'Thu nhap' : 'Chi tieu'}
+          {type === 'INCOME' ? 'Thu nhập' : 'Chi tiêu'}
         </Tag>
       ),
     },
     {
-      title: 'Mo ta',
+      title: 'Mô tả',
       dataIndex: 'description',
       key: 'description',
       render: (description: string) => description || <Text type="secondary">-</Text>,
     },
     {
-      title: 'Thao tac',
+      title: 'Thao tác',
       key: 'actions',
       width: 180,
       render: (_: any, record: Category) => {
         if (!isAdmin()) {
-          return <Text type="secondary">Chi xem</Text>;
+          return <Text type="secondary">Chỉ xem</Text>;
         }
         return (
           <Space>
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)}>
-              Sua
+              Sửa
             </Button>
             <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
-              Xoa
+              Xóa
             </Button>
           </Space>
         );
@@ -160,18 +160,18 @@ export default function AdminCategoriesPage() {
       <Card bordered={false} className={styles.tableCard}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
-            <Text strong style={{ fontSize: 20 }}>Danh muc he thong</Text>
+            <Text strong style={{ fontSize: 20 }}>Danh mục hệ thống</Text>
             <div style={{ color: '#5F6368', marginTop: 4 }}>
-              Bo danh muc mac dinh dung chung cho toan bo nguoi dung.
+              Bộ danh mục mặc định dùng chung cho toàn bộ người dùng.
             </div>
           </div>
           <div className={styles.toolbarRight}>
             <Button icon={<ReloadOutlined />} onClick={fetchCategories} loading={loading} style={{ marginRight: 8 }}>
-              Lam moi
+              Làm mới
             </Button>
             {isAdmin() && (
               <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
-                Them danh muc
+                Thêm danh mục
               </Button>
             )}
           </div>
@@ -181,8 +181,8 @@ export default function AdminCategoriesPage() {
           value={activeType}
           onChange={(value) => setActiveType(value as CategoryType)}
           options={[
-            { label: 'Chi tieu', value: 'EXPENSE' },
-            { label: 'Thu nhap', value: 'INCOME' },
+            { label: 'Chi tiêu', value: 'EXPENSE' },
+            { label: 'Thu nhập', value: 'INCOME' },
           ]}
           style={{ marginBottom: 18 }}
         />
@@ -193,34 +193,34 @@ export default function AdminCategoriesPage() {
           dataSource={visibleCategories}
           loading={loading}
           className={styles.table}
-          pagination={{ pageSize: 10, showTotal: (total) => `Tong ${total} danh muc` }}
+          pagination={{ pageSize: 10, showTotal: (total) => `Tổng ${total} danh mục` }}
         />
       </Card>
 
       <Modal
-        title={editingCategory ? 'Sua danh muc he thong' : 'Them danh muc he thong'}
+        title={editingCategory ? 'Sửa danh mục hệ thống' : 'Thêm danh mục hệ thống'}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
         confirmLoading={submitting}
-        okText={editingCategory ? 'Luu thay doi' : 'Tao danh muc'}
-        cancelText="Huy"
+        okText={editingCategory ? 'Lưu thay đổi' : 'Tạo danh mục'}
+        cancelText="Hủy"
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item label="Loai danh muc">
+          <Form.Item label="Loại danh mục">
             <Tag color={activeType === 'INCOME' ? 'success' : 'processing'}>
-              {activeType === 'INCOME' ? 'Thu nhap' : 'Chi tieu'}
+              {activeType === 'INCOME' ? 'Thu nhập' : 'Chi tiêu'}
             </Tag>
           </Form.Item>
           <Form.Item
             name="name"
-            label="Ten danh muc"
-            rules={[{ required: true, message: 'Vui long nhap ten danh muc' }]}
+            label="Tên danh mục"
+            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}
           >
-            <Input placeholder="Vi du: Du lich, Mua nha, Luong..." />
+            <Input placeholder="Ví dụ: Du lịch, Mua nhà, Lương..." />
           </Form.Item>
-          <Form.Item name="description" label="Mo ta">
-            <Input.TextArea rows={3} placeholder="Mo ta ngan gon ve danh muc" />
+          <Form.Item name="description" label="Mô tả">
+            <Input.TextArea rows={3} placeholder="Mô tả ngắn gọn về danh mục" />
           </Form.Item>
         </Form>
       </Modal>

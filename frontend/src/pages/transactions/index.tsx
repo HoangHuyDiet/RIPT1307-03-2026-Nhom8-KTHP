@@ -5,6 +5,8 @@ import {
   Card,
   Col,
   DatePicker,
+  Divider,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -24,8 +26,10 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   CoffeeOutlined,
+  CreditCardOutlined,
   DollarCircleOutlined,
   FilterOutlined,
+  MobileOutlined,
   PlusOutlined,
   ReloadOutlined,
   RobotOutlined,
@@ -40,6 +44,17 @@ import styles from './index.less';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+
+const FUND_TYPE_OPTIONS = [
+  { value: 'CASH', label: 'Tiền mặt', icon: <WalletOutlined /> },
+  { value: 'BANK_ACCOUNT', label: 'Tài khoản ngân hàng', icon: <BankOutlined /> },
+  { value: 'E_WALLET', label: 'Ví điện tử', icon: <MobileOutlined /> },
+  { value: 'CREDIT_CARD', label: 'Thẻ tín dụng', icon: <CreditCardOutlined /> },
+  { value: 'INVESTMENT', label: 'Đầu tư', icon: <DollarCircleOutlined /> },
+];
+
+const getFundTypeMeta = (fundType?: string) =>
+  FUND_TYPE_OPTIONS.find((item) => item.value === fundType) || FUND_TYPE_OPTIONS[0];
 
 interface Transaction {
   id: number;
@@ -79,6 +94,24 @@ export default function TransactionsManager() {
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [addTxLoading, setAddTxLoading] = useState(false);
   const [addTxForm] = Form.useForm();
+  const [quickFundOpen, setQuickFundOpen] = useState(false);
+  const [quickFundLoading, setQuickFundLoading] = useState(false);
+  const [quickFundForm] = Form.useForm();
+  const watchedFundId = Form.useWatch('personalFundId', addTxForm);
+  const watchedTxType = Form.useWatch('type', addTxForm);
+  const watchedAmount = Form.useWatch('amount', addTxForm);
+
+  const selectedFund = useMemo(
+    () => personalFunds.find((fund) => fund.id === watchedFundId),
+    [personalFunds, watchedFundId],
+  );
+
+  const balanceAfterTransaction = useMemo(() => {
+    if (!selectedFund || !watchedAmount) return undefined;
+    const currentBalance = Number(selectedFund.balance || 0);
+    const amount = Number(watchedAmount || 0);
+    return watchedTxType === 'INCOME' ? currentBalance + amount : currentBalance - amount;
+  }, [selectedFund, watchedAmount, watchedTxType]);
 
   const categoryOptions = useMemo(
     () =>
@@ -86,7 +119,7 @@ export default function TransactionsManager() {
         .filter((category) => type === 'ALL' || category.type === type)
         .map((category) => ({
           value: category.id,
-          label: `${category.name}${category.system ? '' : ' (ca nhan)'}`,
+          label: `${category.name}${category.system ? '' : ' (cá nhân)'}`,
         })),
     [categories, type],
   );
@@ -97,6 +130,28 @@ export default function TransactionsManager() {
         value: fund.id,
         label: `${fund.name} - ${formatCurrency(Number(fund.balance))}`,
       })),
+    [personalFunds],
+  );
+
+  const richFundOptions = useMemo(
+    () =>
+      personalFunds.map((fund) => {
+        const fundType = getFundTypeMeta(fund.fundType);
+        return {
+          value: fund.id,
+          label: (
+            <div className={styles.fundOption}>
+              <div className={styles.fundOptionIcon}>{fundType.icon}</div>
+              <div className={styles.fundOptionMeta}>
+                <Text strong className={styles.fundOptionName}>{fund.name}</Text>
+                <Text type="secondary" className={styles.fundOptionSub}>
+                  {fundType.label} · {formatCurrency(Number(fund.balance))}
+                </Text>
+              </div>
+            </div>
+          ),
+        };
+      }),
     [personalFunds],
   );
 
@@ -111,7 +166,7 @@ export default function TransactionsManager() {
       setPersonalFunds(Array.isArray(fundsData) ? fundsData : []);
     } catch (error) {
       console.error(error);
-      message.error('Khong the tai danh muc hoac nguon tien');
+      message.error('Không thể tải danh mục hoặc nguồn tiền');
     }
   };
 
@@ -133,7 +188,7 @@ export default function TransactionsManager() {
       setTransactions(data.content || []);
       setTotalElements(data.totalElements || data.total_elements || 0);
     } catch (error: any) {
-      message.error(error.response?.data?.message || 'Khong the tai danh sach giao dich');
+      message.error(error.response?.data?.message || 'Không thể tải danh sách giao dịch');
     } finally {
       setLoading(false);
     }
@@ -167,6 +222,47 @@ export default function TransactionsManager() {
     setIsAddTxOpen(true);
   };
 
+  const openQuickFundModal = () => {
+    quickFundForm.resetFields();
+    quickFundForm.setFieldsValue({
+      fundType: 'CASH',
+      initialBalance: 0,
+      currency: 'VND',
+    });
+    setQuickFundOpen(true);
+  };
+
+  const handleCreateQuickFund = async () => {
+    try {
+      const values = await quickFundForm.validateFields();
+      setQuickFundLoading(true);
+      const payload = {
+        name: values.name,
+        fundType: values.fundType,
+        initialBalance: Number(values.initialBalance || 0),
+        currency: 'VND',
+        description: values.description || '',
+      };
+
+      const res = await api.post('/personal-funds/create', payload);
+      const createdFund = res.data?.data;
+      if (createdFund?.id) {
+        setPersonalFunds((prev) => [...prev.filter((fund) => fund.id !== createdFund.id), createdFund]);
+        addTxForm.setFieldValue('personalFundId', createdFund.id);
+      } else {
+        await fetchFilterData();
+      }
+      message.success(res.data?.message || 'Đã tạo nguồn tiền');
+      setQuickFundOpen(false);
+      quickFundForm.resetFields();
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.message || 'Không thể tạo nguồn tiền');
+    } finally {
+      setQuickFundLoading(false);
+    }
+  };
+
   const handleAddTransactionSubmit = async (values: any) => {
     setAddTxLoading(true);
     try {
@@ -180,14 +276,14 @@ export default function TransactionsManager() {
       };
 
       const res = await api.post('/transactions', payload);
-      message.success(res.data?.message || 'Da them giao dich');
+      message.success(res.data?.message || 'Đã thêm giao dịch');
       setIsAddTxOpen(false);
       addTxForm.resetFields();
       setPage(0);
       fetchTransactions();
       fetchFilterData();
     } catch (error: any) {
-      message.error(error.response?.data?.message || 'Them giao dich that bai');
+      message.error(error.response?.data?.message || 'Thêm giao dịch thất bại');
     } finally {
       setAddTxLoading(false);
     }
@@ -195,7 +291,7 @@ export default function TransactionsManager() {
 
   const columns = [
     {
-      title: 'Chi tiet giao dich',
+      title: 'Chi tiết giao dịch',
       key: 'details',
       width: '42%',
       render: (_: any, record: Transaction) => (
@@ -209,7 +305,7 @@ export default function TransactionsManager() {
             }}
           />
           <div className={styles.txMeta}>
-            <Text strong className={styles.txTitle}>{record.description || 'Giao dich'}</Text>
+            <Text strong className={styles.txTitle}>{record.description || 'Giao dịch'}</Text>
             <div className={styles.txSub}>
               {record.personalFundName ? (
                 <Space size={4}>
@@ -217,7 +313,7 @@ export default function TransactionsManager() {
                   <span>{record.personalFundName}</span>
                 </Space>
               ) : (
-                'Chua gan nguon tien'
+                'Chưa gắn nguồn tiền'
               )}
             </div>
           </div>
@@ -225,17 +321,17 @@ export default function TransactionsManager() {
       ),
     },
     {
-      title: 'Danh muc',
+      title: 'Danh mục',
       key: 'category',
       width: '20%',
       render: (_: any, record: Transaction) => (
         <Tag color={record.type === 'INCOME' ? 'success' : 'default'} className={styles.txTag}>
-          {record.categoryName || 'Chua phan loai'}
+          {record.categoryName || 'Chưa phân loại'}
         </Tag>
       ),
     },
     {
-      title: 'Ngay giao dich',
+      title: 'Ngày giao dịch',
       dataIndex: 'date',
       key: 'date',
       width: '18%',
@@ -247,7 +343,7 @@ export default function TransactionsManager() {
       ),
     },
     {
-      title: 'So tien',
+      title: 'Số tiền',
       key: 'amount',
       width: '20%',
       align: 'right' as const,
@@ -265,10 +361,10 @@ export default function TransactionsManager() {
         <Col xs={24} lg={17}>
           <div className={styles.leftSection}>
             <div className={styles.sectionHeader}>
-              <Title level={3} className={styles.mainTitle}>Giao dich</Title>
+              <Title level={3} className={styles.mainTitle}>Giao dịch</Title>
               <Space size="middle" className={styles.actionButtons}>
                 <Button icon={<PlusOutlined />} type="primary" className={styles.addBtn} onClick={handleOpenAdd}>
-                  Them moi
+                  Thêm mới
                 </Button>
               </Space>
             </div>
@@ -277,7 +373,7 @@ export default function TransactionsManager() {
               <Space size="middle" className={styles.capsuleFilters}>
                 <Input
                   prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
-                  placeholder="Tim noi dung..."
+                  placeholder="Tìm nội dung..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onPressEnter={handleSearch}
@@ -297,15 +393,15 @@ export default function TransactionsManager() {
                   className={styles.capsuleSelect}
                   suffixIcon={<CalendarOutlined />}
                   options={[
-                    { value: 'ALL', label: 'Tat ca loai' },
-                    { value: 'INCOME', label: 'Khoan thu' },
-                    { value: 'EXPENSE', label: 'Khoan chi' },
+                    { value: 'ALL', label: 'Tất cả loại' },
+                    { value: 'INCOME', label: 'Khoản thu' },
+                    { value: 'EXPENSE', label: 'Khoản chi' },
                   ]}
                 />
 
                 <Select
                   value={categoryId}
-                  placeholder="Tat ca danh muc"
+                  placeholder="Tất cả danh mục"
                   onChange={(val) => { setCategoryId(val); setPage(0); }}
                   bordered={false}
                   allowClear
@@ -316,7 +412,7 @@ export default function TransactionsManager() {
 
                 <Select
                   value={personalFundId}
-                  placeholder="Tat ca nguon tien"
+                  placeholder="Tất cả nguồn tiền"
                   onChange={(val) => { setPersonalFundId(val); setPage(0); }}
                   bordered={false}
                   allowClear
@@ -336,11 +432,11 @@ export default function TransactionsManager() {
                     }
                     setPage(0);
                   }}
-                  placeholder={['Tu ngay', 'Den ngay']}
+                  placeholder={['Từ ngày', 'Đến ngày']}
                 />
 
-                <Button type="primary" icon={<FilterOutlined />} className={styles.btnFilter} onClick={handleSearch} title="Tim kiem" />
-                <Button icon={<ReloadOutlined />} className={styles.btnReload} onClick={handleResetFilters} title="Dat lai bo loc" />
+                <Button type="primary" icon={<FilterOutlined />} className={styles.btnFilter} onClick={handleSearch} title="Tìm kiếm" />
+                <Button icon={<ReloadOutlined />} className={styles.btnReload} onClick={handleResetFilters} title="Đặt lại bộ lọc" />
               </Space>
             </div>
 
@@ -372,23 +468,23 @@ export default function TransactionsManager() {
               <div className={styles.aiHeader}>
                 <Space>
                   <RobotOutlined className={styles.aiRobotIcon} />
-                  <Text strong style={{ fontSize: '15px' }}>Phan tich Ngan sach AI</Text>
+                  <Text strong style={{ fontSize: '15px' }}>Phân tích Ngân sách AI</Text>
                 </Space>
               </div>
               <Text className={styles.aiContent}>
-                Danh muc va nguon tien da duoc noi API, nen phan tich chi tieu co the tinh theo nhom giao dich that.
+                Danh mục và nguồn tiền đã được nối API, nên phân tích chi tiêu có thể tính theo nhóm giao dịch thật.
               </Text>
             </Card>
 
             <Card bordered={false} className={styles.patternCard}>
               <div className={styles.cardHeader}>
-                <Text strong style={{ fontSize: '15px', color: '#202124' }}>Mau chi tieu</Text>
+                <Text strong style={{ fontSize: '15px', color: '#202124' }}>Mẫu chi tiêu</Text>
               </div>
               <div className={styles.patternBody}>
                 <div className={styles.patternItem}>
                   <div className={styles.patternMeta}>
-                    <Text className={styles.patternName}>Nguon tien da loc</Text>
-                    <Text className={styles.patternPercent} style={{ color: '#1A73E8' }}>{personalFundId ? '1' : 'Tat ca'}</Text>
+                    <Text className={styles.patternName}>Nguồn tiền đã lọc</Text>
+                    <Text className={styles.patternPercent} style={{ color: '#1A73E8' }}>{personalFundId ? '1' : 'Tất cả'}</Text>
                   </div>
                   <Progress percent={personalFundId ? 100 : 65} showInfo={false} strokeWidth={6} strokeColor="#1A73E8" />
                 </div>
@@ -399,7 +495,7 @@ export default function TransactionsManager() {
       </Row>
 
       <Modal
-        title={<span style={{ fontSize: '18px', fontWeight: 700 }}>Them giao dich moi</span>}
+        title={<span style={{ fontSize: '18px', fontWeight: 700 }}>Thêm giao dịch mới</span>}
         open={isAddTxOpen}
         onCancel={() => { setIsAddTxOpen(false); addTxForm.resetFields(); }}
         footer={null}
@@ -416,18 +512,18 @@ export default function TransactionsManager() {
           style={{ marginTop: 8 }}
         >
           <Form.Item
-            label={<span style={{ fontWeight: 600 }}>Mo ta giao dich</span>}
+            label={<span style={{ fontWeight: 600 }}>Mô tả giao dịch</span>}
             name="description"
-            rules={[{ required: true, message: 'Vui long nhap mo ta giao dich!' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập mô tả giao dịch!' }]}
           >
-            <Input placeholder="Vi du: Mua sam sieu thi, Nhan luong..." style={{ borderRadius: 12 }} />
+            <Input placeholder="Ví dụ: Mua sắm siêu thị, Nhận lương..." style={{ borderRadius: 12 }} />
           </Form.Item>
 
-          <Form.Item label={<span style={{ fontWeight: 600 }}>Loai giao dich</span>} name="type" rules={[{ required: true }]}>
+          <Form.Item label={<span style={{ fontWeight: 600 }}>Loại giao dịch</span>} name="type" rules={[{ required: true }]}>
             <Segmented
               options={[
-                { label: 'Chi phi', value: 'EXPENSE' },
-                { label: 'Thu nhap', value: 'INCOME' },
+                { label: 'Chi phí', value: 'EXPENSE' },
+                { label: 'Thu nhập', value: 'INCOME' },
               ]}
               onChange={(val) => {
                 addTxForm.setFieldValue('type', val);
@@ -440,12 +536,12 @@ export default function TransactionsManager() {
           <Form.Item noStyle shouldUpdate={(prev, curr) => prev.type !== curr.type}>
             {({ getFieldValue }) => (
               <Form.Item
-                label={<span style={{ fontWeight: 600 }}>Danh muc</span>}
+                label={<span style={{ fontWeight: 600 }}>Danh mục</span>}
                 name="categoryId"
-                rules={[{ required: true, message: 'Vui long chon danh muc!' }]}
+                rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
               >
                 <Select
-                  placeholder="Chon danh muc..."
+                  placeholder="Chọn danh mục..."
                   style={{ borderRadius: 12 }}
                   options={categories
                     .filter((category) => category.type === getFieldValue('type'))
@@ -456,26 +552,55 @@ export default function TransactionsManager() {
           </Form.Item>
 
           <Form.Item
-            label={<span style={{ fontWeight: 600 }}>Nguon tien</span>}
+            label={<span style={{ fontWeight: 600 }}>Nguồn tiền</span>}
             name="personalFundId"
-            rules={[{ required: true, message: 'Vui long chon nguon tien!' }]}
+            rules={[{ required: true, message: 'Vui lòng chọn nguồn tiền!' }]}
           >
             <Select
-              placeholder="Chon vi hoac tai khoan..."
+              placeholder="Chọn ví hoặc tài khoản..."
               style={{ borderRadius: 12 }}
-              options={fundOptions}
+              options={richFundOptions}
               suffixIcon={<BankOutlined />}
+              optionLabelProp="label"
+              dropdownRender={(menu) => (
+                <>
+                  {personalFunds.length > 0 ? menu : (
+                    <div className={styles.fundEmptyState}>
+                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có nguồn tiền" />
+                    </div>
+                  )}
+                  <Divider style={{ margin: '8px 0' }} />
+                  <Button type="link" icon={<PlusOutlined />} onClick={openQuickFundModal} block>
+                    Tạo nguồn tiền mới
+                  </Button>
+                </>
+              )}
             />
           </Form.Item>
+
+          {selectedFund && (
+            <div className={styles.balancePreview}>
+              <div>
+                <Text type="secondary">Số dư hiện tại</Text>
+                <Text strong>{formatCurrency(Number(selectedFund.balance))}</Text>
+              </div>
+              <div>
+                <Text type="secondary">Sau giao dịch</Text>
+                <Text strong className={balanceAfterTransaction !== undefined && balanceAfterTransaction < 0 ? styles.negativeBalance : ''}>
+                  {balanceAfterTransaction !== undefined ? formatCurrency(balanceAfterTransaction) : '-'}
+                </Text>
+              </div>
+            </div>
+          )}
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label={<span style={{ fontWeight: 600 }}>So tien</span>}
+                label={<span style={{ fontWeight: 600 }}>Số tiền</span>}
                 name="amount"
                 rules={[
-                  { required: true, message: 'Vui long nhap so tien!' },
-                  { type: 'number', min: 1, message: 'So tien phai lon hon 0!' },
+                  { required: true, message: 'Vui lòng nhập số tiền!' },
+                  { type: 'number', min: 1, message: 'Số tiền phải lớn hơn 0!' },
                 ]}
               >
                 <InputNumber
@@ -483,25 +608,25 @@ export default function TransactionsManager() {
                   style={{ width: '100%', borderRadius: 12 }}
                   formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={(value) => value!.replace(/(,*)/g, '') as any}
-                  placeholder="Nhap so tien"
+                  placeholder="Nhập số tiền"
                 />
               </Form.Item>
             </Col>
 
             <Col span={12}>
               <Form.Item
-                label={<span style={{ fontWeight: 600 }}>Ngay giao dich</span>}
+                label={<span style={{ fontWeight: 600 }}>Ngày giao dịch</span>}
                 name="date"
-                rules={[{ required: true, message: 'Vui long chon ngay!' }]}
+                rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}
               >
-                <DatePicker style={{ width: '100%', borderRadius: 12 }} format="DD/MM/YYYY" placeholder="Chon ngay" />
+                <DatePicker style={{ width: '100%', borderRadius: 12 }} format="DD/MM/YYYY" placeholder="Chọn ngày" />
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item style={{ marginBottom: 0, marginTop: 24, textAlign: 'right' }}>
             <Space size="middle">
-              <Button onClick={() => setIsAddTxOpen(false)} style={{ borderRadius: 16, minWidth: 80 }}>Huy</Button>
+              <Button onClick={() => setIsAddTxOpen(false)} style={{ borderRadius: 16, minWidth: 80 }}>Hủy</Button>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -510,9 +635,76 @@ export default function TransactionsManager() {
                 className={styles.primaryBtn}
                 style={{ borderRadius: 16, minWidth: 140 }}
               >
-                Luu giao dich
+                Lưu giao dịch
               </Button>
             </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={<span style={{ fontSize: '18px', fontWeight: 700 }}>Tạo nguồn tiền mới</span>}
+        open={quickFundOpen}
+        onOk={handleCreateQuickFund}
+        onCancel={() => setQuickFundOpen(false)}
+        confirmLoading={quickFundLoading}
+        okText="Tạo nguồn tiền"
+        cancelText="Hủy"
+        centered
+        width={480}
+      >
+        <Form
+          form={quickFundForm}
+          layout="vertical"
+          size="large"
+          initialValues={{ fundType: 'CASH', initialBalance: 0, currency: 'VND' }}
+          style={{ marginTop: 12 }}
+        >
+          <Form.Item
+            name="name"
+            label={<span style={{ fontWeight: 600 }}>Tên nguồn tiền</span>}
+            rules={[{ required: true, message: 'Vui lòng nhập tên nguồn tiền!' }]}
+          >
+            <Input placeholder="Ví dụ: Ví tiền mặt, MB Bank, MoMo..." />
+          </Form.Item>
+
+          <Form.Item
+            name="fundType"
+            label={<span style={{ fontWeight: 600 }}>Loại nguồn tiền</span>}
+            rules={[{ required: true, message: 'Vui lòng chọn loại nguồn tiền!' }]}
+          >
+            <Select
+              options={FUND_TYPE_OPTIONS.map((item) => ({
+                value: item.value,
+                label: (
+                  <Space>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Space>
+                ),
+              }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="initialBalance"
+            label={<span style={{ fontWeight: 600 }}>Số dư ban đầu</span>}
+            rules={[
+              { required: true, message: 'Vui lòng nhập số dư ban đầu!' },
+              { type: 'number', min: 0, message: 'Số dư ban đầu không được âm!' },
+            ]}
+          >
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => value!.replace(/(,*)/g, '') as any}
+              placeholder="Nhập số dư ban đầu"
+            />
+          </Form.Item>
+
+          <Form.Item name="description" label={<span style={{ fontWeight: 600 }}>Mô tả</span>}>
+            <Input.TextArea rows={3} placeholder="Ghi chú ngắn về nguồn tiền này" />
           </Form.Item>
         </Form>
       </Modal>
