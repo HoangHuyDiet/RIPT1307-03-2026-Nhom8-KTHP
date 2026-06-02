@@ -1,0 +1,9 @@
+spring:
+  mail:
+    username: hoangnv.private@gmail.com
+    password: your-gmail-app-password
+
+app:
+  mail:
+    from-email: hoangnv.private@gmail.com
+    local-otp-fallback: false
