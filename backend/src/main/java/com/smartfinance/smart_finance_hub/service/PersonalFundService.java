@@ -48,5 +48,5 @@ public interface PersonalFundService {
 
     List<TransactionResponse> getRecentTransactions(Long userId);
 
-    void deposit(Long userId, Long fundId, BigDecimal amount, String description);
+    void deposit(Long userId, Long fundId, BigDecimal amount, String description, Long categoryId, LocalDate date);
 }

@@ -236,13 +236,21 @@ public class SharedFundController {
         String type = (String) body.get("type");
         java.math.BigDecimal amount = new java.math.BigDecimal(body.get("amount").toString());
         String description = (String) body.get("description");
+        Long categoryId = body.get("categoryId") != null ? Long.valueOf(body.get("categoryId").toString()) : null;
+        Long personalFundId = body.get("personalFundId") != null ? Long.valueOf(body.get("personalFundId").toString()) : null;
+        java.time.LocalDate date = body.get("date") != null
+                ? java.time.LocalDate.parse(body.get("date").toString())
+                : java.time.LocalDate.now();
         
         String normalizedType = type != null ? type.toUpperCase() : null;
-        com.smartfinance.smart_finance_hub.entity.Category category = categoryRepository
-                .findSystemCategories(normalizedType)
-                .stream()
-                .findFirst()
-                .orElse(categoryRepository.findSystemCategories(null).stream().findFirst().orElse(null));
+        com.smartfinance.smart_finance_hub.entity.Category category = categoryId != null
+                ? categoryRepository.findByIdAndDeletedAtIsNull(categoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + categoryId))
+                : categoryRepository
+                    .findSystemCategories(normalizedType)
+                    .stream()
+                    .findFirst()
+                    .orElse(categoryRepository.findSystemCategories(null).stream().findFirst().orElse(null));
                 
         if (category == null) {
             throw new IllegalArgumentException("Vui lòng tạo ít nhất một danh mục thu/chi trong hệ thống!");
@@ -250,7 +258,7 @@ public class SharedFundController {
 
         com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest req = 
                 new com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionRequest(
-                        amount, type, description, java.time.LocalDate.now(), category.getId());
+                        amount, type, description, date, category.getId(), personalFundId);
 
         com.smartfinance.smart_finance_hub.entity.Transaction tx = 
                 sharedFundService.createFundTransaction(fundId, req, userId);

@@ -387,7 +387,7 @@ public class PersonalFundServiceImpl implements PersonalFundService {
 
     @Override
     @Transactional
-    public void deposit(Long userId, Long fundId, BigDecimal amount, String description) {
+    public void deposit(Long userId, Long fundId, BigDecimal amount, String description, Long categoryId, LocalDate date) {
         log.info("deposit: userId={}, fundId={}, amount={}", userId, fundId, amount);
         PersonalFund fund = findUserFund(userId, fundId);
         validateFundActive(fund);
@@ -395,8 +395,21 @@ public class PersonalFundServiceImpl implements PersonalFundService {
         fund.setBalance(fund.getBalance().add(amount));
         personalFundRepository.save(fund);
 
-        Category category = categoryRepository.findAvailableCategories(userId, "INCOME")
-                .stream().findFirst().orElse(null);
+        Category category = null;
+        if (categoryId != null) {
+            category = categoryRepository.findByIdAndDeletedAtIsNull(categoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + categoryId));
+            if (category.getUser() != null && !category.getUser().getId().equals(userId)) {
+                throw new IllegalArgumentException("Bạn không có quyền dùng danh mục này!");
+            }
+            if (!"INCOME".equalsIgnoreCase(category.getType())) {
+                throw new IllegalArgumentException("Danh mục nạp tiền phải là danh mục thu nhập!");
+            }
+        }
+        if (category == null) {
+            category = categoryRepository.findAvailableCategories(userId, "INCOME")
+                    .stream().findFirst().orElse(null);
+        }
 
         Transaction tx = Transaction.builder()
                 .user(fund.getUser())
@@ -405,7 +418,7 @@ public class PersonalFundServiceImpl implements PersonalFundService {
                 .amount(amount)
                 .type("INCOME")
                 .description(description != null && !description.isBlank() ? description : "Nạp tiền vào quỹ (Chuyển khoản ngoài)")
-                .date(LocalDate.now())
+                .date(date != null ? date : LocalDate.now())
                 .isApproved(true)
                 .build();
 
