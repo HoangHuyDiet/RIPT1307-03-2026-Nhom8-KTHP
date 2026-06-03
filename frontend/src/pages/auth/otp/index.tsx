@@ -11,7 +11,8 @@ const { Title, Text } = Typography;
 
 interface LocationState {
   email?: string;
-  type?: 'register' | 'login' | 'reset';
+  type?: 'register' | 'login' | 'reset' | 'change-password';
+  oldPassword?: string;
   newPassword?: string;
 }
 
@@ -21,6 +22,7 @@ export default function OTPVerification() {
 
   const email = state?.email || '';
   const type = state?.type || 'register';
+  const oldPassword = state?.oldPassword || '';
   const newPassword = state?.newPassword || '';
 
   const [loading, setLoading] = useState(false);
@@ -48,8 +50,19 @@ export default function OTPVerification() {
 
     setLoading(true);
     try {
+      if (type === 'change-password') {
+        await api.post('/auth/change-password', {
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+          otpCode: otpValue,
+        });
+        message.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        useAuthStore.getState().logout();
+        history.push('/auth/login');
+        return;
+      }
+
       if (type === 'reset') {
-        // Flow quên mật khẩu: verify OTP + đổi mật khẩu
         await api.post('/auth/reset-password', {
           email: email,
           otpCode: otpValue,
@@ -58,7 +71,6 @@ export default function OTPVerification() {
         message.success('Đổi mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.');
         history.push('/auth/login');
       } else {
-        // Flow đăng ký: verify OTP + kích hoạt tài khoản
         const response = await api.post('/auth/verify-account', {
           email: email,
           otpCode: otpValue,
