@@ -1,0 +1,103 @@
+@primary-color: #0052cc; 
+@text-color: #172b4d;
+@text-secondary: #6b778c;
+
+.loginContainer {
+  font-family: 'Inter', sans-serif;
+  color: @text-color;
+
+  .brandHeader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    .brandIcon {
+      font-size: 24px;
+      color: @primary-color;
+      margin-right: 8px;
+    }
+    
+    .brandName {
+      font-size: 22px;
+      font-weight: 700;
+      color: @primary-color;
+    }
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    
+    .title {
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 24px;
+      color: @text-color;
+    }
+
+    .subtitle {
+      color: @text-secondary;
+      font-size: 14px;
+    }
+  }
+
+  .loginForm {
+    .inputLabel {
+      font-size: 13px;
+      font-weight: 600;
+      color: @text-color;
+    }
+
+    .inputIcon {
+      color: #8c939d;
+    }
+
+    .loginButton {
+      background-color: @primary-color;
+      border-radius: 8px;
+      font-weight: 600;
+      height: 44px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 16px;
+      
+      &:hover {
+        background-color: darken(@primary-color, 10%) !important;
+      }
+
+      .arrowIcon {
+        margin-left: 8px;
+      }
+    }
+
+    .backLink {
+      text-align: center;
+      font-size: 14px;
+      color: @text-secondary;
+      margin-top: 16px;
+      
+      a {
+        color: @primary-color;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+:global {
+  .ant-input-affix-wrapper-large, 
+  .ant-input-large {
+    border-radius: 8px;
+    padding: 10px 16px;
+    border-color: #dfe1e6;
+    background-color: #fafbfc;
+    
+    &:focus, &:hover, &-focused {
+      background-color: #ffffff;
+      border-color: @primary-color;
+      box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.1);
+    }
+  }
+}

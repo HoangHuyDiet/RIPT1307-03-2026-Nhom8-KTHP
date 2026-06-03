@@ -56,7 +56,6 @@ export default function Login() {
         roles
       );
       
-      // Phân quyền: Admin/Support Admin → /admin/users, User → /dashboard
       if (roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN')) {
         history.push('/admin/users');
       } else {
@@ -68,7 +67,6 @@ export default function Login() {
       const errorMsg = error.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
       message.error(errorMsg);
       
-      // Nếu tài khoản chưa xác thực OTP, chuyển hướng họ sang trang nhập OTP
       if (errorMsg.includes('chưa xác thực OTP')) {
         history.push('/auth/otp', { email: values.email, type: 'register' });
       }

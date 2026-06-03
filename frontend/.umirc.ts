@@ -9,7 +9,7 @@ export default defineConfig({
         { path: '/auth/login', component: '@/pages/auth/login' },
         { path: '/auth/register', component: '@/pages/auth/register' },
         { path: '/auth/forgot-password', component: '@/pages/auth/forgot-password' },
-
+        { path: '/auth/change-password', component: '@/pages/auth/change-password' },
         { path: '/auth/otp', component: '@/pages/auth/otp' },
       ],
     },
