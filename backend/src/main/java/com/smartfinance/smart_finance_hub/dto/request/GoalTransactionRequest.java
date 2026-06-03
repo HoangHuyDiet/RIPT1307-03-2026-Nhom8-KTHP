@@ -12,6 +12,5 @@ public class GoalTransactionRequest {
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
-    @NotNull(message = "Personal fund ID is required")
     private Long personalFundId;
 }
