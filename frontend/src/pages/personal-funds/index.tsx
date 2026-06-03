@@ -222,7 +222,14 @@ export default function PersonalFundManagement() {
       setSummary(summaryData);
       setFunds(fundsData);
       setBalanceHistory(balanceData);
-      setAssetDistribution(distributionData);
+      
+      const mappedDistribution = (distributionData || []).map((d: any) => ({
+        ...d,
+        type: d.fundName || d.type || 'Khác',
+        value: Number(d.balance !== undefined ? d.balance : (d.value || 0))
+      }));
+      setAssetDistribution(mappedDistribution);
+      
       setTransactions(transactionsData);
       setAiTips(aiData);
     } catch (err) {
