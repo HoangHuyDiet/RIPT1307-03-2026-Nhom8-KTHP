@@ -16,6 +16,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DollarOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import { useNotificationStore, FundNotification } from '@/store/useNotificationStore';
@@ -212,6 +213,11 @@ export default function BasicLayout() {
       key: '/transactions',
       icon: <DollarOutlined />,
       label: <Link to="/transactions">Quản lý giao dịch</Link>,
+    },
+    {
+      key: '/categories',
+      icon: <TagsOutlined />,
+      label: <Link to="/categories">Danh mục</Link>,
     },
     {
       key: '/funds',

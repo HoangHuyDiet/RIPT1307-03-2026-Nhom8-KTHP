@@ -22,4 +22,6 @@ public class UpdateTransactionRequest {
     private LocalDate date;
 
     private Long categoryId;
+
+    private Long personalFundId;
 }

@@ -207,7 +207,13 @@ public class PersonalFundController {
             @PathVariable("id") Long fundId,
             @RequestBody DepositRequest request) {
         Long userId = getCurrentUserId();
-        personalFundService.deposit(userId, fundId, request.getAmount(), request.getDescription());
+        personalFundService.deposit(
+                userId,
+                fundId,
+                request.getAmount(),
+                request.getDescription(),
+                request.getCategoryId(),
+                request.getDate());
         return ResponseEntity.ok(ApiResponse.success("Nạp tiền vào quỹ thành công!"));
     }
 

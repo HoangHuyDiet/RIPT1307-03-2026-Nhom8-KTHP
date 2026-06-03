@@ -9,6 +9,7 @@ import {
   BankOutlined,
   DashboardOutlined,
   SettingOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/useAuthStore';
 import styles from './index.less';
@@ -21,6 +22,11 @@ const PAGE_TITLES: Record<string, { title: string; icon: React.ReactNode; subtit
     title: 'Quản lý Người dùng',
     icon: <TeamOutlined />,
     subtitle: 'Danh sách & phân quyền tài khoản',
+  },
+  '/admin/categories': {
+    title: 'Danh mục hệ thống',
+    icon: <TagsOutlined />,
+    subtitle: 'Bộ danh mục thu chi dùng chung cho toàn bộ người dùng',
   },
 };
 
@@ -47,6 +53,11 @@ export default function AdminLayout() {
       key: '/admin/users',
       icon: <TeamOutlined />,
       label: <Link to="/admin/users">Người dùng</Link>,
+    },
+    {
+      key: '/admin/categories',
+      icon: <TagsOutlined />,
+      label: <Link to="/admin/categories">Danh mục</Link>,
     },
     {
       type: 'divider',
