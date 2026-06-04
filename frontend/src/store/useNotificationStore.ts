@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export interface FundNotification {
   id: string;
-  type: 'DEPOSIT_REQUEST' | 'WITHDRAW_REQUEST' | 'DEPOSIT_APPROVED' | 'DEPOSIT_REJECTED' | 'WITHDRAW_APPROVED' | 'WITHDRAW_REJECTED' | 'SYSTEM_INFO';
+  type: 'DEPOSIT_REQUEST' | 'WITHDRAW_REQUEST' | 'DEPOSIT_APPROVED' | 'DEPOSIT_REJECTED' | 'WITHDRAW_APPROVED' | 'WITHDRAW_REJECTED' | 'SYSTEM_INFO' | 'FUND_INVITATION' | 'FUND_DISBAND_PROPOSAL' | 'FUND_MEMBER_REMOVED';
   fundId: number;
   fundName: string;
   amount: number;

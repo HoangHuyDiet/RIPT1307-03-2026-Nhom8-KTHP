@@ -198,6 +198,15 @@ export default function NotificationCenter() {
     if (id.startsWith('tx')) {
       return <Tag color="purple">Giao dịch</Tag>;
     }
+    if (item.type === 'FUND_INVITATION') {
+      return <Tag color="purple">Lời mời tham gia quỹ</Tag>;
+    }
+    if (item.type === 'FUND_DISBAND_PROPOSAL') {
+      return <Tag color="warning">Đề xuất giải tán quỹ</Tag>;
+    }
+    if (item.type === 'FUND_MEMBER_REMOVED') {
+      return <Tag color="error">Bị xóa khỏi quỹ</Tag>;
+    }
     return <Tag color="green">Quỹ nhóm</Tag>;
   };
 
@@ -205,7 +214,7 @@ export default function NotificationCenter() {
     if (activeTab === 'unread') return !n.read;
     if (activeTab === 'system') return n.id.startsWith('dash') || n.id.startsWith('goal') || n.id.startsWith('tx');
     if (activeTab === 'personal') return n.id.startsWith('pf');
-    if (activeTab === 'funds') return n.id.startsWith('fund') || n.type.includes('REQUEST') || n.type.includes('APPROVED') || n.type.includes('REJECTED');
+    if (activeTab === 'funds') return n.id.startsWith('fund') || n.type.includes('REQUEST') || n.type.includes('APPROVED') || n.type.includes('REJECTED') || n.type === 'FUND_INVITATION' || n.type === 'FUND_DISBAND_PROPOSAL' || n.type === 'FUND_MEMBER_REMOVED';
     return true;
   });
 
@@ -298,6 +307,9 @@ export default function NotificationCenter() {
                         {item.type === 'WITHDRAW_APPROVED' && '✅ Rút tiền được duyệt'}
                         {item.type === 'WITHDRAW_REJECTED' && '❌ Rút tiền bị từ chối'}
                         {item.type === 'SYSTEM_INFO' && 'ℹ️ Hệ thống'}
+                        {item.type === 'FUND_INVITATION' && '📩 Lời mời tham gia quỹ'}
+                        {item.type === 'FUND_DISBAND_PROPOSAL' && '⚠️ Đề xuất giải tán quỹ'}
+                        {item.type === 'FUND_MEMBER_REMOVED' && '🚫 Bị xóa khỏi quỹ'}
                       </span>
                       {getSourcePageTag(item)}
                     </Space>
@@ -319,7 +331,7 @@ export default function NotificationCenter() {
 
                   <div className={styles.notifMessage}>{item.description}</div>
 
-                  {item.type !== 'SYSTEM_INFO' && item.amount > 0 && (
+                  {item.type !== 'SYSTEM_INFO' && item.type !== 'FUND_INVITATION' && item.type !== 'FUND_DISBAND_PROPOSAL' && item.type !== 'FUND_MEMBER_REMOVED' && item.amount > 0 && (
                     <div className={styles.amountBox}>
                       Số tiền: <span className={styles.amountVal}>
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.amount)}

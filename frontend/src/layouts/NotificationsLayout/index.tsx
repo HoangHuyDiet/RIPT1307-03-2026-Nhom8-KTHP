@@ -337,7 +337,14 @@ export default function NotificationsPopover() {
                       <div className={styles.notifContent}>
                         <div className={styles.notifHeader}>
                           <Tag
-                            color={item.type === 'SYSTEM_INFO' ? 'default' : item.type.includes('REQUEST') ? 'processing' : item.type.includes('APPROVED') ? 'success' : 'error'}
+                            color={
+                              item.type === 'SYSTEM_INFO' ? 'default' :
+                              item.type === 'FUND_INVITATION' ? 'purple' :
+                              item.type === 'FUND_DISBAND_PROPOSAL' ? 'warning' :
+                              item.type === 'FUND_MEMBER_REMOVED' ? 'error' :
+                              item.type.includes('REQUEST') ? 'processing' :
+                              item.type.includes('APPROVED') ? 'success' : 'error'
+                            }
                             className={styles.notifTag}
                           >
                             {item.type === 'DEPOSIT_REQUEST' && '💰 Yêu cầu nạp tiền'}
@@ -347,6 +354,9 @@ export default function NotificationsPopover() {
                             {item.type === 'WITHDRAW_APPROVED' && '✅ Rút tiền được duyệt'}
                             {item.type === 'WITHDRAW_REJECTED' && '❌ Rút tiền bị từ chối'}
                             {item.type === 'SYSTEM_INFO' && 'ℹ️ Hệ thống'}
+                            {item.type === 'FUND_INVITATION' && '📩 Lời mời tham gia quỹ'}
+                            {item.type === 'FUND_DISBAND_PROPOSAL' && '⚠️ Đề xuất giải tán quỹ'}
+                            {item.type === 'FUND_MEMBER_REMOVED' && '🚫 Bị xóa khỏi quỹ'}
                           </Tag>
                           <span className={styles.notifDate}>{item.date}</span>
                         </div>
@@ -357,10 +367,10 @@ export default function NotificationsPopover() {
                         </div>
 
                         <div className={styles.notifDesc}>
-                          {item.type === 'SYSTEM_INFO' || item.type.includes('REJECTED') ? item.description : (item.type.includes('WITHDRAW') ? `Lý do: ${item.description}` : `Nội dung: ${item.description}`)}
+                          {item.type === 'SYSTEM_INFO' || item.type === 'FUND_INVITATION' || item.type === 'FUND_DISBAND_PROPOSAL' || item.type === 'FUND_MEMBER_REMOVED' || item.type.includes('REJECTED') ? item.description : (item.type.includes('WITHDRAW') ? `Lý do: ${item.description}` : `Nội dung: ${item.description}`)}
                         </div>
 
-                        {item.type !== 'SYSTEM_INFO' && item.amount > 0 && (
+                        {item.type !== 'SYSTEM_INFO' && item.type !== 'FUND_INVITATION' && item.type !== 'FUND_DISBAND_PROPOSAL' && item.type !== 'FUND_MEMBER_REMOVED' && item.amount > 0 && (
                           <div className={styles.notifAmount}>
                             Số tiền: <span className={styles.amountVal}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.amount)}</span>
                           </div>

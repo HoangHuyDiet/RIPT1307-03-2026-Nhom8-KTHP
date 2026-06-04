@@ -132,6 +132,42 @@ const baseNotifications = [
     date: '4 ngày trước',
     read: true,
     targetRole: 'MEMBER'
+  },
+  {
+    id: 'fund_invitation_mock_1',
+    type: 'FUND_INVITATION',
+    fundId: 1,
+    fundName: 'Du Lịch Gia Đình',
+    amount: 0,
+    description: 'Alice Nguyễn đã mời bạn tham gia quỹ nhóm "Du Lịch Gia Đình". Vui lòng kiểm tra email của bạn để xác nhận.',
+    requesterName: 'Alice Nguyễn',
+    date: 'Hôm nay, 15:45',
+    read: false,
+    targetRole: 'MEMBER'
+  },
+  {
+    id: 'fund_disband_mock_1',
+    type: 'FUND_DISBAND_PROPOSAL',
+    fundId: 2,
+    fundName: 'Chi Phí Bạn Cùng Room',
+    amount: 0,
+    description: 'Chủ quỹ Bùi Minh đề xuất giải tán quỹ nhóm "Chi Phí Bạn Cùng Room". Vui lòng kiểm tra email của bạn để xác nhận.',
+    requesterName: 'Bùi Minh',
+    date: 'Hôm nay, 16:10',
+    read: false,
+    targetRole: 'MEMBER'
+  },
+  {
+    id: 'fund_removed_mock_1',
+    type: 'FUND_MEMBER_REMOVED',
+    fundId: 3,
+    fundName: 'Quỹ Ăn Nhậu',
+    amount: 0,
+    description: 'Bạn đã bị xóa khỏi quỹ nhóm "Quỹ Ăn Nhậu" bởi chủ quỹ.',
+    requesterName: 'Trưởng nhóm',
+    date: 'Hôm qua, 09:00',
+    read: true,
+    targetRole: 'MEMBER'
   }
 ];
 
