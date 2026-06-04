@@ -179,6 +179,10 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
+  &.highlightedCard {
+    animation: borderGlow 2s ease-in-out;
+  }
+
   :global(.ant-card-body) {
     padding: 20px;
     display: flex;
@@ -622,5 +626,20 @@
     color: #C5221F;
     font-weight: 500;
     line-height: 1.4;
+  }
+}
+
+@keyframes borderGlow {
+  0% {
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.6);
+    transform: scale(1.01);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.4);
+    transform: scale(1.01);
+  }
+  100% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 15px -3px rgba(0, 0, 0, 0.01);
+    transform: scale(1);
   }
 }

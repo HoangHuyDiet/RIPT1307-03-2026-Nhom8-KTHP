@@ -39,7 +39,7 @@ export default defineConfig({
       ],
     },
   ],
-  mock: {},
+  mock: false,
   npmClient: 'npm',
   utoopack: {},
   proxy: {

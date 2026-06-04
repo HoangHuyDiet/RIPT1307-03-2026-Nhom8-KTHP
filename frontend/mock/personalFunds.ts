@@ -595,6 +595,56 @@ export const MOCK_SAVINGS_GOALS_API = [
     status: 'ON_TRACK',
     category: 'travel',
     isPinned: false
+  },
+  {
+    id: 3,
+    name: 'Mua xe Honda SH',
+    targetAmount: 100000000,
+    currentAmount: 20000000,
+    dueDate: '2026-10-31',
+    status: 'ON_TRACK',
+    category: 'car',
+    isPinned: false
+  },
+  {
+    id: 4,
+    name: 'Quỹ dự phòng y tế',
+    targetAmount: 50000000,
+    currentAmount: 40000000,
+    dueDate: '2026-12-31',
+    status: 'ON_TRACK',
+    category: 'medical',
+    isPinned: false
+  },
+  {
+    id: 5,
+    name: 'Học phí Cao học',
+    targetAmount: 80000000,
+    currentAmount: 15000000,
+    dueDate: '2027-06-30',
+    status: 'ON_TRACK',
+    category: 'education',
+    isPinned: false
+  },
+  {
+    id: 6,
+    name: 'Mua Macbook Pro M4',
+    targetAmount: 60000000,
+    currentAmount: 55000000,
+    dueDate: '2026-06-15',
+    status: 'ON_TRACK',
+    category: 'electronics',
+    isPinned: false
+  },
+  {
+    id: 7,
+    name: 'Khởi nghiệp quán cà phê',
+    targetAmount: 200000000,
+    currentAmount: 0,
+    dueDate: '2027-12-31',
+    status: 'ON_TRACK',
+    category: 'coffee',
+    isPinned: false
   }
 ];
 

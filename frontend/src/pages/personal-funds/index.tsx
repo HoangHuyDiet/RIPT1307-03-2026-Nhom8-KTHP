@@ -40,7 +40,7 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import { Column, Pie } from '@ant-design/charts';
-import { history } from 'umi';
+import { useLocation, history } from 'umi';
 import dayjs from 'dayjs';
 import styles from './index.less';
 import api from '../../utils/api';
@@ -355,6 +355,34 @@ export default function PersonalFundManagement() {
 
   const [selectedFundId, setSelectedFundId] = useState<string | null>(null);
 
+  const [highlightedFundId, setHighlightedFundId] = useState<string | null>(null);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const fundIdParam = queryParams.get('id');
+  const actionParam = queryParams.get('action');
+
+  useEffect(() => {
+    if (funds.length > 0) {
+      if (fundIdParam) {
+        const element = document.getElementById(`fund-card-${fundIdParam}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedFundId(fundIdParam);
+          setTimeout(() => setHighlightedFundId(null), 2000);
+          history.replace('/personal-funds');
+        }
+      } else if (actionParam === 'pay-bill') {
+        const targetFundId = queryParams.get('fundId') || '';
+        payBillForm.resetFields();
+        if (targetFundId) {
+          payBillForm.setFieldsValue({ fundId: targetFundId });
+        }
+        setIsPayBillModalOpen(true);
+        history.replace('/personal-funds');
+      }
+    }
+  }, [fundIdParam, actionParam, funds]);
+
   const handleCreateFund = async (values: any) => {
     try {
       const requestData = {
@@ -571,7 +599,10 @@ export default function PersonalFundManagement() {
 
           return (
             <Col xs={24} sm={12} md={8} key={fund.id}>
-              <Card className={styles.fundCard}>
+              <Card
+                id={`fund-card-${fund.id}`}
+                className={`${styles.fundCard} ${highlightedFundId === String(fund.id) ? styles.highlightedCard : ''}`}
+              >
                 <div className={styles.fundCardTop}>
                   <div className={wrapperClass}>
                     {iconComponent}
