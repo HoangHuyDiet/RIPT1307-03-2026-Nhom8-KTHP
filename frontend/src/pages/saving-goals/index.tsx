@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, history } from 'umi';
 import { Row, Col, Card, Space, Button, Progress, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Skeleton, Pagination } from 'antd';
 import { PlusOutlined, HomeOutlined, CarOutlined, SafetyOutlined, CompassOutlined, LineChartOutlined, FolderOpenOutlined, RobotOutlined, DeleteOutlined, EditOutlined, DollarCircleOutlined, FlagOutlined, PushpinOutlined, PushpinFilled, MedicineBoxOutlined, BookOutlined, ShoppingOutlined, AppstoreOutlined, LaptopOutlined, BankOutlined, GoldOutlined, GiftOutlined, TrophyOutlined, HeartOutlined, CoffeeOutlined, RocketOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -119,6 +120,26 @@ export default function SavingGoals() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const goalIdParam = queryParams.get('id');
+
+  useEffect(() => {
+    if (goalIdParam && goals.length > 0) {
+      const gId = Number(goalIdParam);
+      const sortedGoals = [...goals].sort((a, b) => getUrgencyScore(a) - getUrgencyScore(b));
+      const index = sortedGoals.findIndex(g => g.id === gId);
+      if (index !== -1) {
+        const page = Math.floor(index / ITEMS_PER_PAGE) + 1;
+        setCurrentPage(page);
+        setTimeout(() => {
+          scrollToGoal(gId);
+          history.replace('/saving-goals');
+        }, 100);
+      }
+    }
+  }, [goalIdParam, goals]);
+
   const totalPages = Math.ceil(goals.length / ITEMS_PER_PAGE) || 1;
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -146,11 +167,19 @@ export default function SavingGoals() {
   const pinnedGoals = goals.filter(g => g.isPinned).slice(0, 5);
 
   const scrollToGoal = (goalId: number) => {
-    const element = document.getElementById(`goal-card-${goalId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setHighlightedGoalId(goalId);
-      setTimeout(() => setHighlightedGoalId(null), 2000);
+    const sortedGoals = [...goals].sort((a, b) => getUrgencyScore(a) - getUrgencyScore(b));
+    const index = sortedGoals.findIndex(g => g.id === goalId);
+    if (index !== -1) {
+      const page = Math.floor(index / ITEMS_PER_PAGE) + 1;
+      setCurrentPage(page);
+      setTimeout(() => {
+        const element = document.getElementById(`goal-card-${goalId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedGoalId(goalId);
+          setTimeout(() => setHighlightedGoalId(null), 2000);
+        }
+      }, 100);
     }
   };
 

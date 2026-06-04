@@ -26,6 +26,7 @@ export default defineConfig({
         { path: '/saving-goals', component: '@/pages/saving-goals' },
         { path: '/transactions', component: '@/pages/transactions' },
         { path: '/categories', component: '@/pages/categories' },
+        { path: '/notifications', component: '@/pages/notifications' },
       ],
     },
 

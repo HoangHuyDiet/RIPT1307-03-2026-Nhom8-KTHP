@@ -12,24 +12,16 @@ import {
   SearchOutlined,
   FlagOutlined,
   FlagFilled,
-  WalletOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
   DollarOutlined,
   TagsOutlined,
   LockOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
-import { useNotificationStore, FundNotification } from '@/store/useNotificationStore';
+import NotificationsPopover from '../NotificationsLayout';
 import { useAuthStore } from '@/store/useAuthStore';
-import request from '@/utils/request';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-
 
 const { Header, Sider, Content } = Layout;
-const { Title, Text } = Typography;
 
 const PiggyBankIcon = (props: any) => (
   <span role="img" className={`anticon ${props.className || ''}`} style={{ verticalAlign: 'middle', ...props.style }}>
@@ -58,143 +50,6 @@ export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
-  const notifications = useNotificationStore((s) => s.notifications);
-  const markAsRead = useNotificationStore((s) => s.markAsRead);
-  const removeNotification = useNotificationStore((s) => s.removeNotification);
-  const addNotification = useNotificationStore((s) => s.addNotification);
-  const [serverRequests, setServerRequests] = useState<FundNotification[]>([]);
-  const [serverMemberNotifications, setServerMemberNotifications] = useState<FundNotification[]>([]);
-
-  const [rejectModalVisible, setRejectModalVisible] = useState(false);
-  const [rejectingItem, setRejectingItem] = useState<FundNotification | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-
-  const fetchPendingFundRequests = async () => {
-    if (!user?.email) {
-      setServerRequests([]);
-      setServerMemberNotifications([]);
-      return;
-    }
-
-    try {
-      const fundsRes = await request.get('/funds/list');
-      const funds = fundsRes.data || [];
-      const ownedFunds = funds.filter((fund: any) =>
-        (fund.members || []).some((member: any) =>
-          member.email === user.email && member.role === 'OWNER'
-        )
-      );
-      const txLists = await Promise.all(
-        ownedFunds.map(async (fund: any) => {
-          try {
-            const txRes = await request.get('/funds/transactions', { params: { fundId: fund.id } });
-            return (txRes.data || [])
-              .filter((tx: any) => tx.is_approved === false && tx.status !== 'REJECTED')
-              .map((tx: any) => ({
-                id: String(tx.id),
-                type: tx.type === 'INCOME' ? 'DEPOSIT_REQUEST' : 'WITHDRAW_REQUEST',
-                fundId: fund.id,
-                fundName: fund.name,
-                amount: Number(tx.amount),
-                description: tx.description || '',
-                requesterName: tx.user_display_name || 'Người dùng',
-                bankAccount: tx.bank_account,
-                bankName: tx.bank_name,
-                date: tx.date,
-                read: false,
-                targetRole: 'OWNER'
-              } as FundNotification));
-          } catch (error) {
-            console.warn(`Khong the tai yeu cau cho duyet cua quy ${fund.id}:`, error);
-            return [];
-          }
-        })
-      );
-
-      setServerRequests(txLists.flat());
-
-      const myNotificationsRes = await request.get('/funds/my-notifications');
-      setServerMemberNotifications(myNotificationsRes.data || []);
-    } catch (error) {
-      console.error('Lỗi tải yêu cầu quỹ chờ duyệt:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchPendingFundRequests();
-    window.addEventListener('transaction-approved', fetchPendingFundRequests);
-    const timer = window.setInterval(fetchPendingFundRequests, 30000);
-
-    return () => {
-      window.removeEventListener('transaction-approved', fetchPendingFundRequests);
-      window.clearInterval(timer);
-    };
-  }, [user?.email]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
-    if (!user?.email || !token) return;
-
-    const client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
-      },
-      onConnect: () => {
-        client.subscribe('/user/queue/notifications', (frame) => {
-          const notification = JSON.parse(frame.body);
-          addNotification({
-            ...notification,
-            id: String(notification.id || `ws_${Date.now()}`),
-            read: false,
-          });
-        });
-      },
-      onStompError: (frame) => {
-        console.error('Loi Socket STOMP:', frame.headers.message);
-      },
-    });
-
-    client.activate();
-
-    return () => {
-      if (client.active) {
-        client.deactivate();
-      }
-    };
-  }, [user?.email, addNotification]);
-
-  const visibleNotifications = [
-    ...serverRequests,
-    ...serverMemberNotifications,
-    ...notifications.filter((n) => !(n.targetRole === 'OWNER' && n.type.includes('REQUEST')))
-  ];
-
-  const visibleUnreadCount = visibleNotifications.filter((n) => !n.read).length;
-
-  const handleApproveRequest = async (req: FundNotification, action: 'approved' | 'rejected', reason?: string) => {
-    try {
-      const data = await request.post('/funds/approve-transaction', {
-        requestId: req.id,
-        action,
-        rejectReason: reason
-      });
-      if (data.success) {
-        if (action === 'approved') {
-          message.success(`Đã duyệt thành công!`);
-          fetchPendingFundRequests();
-          window.dispatchEvent(new Event('transaction-approved'));
-        } else {
-          message.info(`Đã từ chối yêu cầu.`);
-        }
-
-        removeNotification(req.id);
-        fetchPendingFundRequests();
-      }
-    } catch {
-      message.error('Lỗi xử lý duyệt yêu cầu!');
-    }
-  };
 
   const menuItems: MenuProps['items'] = [
     {
@@ -244,6 +99,11 @@ export default function BasicLayout() {
       style: { cursor: 'default', backgroundColor: 'transparent' }
     },
     {
+      key: 'notifications',
+      icon: <BellOutlined />,
+      label: <Link to="/notifications">Trung tâm thông báo</Link>,
+    },
+    {
       type: 'divider',
     },
     {
@@ -282,7 +142,6 @@ export default function BasicLayout() {
             <div className={styles.logoText}>
               <div className={styles.brandTitle}>Smart Finance <span className={styles.brandAi}></span></div>
               <div className={styles.brandSubtitle}>Precision Intelligence</div>
-
             </div>
           )}
         </div>
@@ -309,102 +168,7 @@ export default function BasicLayout() {
           </div>
 
           <Space size="large" align="center" className={styles.rightActions}>
-            <Popover
-              trigger="click"
-              placement="bottomRight"
-              title={<span style={{ fontWeight: 700 }}>Thông báo</span>}
-              content={
-                <div style={{ width: 380, maxHeight: 400, overflowY: 'auto' }}>
-                  {visibleNotifications.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 24, color: '#8c98a5' }}>
-                      Không có thông báo
-                    </div>
-                  ) : (
-                    <List
-                      dataSource={visibleNotifications}
-                      renderItem={(item: FundNotification) => {
-                        const isRequest = item.type === 'DEPOSIT_REQUEST' || item.type === 'WITHDRAW_REQUEST';
-                        return (
-                          <List.Item 
-                            style={{ 
-                              padding: '12px 16px', 
-                              borderBottom: '1px solid #f1f3f4',
-                              background: item.read ? '#fff' : '#f0f7ff',
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => {
-                              if (!item.read) markAsRead(item.id);
-                            }}
-                          >
-                            <div style={{ width: '100%' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Tag color={item.type === 'SYSTEM_INFO' ? 'default' : item.type.includes('REQUEST') ? 'processing' : item.type.includes('APPROVED') ? 'success' : 'error'} style={{ borderRadius: 8, fontSize: 11, margin: 0 }}>
-                                  {item.type === 'DEPOSIT_REQUEST' && '💰 Yêu cầu nạp tiền'}
-                                  {item.type === 'WITHDRAW_REQUEST' && '💸 Yêu cầu rút tiền'}
-                                  {item.type === 'DEPOSIT_APPROVED' && '✅ Nạp tiền được duyệt'}
-                                  {item.type === 'DEPOSIT_REJECTED' && '❌ Nạp tiền bị từ chối'}
-                                  {item.type === 'WITHDRAW_APPROVED' && '✅ Rút tiền được duyệt'}
-                                  {item.type === 'WITHDRAW_REJECTED' && '❌ Rút tiền bị từ chối'}
-                                  {item.type === 'SYSTEM_INFO' && 'ℹ️ Hệ thống'}
-                                </Tag>
-                                <span style={{ fontSize: 11, color: '#8c98a5' }}>{item.date}</span>
-                              </div>
-                              <div style={{ fontSize: 13, fontWeight: item.read ? 600 : 700, color: '#202124' }}>
-                                {item.requesterName} {item.fundName ? `• Quỹ "${item.fundName}"` : ''}
-                              </div>
-                              {item.type !== 'SYSTEM_INFO' && (
-                                <div style={{ fontSize: 13, color: '#5f6368', fontWeight: 500 }}>
-                                  Số tiền: <span style={{ color: '#1890ff' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.amount)}</span>
-                                </div>
-                              )}
-                              {item.description && (
-                                <div style={{ fontSize: 12, color: '#8c98a5', marginTop: 2 }}>
-                                  {item.type === 'SYSTEM_INFO' || item.type.includes('REJECTED') ? item.description : (item.type.includes('WITHDRAW') ? `Lý do: ${item.description}` : `Nội dung: ${item.description}`)}
-                                </div>
-                              )}
-                              {item.bankAccount && (
-                                <div style={{ fontSize: 12, color: '#8c98a5' }}>
-                                  TK: {item.bankAccount} - {item.bankName}
-                                </div>
-                              )}
-
-                              {!item.read && isRequest && (
-                                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                                  <Button 
-                                    type="primary" 
-                                    size="small" 
-                                    icon={<CheckCircleOutlined />} 
-                                    onClick={(e) => { e.stopPropagation(); handleApproveRequest(item, 'approved'); }}
-                                  >
-                                    Duyệt
-                                  </Button>
-                                  <Button 
-                                    danger 
-                                    size="small" 
-                                    icon={<CloseCircleOutlined />} 
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      setRejectingItem(item);
-                                      setRejectModalVisible(true);
-                                    }}
-                                  >
-                                    Từ chối
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </List.Item>
-                        );
-                      }}
-                    />
-                  )}
-                </div>
-              }
-            >
-              <Badge count={visibleUnreadCount} size="small" offset={[-2, 2]}>
-                <BellOutlined className={styles.bellIcon} />
-              </Badge>
-            </Popover>
+            <NotificationsPopover />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Space align="center" className={styles.avatarWrapper}>
                 <Avatar size={40} className={styles.avatar} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
@@ -416,34 +180,6 @@ export default function BasicLayout() {
           <Outlet />
         </Content>
       </Layout>
-
-      <Modal
-        title="Lý do từ chối"
-        open={rejectModalVisible}
-        onOk={() => {
-          if (rejectingItem) {
-            handleApproveRequest(rejectingItem, 'rejected', rejectReason);
-          }
-          setRejectModalVisible(false);
-          setRejectingItem(null);
-          setRejectReason('');
-        }}
-        onCancel={() => {
-          setRejectModalVisible(false);
-          setRejectingItem(null);
-          setRejectReason('');
-        }}
-        okText="Từ chối yêu cầu"
-        cancelText="Hủy"
-        okButtonProps={{ danger: true }}
-      >
-        <Input.TextArea
-          rows={4}
-          placeholder="Nhập lý do từ chối để thông báo lại cho thành viên..."
-          value={rejectReason}
-          onChange={(e) => setRejectReason(e.target.value)}
-        />
-      </Modal>
     </Layout>
   );
 }

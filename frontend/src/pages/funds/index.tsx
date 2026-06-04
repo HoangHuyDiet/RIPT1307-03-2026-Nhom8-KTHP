@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, history } from 'umi';
 import request from '@/utils/request';
 import { useAuthStore } from '@/store/useAuthStore';
 import { GroupFund } from './types';
@@ -11,6 +12,18 @@ export default function FundManagement() {
   const [selectedGroup, setSelectedGroup] = useState<GroupFund | null>(null);
 
   const user = useAuthStore(state => state.user);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const fundId = queryParams.get('id');
+
+  useEffect(() => {
+    if (fundId && groups.length > 0) {
+      const group = groups.find(g => String(g.id) === fundId);
+      if (group) {
+        setSelectedGroup(group);
+      }
+    }
+  }, [fundId, groups]);
 
   useEffect(() => {
     fetchData();
@@ -57,12 +70,14 @@ export default function FundManagement() {
   const handleLeaveGroup = (groupId: number) => {
     setGroups(groups.filter(g => g.id !== groupId));
     setSelectedGroup(null);
+    history.push('/funds');
     fetchData();
   };
 
   const handleDeleteGroup = (groupId: number) => {
     setGroups(groups.filter(g => g.id !== groupId));
     setSelectedGroup(null);
+    history.push('/funds');
     fetchData();
   };
 
@@ -77,7 +92,10 @@ export default function FundManagement() {
     return (
       <GroupDetailView 
         group={selectedGroup} 
-        onBack={() => setSelectedGroup(null)}
+        onBack={() => {
+          setSelectedGroup(null);
+          history.push('/funds');
+        }}
         onLeaveGroup={handleLeaveGroup}
         onRenameGroup={handleRenameGroup}
         onDeleteGroup={handleDeleteGroup}
