@@ -331,6 +331,66 @@
   }
 }
 
+.fundOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.fundOptionIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #1a73e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fundOptionMeta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.fundOptionName {
+  font-size: 13px;
+  color: #202124;
+}
+
+.fundOptionSub {
+  font-size: 12px;
+}
+
+.fundEmptyState {
+  padding: 12px 8px 4px;
+}
+
+.balancePreview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: -4px 0 16px;
+  border: 1px solid #e8eef8;
+  border-radius: 12px;
+  background: #f7faff;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.negativeBalance {
+  color: #ff4d4f !important;
+}
+
 :global {
   .ant-segmented {
     .ant-segmented-item-selected {

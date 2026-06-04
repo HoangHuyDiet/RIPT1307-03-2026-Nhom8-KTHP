@@ -5,7 +5,9 @@ import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
 import com.smartfinance.smart_finance_hub.dto.ResendOtpRequest;
 import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import jakarta.validation.Valid;
@@ -15,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -105,4 +109,50 @@ public class AuthController {
 
       return ResponseEntity.ok(response);
     }
+
+    // =============================================
+    // Đổi mật khẩu (cho User đã đăng nhập, kèm OTP)
+    // =============================================
+
+    @PostMapping("/request-password-change")
+    public ResponseEntity<Map<String, Object>> requestPasswordChange(
+            @Valid @RequestBody RequestPasswordChangeRequest request) {
+        String email = getAuthenticatedEmail();
+        log.info("request-password-change for email: {}", email);
+
+        authService.requestPasswordChange(email, request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Mã OTP đã được gửi đến email của bạn!");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        String email = getAuthenticatedEmail();
+        log.info("change-password for email: {}", email);
+
+        authService.changePassword(email, request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy email của user đang đăng nhập từ SecurityContext (JWT token).
+     */
+    private String getAuthenticatedEmail() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        }
+        throw new IllegalStateException("Bạn cần đăng nhập để thực hiện chức năng này!");
+    }
 }
+

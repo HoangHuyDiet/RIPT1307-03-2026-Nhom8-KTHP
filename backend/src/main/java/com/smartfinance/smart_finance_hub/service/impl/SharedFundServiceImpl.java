@@ -4,6 +4,7 @@ import com.smartfinance.smart_finance_hub.dto.request.CreateFundTransactionReque
 import com.smartfinance.smart_finance_hub.dto.request.InviteMemberRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RespondInvitationRequest;
 import com.smartfinance.smart_finance_hub.entity.*;
+import com.smartfinance.smart_finance_hub.enums.FundStatus;
 import com.smartfinance.smart_finance_hub.enums.FundRole;
 import com.smartfinance.smart_finance_hub.enums.InvitationStatus;
 import com.smartfinance.smart_finance_hub.enums.TransactionType;
@@ -32,6 +33,7 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+    private final PersonalFundRepository personalFundRepository;
     private final FundMessageRepository fundMessageRepository;
     private final FundActivityRepository fundActivityRepository;
     private final MailService mailService;
@@ -195,12 +197,20 @@ public class SharedFundServiceImpl implements SharedFundService {
             throw new IllegalArgumentException("Loại giao dịch không hợp lệ! Chỉ chấp nhận INCOME hoặc EXPENSE.");
         }
 
+        validateFundCategory(category, transactionType.name(), userId);
+
+        PersonalFund personalFund = null;
+        if (request.getPersonalFundId() != null) {
+            personalFund = findActiveUserPersonalFund(request.getPersonalFundId(), userId);
+        }
+
         boolean autoApprove = (members.size() <= 1);
 
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .category(category)
                 .shareFund(fund)
+                .personalFund(personalFund)
                 .amount(request.getAmount())
                 .type(transactionType.name())
                 .description(request.getDescription())
@@ -218,6 +228,7 @@ public class SharedFundServiceImpl implements SharedFundService {
             } else if (TransactionType.EXPENSE == transactionType) {
                 fund.setBalance(currentBalance.subtract(request.getAmount()));
             }
+            applyPersonalFundImpact(transaction);
             shareFundRepository.save(fund);
         }
 
@@ -279,6 +290,7 @@ public class SharedFundServiceImpl implements SharedFundService {
             log.info("EXPENSE: balance -{} -> new balance={}", transaction.getAmount(), fund.getBalance());
         }
 
+        applyPersonalFundImpact(transaction);
         shareFundRepository.save(fund);
 
         log.info("approveTransaction success: transactionId={}, isApproved=true, newBalance={}", transactionId, fund.getBalance());
@@ -336,6 +348,7 @@ public class SharedFundServiceImpl implements SharedFundService {
                 fund.setBalance(currentBalance.subtract(transaction.getAmount()));
                 log.info("EXPENSE APPROVED: balance -{} -> new balance={}", transaction.getAmount(), fund.getBalance());
             }
+            applyPersonalFundImpact(transaction);
             shareFundRepository.save(fund);
         } else if ("rejected".equalsIgnoreCase(action)) {
             transaction.setIsApproved(false);
@@ -348,6 +361,43 @@ public class SharedFundServiceImpl implements SharedFundService {
         }
 
         return transactionRepository.save(transaction);
+    }
+
+    private PersonalFund findActiveUserPersonalFund(Long personalFundId, Long userId) {
+        PersonalFund personalFund = personalFundRepository.findByIdAndUserId(personalFundId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nguồn tiền với ID: " + personalFundId));
+        if (personalFund.getStatus() != FundStatus.ACTIVE) {
+            throw new IllegalArgumentException("Nguồn tiền '" + personalFund.getName() + "' đã bị đóng!");
+        }
+        return personalFund;
+    }
+
+    private void validateFundCategory(Category category, String transactionType, Long userId) {
+        if (category.getUser() != null && !category.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền dùng danh mục này!");
+        }
+        if (!category.getType().equalsIgnoreCase(transactionType)) {
+            throw new IllegalArgumentException("Danh mục không khớp với loại giao dịch quỹ!");
+        }
+    }
+
+    private void applyPersonalFundImpact(Transaction transaction) {
+        PersonalFund personalFund = transaction.getPersonalFund();
+        if (personalFund == null) {
+            return;
+        }
+
+        TransactionType txType = TransactionType.valueOf(transaction.getType());
+        BigDecimal amount = transaction.getAmount();
+        if (TransactionType.INCOME == txType) {
+            if (personalFund.getBalance().compareTo(amount) < 0) {
+                throw new IllegalArgumentException("Số dư nguồn tiền '" + personalFund.getName() + "' không đủ!");
+            }
+            personalFund.setBalance(personalFund.getBalance().subtract(amount));
+        } else if (TransactionType.EXPENSE == txType) {
+            personalFund.setBalance(personalFund.getBalance().add(amount));
+        }
+        personalFundRepository.save(personalFund);
     }
 
     private void sendTransactionRejectedNotification(Transaction transaction, ShareFund fund, String rejectReason) {

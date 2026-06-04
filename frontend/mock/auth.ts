@@ -90,4 +90,33 @@ export default {
       });
     }
   },
+  'POST /api/auth/request-password-change': (req: any, res: any) => {
+    const { oldPassword } = req.body;
+    if (oldPassword === 'wrong') {
+      res.status(400).send({
+        status: 'error',
+        message: 'Mật khẩu hiện tại không chính xác!'
+      });
+    } else {
+      res.send({
+        status: 'success',
+        message: 'Mã OTP đã được gửi đến email của bạn!'
+      });
+    }
+  },
+
+  'POST /api/auth/change-password': (req: any, res: any) => {
+    const { otpCode } = req.body;
+    if (otpCode === '123456') {
+      res.send({
+        status: 'success',
+        message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'
+      });
+    } else {
+      res.status(400).send({
+        status: 'error',
+        message: 'Mã OTP không chính xác. Hãy nhập 123456!'
+      });
+    }
+  },
 };

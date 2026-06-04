@@ -3,7 +3,9 @@ package com.smartfinance.smart_finance_hub.service.impl;
 import com.smartfinance.smart_finance_hub.dto.LoginRequest;
 import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
 import com.smartfinance.smart_finance_hub.entity.Role;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.entity.UserRole;
@@ -183,6 +185,59 @@ public class AuthServiceImpl implements AuthService {
             .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại trong hệ thống!"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        log.info("Đổi mật khẩu thành công cho user: {}", email);
+    }
+
+    @Override
+    @Transactional
+    public void requestPasswordChange(String email, RequestPasswordChangeRequest request) {
+        log.info("requestPasswordChange cho email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa, không thể đổi mật khẩu");
+        }
+
+        // Kiểm tra mật khẩu cũ có đúng không
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // Mật khẩu cũ đúng -> Gửi OTP
+        try {
+            twoFactorAuthService.sendOtp(email);
+            log.info("Đã gửi mã OTP đổi mật khẩu cho: {}", email);
+        } catch (MessagingException e) {
+            log.error("Lỗi gửi email OTP cho {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        log.info("changePassword cho email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+
+        // Kiểm tra lại mật khẩu cũ (double-check bảo mật)
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // Xác thực OTP
+        boolean isValid = twoFactorAuthService.verifyOtp(email, request.getOtpCode());
+        if (!isValid) {
+            throw new IllegalArgumentException("Mã OTP không chính xác hoặc đã hết hạn!");
+        }
+
+        // OTP hợp lệ -> Đổi mật khẩu
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
         log.info("Đổi mật khẩu thành công cho user: {}", email);

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, Outlet, useLocation } from 'umi';
-import { Layout, Menu, Avatar, Dropdown, Space, Input } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation, history } from 'umi';
+import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Input, Badge, Popover, List, Tag, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
@@ -13,37 +13,43 @@ import {
   FlagOutlined,
   FlagFilled,
   DollarOutlined,
+  TagsOutlined,
+  LockOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import NotificationsPopover from '../NotificationsLayout';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const { Header, Sider, Content } = Layout;
 
 const PiggyBankIcon = (props: any) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="1.15em"
-    height="1.15em"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.1"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ verticalAlign: 'middle', ...props.style }}
-  >
-    <path d="M19 5c-1.5 0-2.8 1.4-3 2-2.2-1.9-6.8-1.9-9 0-.2-.6-1.5-2-3-2C2.5 5 2 7 2 9c0 4.4 3.6 8 8 8h4c4.4 0 8-3.6 8-8 0-2-.5-4-2-4Z" />
-    <path d="M12 17v3" />
-    <path d="M8 17v3" />
-    <path d="M16 17v3" />
-    <circle cx="9.5" cy="11" r="1.2" fill="currentColor" />
-    <circle cx="14.5" cy="11" r="1.2" fill="currentColor" />
-    <path d="M22 9h-2" />
-  </svg>
+  <span role="img" className={`anticon ${props.className || ''}`} style={{ verticalAlign: 'middle', ...props.style }}>
+    <svg
+      viewBox="0 0 24 24"
+      width="1.15em"
+      height="1.15em"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 5c-1.5 0-2.8 1.4-3 2-2.2-1.9-6.8-1.9-9 0-.2-.6-1.5-2-3-2C2.5 5 2 7 2 9c0 4.4 3.6 8 8 8h4c4.4 0 8-3.6 8-8 0-2-.5-4-2-4Z" />
+      <path d="M12 17v3" />
+      <path d="M8 17v3" />
+      <path d="M16 17v3" />
+      <circle cx="9.5" cy="11" r="1.2" fill="currentColor" />
+      <circle cx="14.5" cy="11" r="1.2" fill="currentColor" />
+      <path d="M22 9h-2" />
+    </svg>
+  </span>
 );
 
 export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
 
   const menuItems: MenuProps['items'] = [
     {
@@ -67,6 +73,11 @@ export default function BasicLayout() {
       label: <Link to="/transactions">Quản lý giao dịch</Link>,
     },
     {
+      key: '/categories',
+      icon: <TagsOutlined />,
+      label: <Link to="/categories">Danh mục</Link>,
+    },
+    {
       key: '/funds',
       icon: <BankOutlined />,
       label: <Link to="/funds">Quản lý quỹ nhóm</Link>,
@@ -75,9 +86,17 @@ export default function BasicLayout() {
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Hồ sơ cá nhân',
+      key: 'profile-info',
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0' }}>
+          <Avatar size={40} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 600, color: '#202124', fontSize: 14 }}>{user?.name || 'Người dùng'}</span>
+            <span style={{ color: '#5f6368', fontSize: 13 }}>{user?.email || 'email@example.com'}</span>
+          </div>
+        </div>
+      ),
+      style: { cursor: 'default', backgroundColor: 'transparent' }
     },
     {
       key: 'notifications',
@@ -88,10 +107,17 @@ export default function BasicLayout() {
       type: 'divider',
     },
     {
+      key: 'change-password',
+      icon: <LockOutlined style={{ fontSize: 16 }} />,
+      label: 'Thay đổi mật khẩu',
+      onClick: () => {
+        history.push('/auth/change-password');
+      }
+    },
+    {
       key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Đăng xuất',
-      danger: true,
+      icon: <LogoutOutlined style={{ fontSize: 16, color: '#d93025' }} />,
+      label: <span style={{ color: '#d93025' }}>Đăng xuất</span>,
       onClick: () => {
         window.location.href = '/auth/login';
       }

@@ -12,7 +12,14 @@ public interface PersonalTransactionService {
     TransactionResponse createTransaction(CreateTransactionRequest request, Long userId);
 
     Page<TransactionResponse> getTransactions(
-            Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
+            Long userId,
+            String type,
+            Long categoryId,
+            Long personalFundId,
+            String search,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable);
 
     TransactionResponse getTransactionById(Long transactionId, Long userId);
 

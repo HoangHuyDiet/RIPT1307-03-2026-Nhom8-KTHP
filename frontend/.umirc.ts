@@ -9,7 +9,7 @@ export default defineConfig({
         { path: '/auth/login', component: '@/pages/auth/login' },
         { path: '/auth/register', component: '@/pages/auth/register' },
         { path: '/auth/forgot-password', component: '@/pages/auth/forgot-password' },
-
+        { path: '/auth/change-password', component: '@/pages/auth/change-password' },
         { path: '/auth/otp', component: '@/pages/auth/otp' },
       ],
     },
@@ -25,6 +25,7 @@ export default defineConfig({
         { path: '/funds/verify', component: '@/pages/funds/verify' },
         { path: '/saving-goals', component: '@/pages/saving-goals' },
         { path: '/transactions', component: '@/pages/transactions' },
+        { path: '/categories', component: '@/pages/categories' },
         { path: '/notifications', component: '@/pages/notifications' },
       ],
     },
@@ -34,6 +35,7 @@ export default defineConfig({
       component: '@/layouts/AdminLayout',
       routes: [
         { path: '/admin/users', component: '@/pages/admin/users' },
+        { path: '/admin/categories', component: '@/pages/admin/categories' },
       ],
     },
   ],

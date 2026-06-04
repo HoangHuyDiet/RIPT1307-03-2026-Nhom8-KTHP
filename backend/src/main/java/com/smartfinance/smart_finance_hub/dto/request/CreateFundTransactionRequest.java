@@ -29,4 +29,6 @@ public class CreateFundTransactionRequest {
 
     @NotNull(message = "Category is required")
     private Long categoryId;
+
+    private Long personalFundId;
 }
