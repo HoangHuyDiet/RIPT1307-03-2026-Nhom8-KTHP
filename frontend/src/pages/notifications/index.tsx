@@ -17,6 +17,9 @@ import styles from './index.less';
 import request from '@/utils/request';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNotificationStore, FundNotification } from '@/store/useNotificationStore';
+import { history } from 'umi';
+
+const EXCLUDED_NAV_TYPES = ['AI_MESSAGE', 'FUND_INVITATION', 'FUND_DISSOLUTION', 'FUND_KICKED', 'FUND_DISBAND_PROPOSAL', 'FUND_MEMBER_REMOVED'];
 
 export default function NotificationCenter() {
   const user = useAuthStore((s) => s.user);
@@ -105,6 +108,34 @@ export default function NotificationCenter() {
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
       );
       markAsReadLocal(id);
+    }
+  };
+
+  const handleNotificationClick = async (item: FundNotification) => {
+    // 1. Luôn luôn gọi hàm markAsReadLocal(item.id) từ store để cập nhật trạng thái đã đọc
+    markAsReadLocal(item.id);
+
+    // Đồng thời gọi API đánh dấu đã đọc trên server để đồng bộ
+    if (!item.read) {
+      try {
+        await request.post('/funds/my-notifications/read', { id: item.id });
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
+        );
+      } catch (e) {
+        console.error('Không thể đồng bộ trạng thái đọc lên server:', e);
+      }
+    }
+
+    // 2. Nếu loại thông báo thuộc mảng ngoại lệ thì dừng lại, không điều hướng
+    if (EXCLUDED_NAV_TYPES.includes(item.type)) {
+      return;
+    }
+
+    // 3. Nếu có link_action hoặc actionUrl thì điều hướng
+    const targetUrl = item.link_action || item.actionUrl;
+    if (targetUrl) {
+      history.push(targetUrl);
     }
   };
 
@@ -290,10 +321,8 @@ export default function NotificationCenter() {
             const isRequest = item.type === 'DEPOSIT_REQUEST' || item.type === 'WITHDRAW_REQUEST';
             return (
               <List.Item
-                className={`${styles.notifItem} ${item.read ? '' : styles.unreadItem}`}
-                onClick={() => {
-                  if (!item.read) handleMarkAsRead(item.id);
-                }}
+                className={`${styles.notifItem} ${item.read ? '' : styles.unreadItem} ${EXCLUDED_NAV_TYPES.includes(item.type) ? styles.excludedNavItem : ''}`}
+                onClick={() => handleNotificationClick(item)}
               >
                 {getIcon(item)}
                 <div className={styles.notifContent}>

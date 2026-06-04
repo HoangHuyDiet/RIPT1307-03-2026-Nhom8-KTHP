@@ -13,6 +13,8 @@ export interface FundNotification {
   date: string;
   read: boolean;
   targetRole: 'OWNER' | 'MEMBER';
+  link_action?: string;
+  actionUrl?: string;
 }
 
 interface NotificationState {

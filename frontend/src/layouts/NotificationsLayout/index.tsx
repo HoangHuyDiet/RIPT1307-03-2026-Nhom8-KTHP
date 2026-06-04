@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'umi';
+import { Link, useLocation, history } from 'umi';
 import { Popover, Badge, Dropdown, Button, List, Tag, message, Modal, Input } from 'antd';
 import {
   BellFilled,
@@ -19,6 +19,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import request from '@/utils/request';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+
+const EXCLUDED_NAV_TYPES = ['AI_MESSAGE', 'FUND_INVITATION', 'FUND_DISSOLUTION', 'FUND_KICKED', 'FUND_DISBAND_PROPOSAL', 'FUND_MEMBER_REMOVED'];
 
 export default function NotificationsPopover() {
   const location = useLocation();
@@ -200,6 +202,35 @@ export default function NotificationsPopover() {
     }
   };
 
+  const handleNotificationClick = async (item: FundNotification) => {
+    // 1. Luôn luôn gọi hàm markAsRead(item.id) từ store để cập nhật trạng thái đã đọc
+    markAsRead(item.id);
+
+    // Đồng thời gọi API đánh dấu đã đọc trên server để đồng bộ
+    if (!item.read) {
+      try {
+        await request.post('/funds/my-notifications/read', { id: item.id });
+        fetchPendingFundRequests();
+      } catch (e) {
+        console.error('Không thể đồng bộ trạng thái đọc lên server:', e);
+      }
+    }
+
+    // 2. Tự động đóng cửa sổ Popover chứa danh sách thông báo
+    setPopoverOpen(false);
+
+    // 3. Nếu thuộc EXCLUDED_NAV_TYPES thì dừng lại, không điều hướng
+    if (EXCLUDED_NAV_TYPES.includes(item.type)) {
+      return;
+    }
+
+    // 4. Nếu có link_action hoặc actionUrl thì điều hướng
+    const targetUrl = item.link_action || item.actionUrl;
+    if (targetUrl) {
+      history.push(targetUrl);
+    }
+  };
+
   const getInlineIcon = (item: FundNotification) => {
     const id = item.id.toLowerCase();
     if (id.startsWith('dash')) {
@@ -329,10 +360,8 @@ export default function NotificationsPopover() {
                   const pageName = getSourcePageName(item);
                   return (
                     <List.Item
-                      className={`${styles.notificationItem} ${item.read ? '' : styles.unread}`}
-                      onClick={() => {
-                        if (!item.read) handleMarkAsRead(item.id);
-                      }}
+                      className={`${styles.notificationItem} ${item.read ? '' : styles.unread} ${EXCLUDED_NAV_TYPES.includes(item.type) ? styles.excludedNavItem : ''}`}
+                      onClick={() => handleNotificationClick(item)}
                     >
                       <div className={styles.notifContent}>
                         <div className={styles.notifHeader}>
