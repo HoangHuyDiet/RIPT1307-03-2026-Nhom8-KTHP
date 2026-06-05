@@ -1,11 +1,19 @@
 .layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mainLayout {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sider {
   box-shadow: 2px 0 8px 0 rgba(0, 0, 0, 0.05);
   z-index: 10;
-  
+
   .logoContainer {
     height: 72px;
     display: flex;
@@ -14,7 +22,7 @@
     margin-bottom: 8px;
     overflow: hidden;
     gap: 12px;
-    
+
     .logoIcon {
       display: flex;
       align-items: center;
@@ -27,11 +35,11 @@
       font-size: 18px;
       flex-shrink: 0;
     }
-    
+
     .logoText {
       display: flex;
       flex-direction: column;
-      
+
       .brandTitle {
         margin: 0;
         color: #1A73E8;
@@ -39,12 +47,12 @@
         font-weight: 700;
         font-size: 22px;
         line-height: 1.1;
-        
+
         .brandAi {
           color: #1A73E8;
         }
       }
-      
+
       .brandSubtitle {
         color: #5F6368;
         font-size: 11px;
@@ -55,12 +63,12 @@
 
   .menu {
     border-right: 0;
-    
+
     :global(.ant-menu-item) {
       border-radius: 8px;
       margin-bottom: 4px;
     }
-    
+
     :global(.ant-menu-item-selected) {
       background-color: #1A73E8 !important;
       color: white !important;
@@ -89,29 +97,29 @@
     display: flex;
     align-items: center;
     flex: 1;
-    
+
     .collapseBtn {
       font-size: 16px;
       width: 64px;
       height: 64px;
       border-radius: 0;
     }
-    
+
     .searchWrapper {
       flex: 1;
       max-width: 600px;
       padding-left: 16px;
-      
+
       .searchBar {
         border-radius: 20px;
         background-color: #F1F4F7;
         border: none;
         padding: 6px 16px;
-        
+
         :global(.ant-input) {
           background-color: transparent;
         }
-        
+
         &:focus-within {
           box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
         }
@@ -123,7 +131,7 @@
     padding-right: 24px;
     display: flex;
     align-items: center;
-    
+
     .bellIcon {
       font-size: 20px;
       cursor: pointer;
@@ -132,12 +140,12 @@
       display: flex;
       align-items: center;
     }
-    
+
     .avatarWrapper {
       cursor: pointer;
       display: flex;
       align-items: center;
-      
+
       .avatar {
         border: 1px solid #000000 !important;
       }
@@ -148,4 +156,13 @@
 .content {
   margin: 24px;
   min-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
+
+

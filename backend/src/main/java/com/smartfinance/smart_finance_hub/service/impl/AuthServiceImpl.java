@@ -3,11 +3,17 @@ package com.smartfinance.smart_finance_hub.service.impl;
 import com.smartfinance.smart_finance_hub.dto.LoginRequest;
 import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
+import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
+import com.smartfinance.smart_finance_hub.entity.Role;
 import com.smartfinance.smart_finance_hub.entity.User;
+import com.smartfinance.smart_finance_hub.entity.UserRole;
 import com.smartfinance.smart_finance_hub.enums.UserStatus;
 import com.smartfinance.smart_finance_hub.exception.business.UserAlreadyExistsException;
+import com.smartfinance.smart_finance_hub.repository.RoleRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
+import com.smartfinance.smart_finance_hub.repository.UserRoleRepository;
 import com.smartfinance.smart_finance_hub.security.CustomUserDetails;
 import com.smartfinance.smart_finance_hub.security.JwtUtils;
 import com.smartfinance.smart_finance_hub.service.AuthService;
@@ -19,12 +25,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TwoFactorAuthService twoFactorAuthService;
     private final JwtUtils jwtUtils;
@@ -46,6 +58,16 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
         userRepository.save(newUser);
+
+        // Gán role USER mặc định cho user mới
+        Role userRole = roleRepository.findByName("USER")
+            .orElseThrow(() -> new RuntimeException("Role USER không tồn tại trong hệ thống!"));
+        UserRole ur = UserRole.builder()
+            .user(newUser)
+            .role(userRole)
+            .build();
+        userRoleRepository.save(ur);
+        log.info("Đã gán role USER cho user: {}", newUser.getEmail());
 
         try {
             twoFactorAuthService.sendOtp(request.getEmail());
@@ -92,7 +114,8 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
       log.info("login request: {}", request.getEmail());
 
-      User user = userRepository.findByEmail(request.getEmail())
+      // Sử dụng findByEmailWithRoles để load roles cùng lúc
+      User user = userRepository.findByEmailWithRoles(request.getEmail())
           .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không đúng"));
 
       if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -110,12 +133,20 @@ public class AuthServiceImpl implements AuthService {
       CustomUserDetails userDetails = CustomUserDetails.build(user);
       String token = jwtUtils.generateToken(userDetails);
 
-      log.info("login success: {}", request.getEmail());
+      // Lấy danh sách tên roles
+      List<String> roleNames = (user.getUserRoles() != null)
+          ? user.getUserRoles().stream()
+              .map(ur -> ur.getRole().getName())
+              .collect(Collectors.toList())
+          : Collections.emptyList();
+
+      log.info("login success: {}, roles: {}", request.getEmail(), roleNames);
 
       return LoginResponse.builder()
           .token(token)
           .email(user.getEmail())
           .displayName(user.getDisplayName())
+          .roles(roleNames)
           .build();
     }
 
@@ -158,4 +189,58 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Đổi mật khẩu thành công cho user: {}", email);
     }
+
+    @Override
+    @Transactional
+    public void requestPasswordChange(String email, RequestPasswordChangeRequest request) {
+        log.info("requestPasswordChange cho email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa, không thể đổi mật khẩu");
+        }
+
+        // Kiểm tra mật khẩu cũ có đúng không
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // Mật khẩu cũ đúng -> Gửi OTP
+        try {
+            twoFactorAuthService.sendOtp(email);
+            log.info("Đã gửi mã OTP đổi mật khẩu cho: {}", email);
+        } catch (MessagingException e) {
+            log.error("Lỗi gửi email OTP cho {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        log.info("changePassword cho email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+
+        // Kiểm tra lại mật khẩu cũ (double-check bảo mật)
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // Xác thực OTP
+        boolean isValid = twoFactorAuthService.verifyOtp(email, request.getOtpCode());
+        if (!isValid) {
+            throw new IllegalArgumentException("Mã OTP không chính xác hoặc đã hết hạn!");
+        }
+
+        // OTP hợp lệ -> Đổi mật khẩu
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        log.info("Đổi mật khẩu thành công cho user: {}", email);
+    }
 }
+

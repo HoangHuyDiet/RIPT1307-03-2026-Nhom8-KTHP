@@ -21,7 +21,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
     log.info("Bắt đầu truy vấn thông tin User từ Database với email: {}", email);
 
-    User user = userRepository.findByEmail(email)
+    User user = userRepository.findByEmailWithRoles(email)
         .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
     return CustomUserDetails.build(user);

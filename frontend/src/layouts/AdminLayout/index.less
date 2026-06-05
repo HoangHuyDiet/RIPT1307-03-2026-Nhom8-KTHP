@@ -1,0 +1,197 @@
+.layout {
+  min-height: 100vh;
+}
+
+.sider {
+  background: #ffffff !important;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  border-right: 1px solid #f0f0f0;
+
+  .logoContainer {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    overflow: hidden;
+    margin-bottom: 8px;
+
+    .logoIcon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background-color: #1A73E8;
+      color: #ffffff;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .logoText {
+      display: flex;
+      flex-direction: column;
+
+      .brandTitle {
+        color: #1A73E8;
+        font-weight: 700;
+        font-size: 15px;
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+
+      .brandSubtitle {
+        color: #5F6368;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .menuSection {
+    padding: 0 12px;
+
+    .menuLabel {
+      padding: 0 12px;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #9ca3af;
+      letter-spacing: 0.8px;
+    }
+  }
+
+  .menu {
+    background: transparent !important;
+    border-right: 0;
+
+    :global(.ant-menu-item) {
+      border-radius: 8px;
+      margin-bottom: 4px;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 500;
+
+      &:hover {
+        background: rgba(26, 115, 232, 0.08) !important;
+        color: #1A73E8 !important;
+      }
+    }
+
+    :global(.ant-menu-item-selected) {
+      background-color: #1A73E8 !important;
+      color: #ffffff !important;
+      font-weight: 600;
+
+      &::after {
+        display: none;
+      }
+    }
+
+    :global(.ant-menu-item .ant-menu-item-icon) {
+      font-size: 16px;
+    }
+  }
+
+  .siderFooter {
+    padding: 12px 20px 16px;
+    border-top: 1px solid #f0f0f0;
+
+    .adminBadge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26, 115, 232, 0.08);
+      border: 1px solid rgba(26, 115, 232, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+
+      .adminBadgeText {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1A73E8;
+      }
+    }
+  }
+
+  &:global(.ant-layout-sider-collapsed) {
+    .logoContainer {
+      padding: 0;
+      justify-content: center;
+    }
+
+    .menuSection {
+      padding: 0 8px;
+    }
+  }
+}
+
+.header {
+  padding: 0 28px;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  z-index: 9;
+  height: 68px;
+  line-height: normal;
+  border-bottom: 1px solid #f0f0f0;
+
+  .headerLeft {
+    display: flex;
+    align-items: center;
+
+    .pageTitleWrapper {
+      display: flex;
+      align-items: center;
+      padding: 0;
+
+      .pageTitleTextGroup {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        .pageTitle {
+          font-size: 20px;
+          font-weight: 700;
+          color: #0f172a;
+          letter-spacing: -0.3px;
+          line-height: 1.2;
+        }
+
+        .pageSubtitle {
+          font-size: 13px;
+          color: #6b7280;
+          font-weight: 400;
+          line-height: 1.4;
+          margin-top: 3px;
+        }
+      }
+    }
+  }
+
+  .headerRight {
+    display: flex;
+    align-items: center;
+
+    .logoutBtn {
+      border-radius: 8px;
+      font-weight: 500;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.content {
+  background: #F1F4F7;
+  min-height: calc(100vh - 68px);
+  padding: 28px;
+  overflow-y: auto;
+}

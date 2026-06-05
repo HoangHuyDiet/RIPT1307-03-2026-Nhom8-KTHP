@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -16,6 +17,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -33,13 +36,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
         String email = jwtUtils.getEmailFromJwtToken(jwt);
+        List<String> roles = jwtUtils.getRolesFromJwtToken(jwt);
 
-        log.info("Xác thực thành công token cho user: {}", email);
+        log.info("Xác thực thành công token cho user: {}, roles: {}", email, roles);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
+        // Sử dụng roles từ JWT để tạo authorities
+        var authorities = roles.stream()
+            .map(SimpleGrantedAuthority::new)
+            .collect(Collectors.toList());
+
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-            userDetails, null, userDetails.getAuthorities());
+            userDetails, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -58,4 +67,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     return null;
   }
-}
+}

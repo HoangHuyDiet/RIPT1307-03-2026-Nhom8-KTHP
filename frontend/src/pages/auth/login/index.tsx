@@ -49,16 +49,24 @@ export default function Login() {
       
       message.success('Đăng nhập thành công');
       
-      useAuthStore.getState().setAuth(data.data.token, { email: data.data.email, name: data.data.displayName });
+      const roles = data.data.roles || [];
+      useAuthStore.getState().setAuth(
+        data.data.token, 
+        { email: data.data.email, name: data.data.displayName },
+        roles
+      );
       
-      history.push('/dashboard');
+      if (roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN')) {
+        history.push('/admin/users');
+      } else {
+        history.push('/dashboard');
+      }
 
     } catch (error: any) {
       console.error('Login failed:', error);
       const errorMsg = error.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
       message.error(errorMsg);
       
-      // Nếu tài khoản chưa xác thực OTP, chuyển hướng họ sang trang nhập OTP
       if (errorMsg.includes('chưa xác thực OTP')) {
         history.push('/auth/otp', { email: values.email, type: 'register' });
       }

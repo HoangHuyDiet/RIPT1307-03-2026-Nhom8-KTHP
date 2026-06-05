@@ -1,5 +1,5 @@
 export default {
-  'POST /api/auth/login': (req: any, res: any) => {
+  'POST /api/auth/login_mock': (req: any, res: any) => {
     const { email, password } = req.body;
 
     if (email === 'admin@gmail.com' && password === '123456') {
@@ -23,7 +23,7 @@ export default {
 
 
   
-  'POST /api/auth/register': (req: any, res: any) => {
+  'POST /api/auth/register_mock': (req: any, res: any) => {
     const { email } = req.body;
 
     if (email === 'admin@gmail.com') {
@@ -40,7 +40,7 @@ export default {
   },
 
 
-  'POST /api/auth/verify-otp': (req: any, res: any) => {
+  'POST /api/auth/verify-otp_mock': (req: any, res: any) => {
     const { email, otp, type } = req.body;
     if (otp === '123456') {
       if (type === 'login') {
@@ -66,7 +66,7 @@ export default {
       });
     }
   },
-  'POST /api/auth/resend-otp': (req: any, res: any) => {
+  'POST /api/auth/resend-otp_mock': (req: any, res: any) => {
     res.send({
       status: 'success',
       message: 'Mã OTP mới đã được gửi'
@@ -75,7 +75,7 @@ export default {
 
 
 
-  'POST /api/auth/forgot-password': (req: any, res: any) => {
+  'POST /api/auth/forgot-password_mock': (req: any, res: any) => {
     const { email } = req.body;
 
     if (email === 'admin@gmail.com') {
@@ -87,6 +87,35 @@ export default {
       res.status(404).send({
         status: 'error',
         message: 'Tài khoản Email này không tồn tại trong hệ thống!'
+      });
+    }
+  },
+  'POST /api/auth/request-password-change': (req: any, res: any) => {
+    const { oldPassword } = req.body;
+    if (oldPassword === 'wrong') {
+      res.status(400).send({
+        status: 'error',
+        message: 'Mật khẩu hiện tại không chính xác!'
+      });
+    } else {
+      res.send({
+        status: 'success',
+        message: 'Mã OTP đã được gửi đến email của bạn!'
+      });
+    }
+  },
+
+  'POST /api/auth/change-password': (req: any, res: any) => {
+    const { otpCode } = req.body;
+    if (otpCode === '123456') {
+      res.send({
+        status: 'success',
+        message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'
+      });
+    } else {
+      res.status(400).send({
+        status: 'error',
+        message: 'Mã OTP không chính xác. Hãy nhập 123456!'
       });
     }
   },

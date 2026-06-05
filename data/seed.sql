@@ -129,3 +129,27 @@ INSERT INTO categories (user_id, name, type, description) VALUES
 -- 17 Permissions
 -- 16 Danh mục mặc định (10 chi + 6 thu)
 -- ============================================================
+-- Danh muc bo sung cho man hinh giao dich ca nhan
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Du lịch', 'EXPENSE', 'Vé máy bay, khách sạn, tour, ăn uống khi đi du lịch'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Du lịch' AND type = 'EXPENSE');
+
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Đi chơi', 'EXPENSE', 'Cafe, xem phim, tụ tập bạn bè, hoạt động cuối tuần'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Đi chơi' AND type = 'EXPENSE');
+
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Mua nhà', 'EXPENSE', 'Đặt cọc, trả góp, phí môi giới, chi phí mua nhà'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Mua nhà' AND type = 'EXPENSE');
+
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Gia đình', 'EXPENSE', 'Chi phí sinh hoạt, hỗ trợ người thân, chăm sóc gia đình'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Gia đình' AND type = 'EXPENSE');
+
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Kinh doanh', 'INCOME', 'Thu nhập từ kinh doanh, vận hành cửa hàng hoặc dịch vụ'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Kinh doanh' AND type = 'INCOME');
+
+INSERT INTO categories (user_id, name, type, description)
+SELECT NULL, 'Bán tài sản', 'INCOME', 'Thu nhập từ bán xe, đồ dùng, bất động sản hoặc tài sản khác'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE user_id IS NULL AND name = 'Bán tài sản' AND type = 'INCOME');

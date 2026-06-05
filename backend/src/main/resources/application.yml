@@ -2,10 +2,10 @@ spring:
   application:
     name: smart-finance-hub
   datasource:
-    url: jdbc:mysql://localhost:3306/smart_finance_hub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: ${DB_URL:jdbc:mysql://localhost:3306/smart_finance_hub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: root
-    password: 145hoang
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: 12345678
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
   jpa:
     open-in-view: false
     hibernate:
@@ -51,6 +51,8 @@ jwt:
 app:
   mail:
     from-name: Smart Finance Hub
+    from-email: hoangnv.private@gmail.com
+  frontend-url: ${FRONTEND_URL:http://localhost:8000}
   2fa:
     otp-length: 6
     otp-expiry-seconds: 60

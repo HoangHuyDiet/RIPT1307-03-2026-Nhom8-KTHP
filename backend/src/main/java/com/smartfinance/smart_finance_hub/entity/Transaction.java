@@ -11,8 +11,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
-@Getter @Setter
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_transactions_fund_status", columnList = "fund_id,status"),
+        @Index(name = "idx_transactions_fund_approved_date", columnList = "fund_id,is_approved,date"),
+        @Index(name = "idx_transactions_user_fund", columnList = "user_id,fund_id"),
+        @Index(name = "idx_transactions_fund_type", columnList = "fund_id,type")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,12 +33,23 @@ public class Transaction {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id")
     private ShareFund shareFund;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "saving_goal_id")
+    private SavingGoal savingGoal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "personal_fund_id")
+    private PersonalFund personalFund;
+
+    @Column(name = "linked_transaction_id")
+    private Long linkedTransactionId;
 
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)
@@ -47,6 +64,26 @@ public class Transaction {
     @Column(name = "is_approved", nullable = false)
     @Builder.Default
     private Boolean isApproved = false;
+
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String status = "PENDING";
+
+    @Column(name = "bank_account", length = 100)
+    private String bankAccount;
+
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedByUser;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
 
     @NotNull
     @Column(nullable = false)
