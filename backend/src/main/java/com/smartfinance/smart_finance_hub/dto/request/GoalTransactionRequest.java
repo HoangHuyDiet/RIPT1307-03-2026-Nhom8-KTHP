@@ -13,4 +13,7 @@ public class GoalTransactionRequest {
     private BigDecimal amount;
 
     private Long personalFundId;
+
+    private String bankName;
+    private String bankAccount;
 }
