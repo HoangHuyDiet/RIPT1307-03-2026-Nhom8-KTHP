@@ -11,6 +11,7 @@ import com.smartfinance.smart_finance_hub.enums.TransactionType;
 import com.smartfinance.smart_finance_hub.repository.*;
 import com.smartfinance.smart_finance_hub.service.SharedFundService;
 import com.smartfinance.smart_finance_hub.service.MailService;
+import com.smartfinance.smart_finance_hub.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -38,6 +39,7 @@ public class SharedFundServiceImpl implements SharedFundService {
     private final FundActivityRepository fundActivityRepository;
     private final MailService mailService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -86,6 +88,24 @@ public class SharedFundServiceImpl implements SharedFundService {
         final String finalInviterEmail = inviter != null ? inviter.getEmail() : "";
         String finalFundName = fund.getName();
         String token = invitation.getInvitationToken();
+
+        try {
+            notificationService.createAndSendNotification(
+                    invitedUser,
+                    "FUND_INVITATION",
+                    fund.getId(),
+                    fund.getName(),
+                    null,
+                    "Bạn nhận được lời mời tham gia quỹ nhóm " + fund.getName() + " từ " + finalInviterName,
+                    finalInviterName,
+                    null,
+                    null,
+                    "MEMBER",
+                    "/shared-funds"
+            );
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo in-app: {}", e.getMessage());
+        }
 
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
@@ -234,6 +254,34 @@ public class SharedFundServiceImpl implements SharedFundService {
 
         Transaction saved = transactionRepository.save(transaction);
         log.info("createFundTransaction success: transactionId={}, isApproved={}", saved.getId(), autoApprove);
+
+        if (!autoApprove) {
+            String requesterName = user.getDisplayName() != null ? user.getDisplayName() : user.getEmail();
+            String type = "INCOME".equalsIgnoreCase(transactionType.name()) ? "DEPOSIT_REQUEST" : "WITHDRAW_REQUEST";
+            String description = ("INCOME".equalsIgnoreCase(transactionType.name()) ? "Yêu cầu nạp tiền: " : "Yêu cầu rút tiền: ") + request.getDescription();
+            for (FundMember fm : members) {
+                if ("OWNER".equalsIgnoreCase(fm.getFundRole())) {
+                    try {
+                        notificationService.createAndSendNotification(
+                                fm.getUser(),
+                                type,
+                                fund.getId(),
+                                fund.getName(),
+                                request.getAmount(),
+                                description,
+                                requesterName,
+                                personalFund != null ? personalFund.getName() : null,
+                                null,
+                                "OWNER",
+                                "/shared-funds"
+                        );
+                    } catch (Exception e) {
+                        log.error("Failed to send transaction request notification", e);
+                    }
+                }
+            }
+        }
+
         return saved;
     }
 
@@ -350,6 +398,26 @@ public class SharedFundServiceImpl implements SharedFundService {
             }
             applyPersonalFundImpact(transaction);
             shareFundRepository.save(fund);
+
+            String type = "INCOME".equalsIgnoreCase(transaction.getType()) ? "DEPOSIT_APPROVED" : "WITHDRAW_APPROVED";
+            String description = ("INCOME".equalsIgnoreCase(transaction.getType()) ? "Yêu cầu nạp tiền vào quỹ " : "Yêu cầu rút tiền từ quỹ ") + fund.getName() + " đã được phê duyệt.";
+            try {
+                notificationService.createAndSendNotification(
+                        transaction.getUser(),
+                        type,
+                        fund.getId(),
+                        fund.getName(),
+                        transaction.getAmount(),
+                        description,
+                        approver != null ? (approver.getDisplayName() != null ? approver.getDisplayName() : approver.getEmail()) : "Chủ quỹ",
+                        null,
+                        null,
+                        "MEMBER",
+                        "/shared-funds"
+                );
+            } catch (Exception e) {
+                log.error("Failed to send transaction approved notification", e);
+            }
         } else if ("rejected".equalsIgnoreCase(action)) {
             transaction.setIsApproved(false);
             transaction.setStatus("REJECTED");
@@ -402,30 +470,35 @@ public class SharedFundServiceImpl implements SharedFundService {
 
     private void sendTransactionRejectedNotification(Transaction transaction, ShareFund fund, String rejectReason) {
         User requester = transaction.getUser();
-        if (requester == null || requester.getEmail() == null) {
+        if (requester == null) {
             return;
         }
 
-        String type = TransactionType.INCOME.name().equalsIgnoreCase(transaction.getType())
+        String type = "INCOME".equalsIgnoreCase(transaction.getType())
                 ? "DEPOSIT_REJECTED"
                 : "WITHDRAW_REJECTED";
         String reason = rejectReason != null && !rejectReason.isBlank()
                 ? rejectReason.trim()
                 : "Chu quy khong neu ly do";
+        String description = "Ly do tu choi: " + reason;
 
-        java.util.Map<String, Object> notification = new java.util.HashMap<>();
-        notification.put("id", "tx_rejected_" + transaction.getId());
-        notification.put("type", type);
-        notification.put("fundId", fund.getId());
-        notification.put("fundName", fund.getName());
-        notification.put("amount", transaction.getAmount());
-        notification.put("description", "Ly do tu choi: " + reason);
-        notification.put("requesterName", requester.getDisplayName() != null ? requester.getDisplayName() : requester.getEmail());
-        notification.put("date", java.time.LocalDateTime.now().toString());
-        notification.put("read", false);
-        notification.put("targetRole", "MEMBER");
-
-        messagingTemplate.convertAndSendToUser(requester.getEmail(), "/queue/notifications", notification);
+        try {
+            notificationService.createAndSendNotification(
+                    requester,
+                    type,
+                    fund.getId(),
+                    fund.getName(),
+                    transaction.getAmount(),
+                    description,
+                    fund.getCreatedByUser() != null ? fund.getCreatedByUser().getDisplayName() : "Chủ quỹ",
+                    null,
+                    null,
+                    "MEMBER",
+                    "/shared-funds"
+            );
+        } catch (Exception e) {
+            log.error("Failed to send transaction rejected notification", e);
+        }
     }
 
     @Override
@@ -582,6 +655,24 @@ public class SharedFundServiceImpl implements SharedFundService {
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng này không thuộc quỹ!"));
 
         fundMemberRepository.delete(targetMember);
+
+        try {
+            notificationService.createAndSendNotification(
+                    targetUser,
+                    "FUND_MEMBER_REMOVED",
+                    fund.getId(),
+                    fund.getName(),
+                    null,
+                    "Bạn đã bị xóa khỏi quỹ nhóm " + fund.getName() + " bởi chủ quỹ.",
+                    fund.getCreatedByUser() != null ? fund.getCreatedByUser().getDisplayName() : "Chủ quỹ",
+                    null,
+                    null,
+                    "MEMBER",
+                    "/shared-funds"
+            );
+        } catch (Exception e) {
+            log.error("Failed to send member removed notification", e);
+        }
     }
 
     private void cleanupFundData(Long fundId) {
@@ -639,30 +730,51 @@ public class SharedFundServiceImpl implements SharedFundService {
             }
         }
 
-        for (java.util.Map<String, String> memberInfo : membersToNotify) {
-            String email = memberInfo.get("email");
-            String name = memberInfo.get("name");
+        for (FundMember member : members) {
+            User memberUser = member.getUser();
+            if (memberUser != null && !memberUser.getId().equals(userId)) {
+                String email = memberUser.getEmail();
+                String name = memberUser.getDisplayName() != null ? memberUser.getDisplayName() : memberUser.getEmail();
 
-            FundInvitation invitation = FundInvitation.builder()
-                    .shareFund(fund)
-                    .invitedEmail(email)
-                    .invitationToken(java.util.UUID.randomUUID().toString())
-                    .status("PENDING")
-                    .type("DISBAND_PROPOSAL")
-                    .expiresAt(LocalDateTime.now().plusHours(12))
-                    .build();
+                FundInvitation invitation = FundInvitation.builder()
+                        .shareFund(fund)
+                        .invitedEmail(email)
+                        .invitationToken(java.util.UUID.randomUUID().toString())
+                        .status("PENDING")
+                        .type("DISBAND_PROPOSAL")
+                        .expiresAt(LocalDateTime.now().plusHours(12))
+                        .build();
 
-            fundInvitationRepository.save(invitation);
+                fundInvitationRepository.save(invitation);
 
-            String tokenVal = invitation.getInvitationToken();
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    mailService.sendDisbandProposalEmail(email, name, fundName, ownerName, ownerEmail, "Yêu cầu giải tán quỹ nhóm từ chủ quỹ", tokenVal);
-                    log.info("Đã gửi email đề xuất giải tán quỹ {} đến {}", fundName, email);
+                    notificationService.createAndSendNotification(
+                            memberUser,
+                            "FUND_DISBAND_PROPOSAL",
+                            fund.getId(),
+                            fund.getName(),
+                            null,
+                            "Đề xuất giải tán quỹ nhóm " + fundName + " từ chủ quỹ " + ownerName,
+                            ownerName,
+                            null,
+                            null,
+                            "MEMBER",
+                            "/shared-funds"
+                    );
                 } catch (Exception e) {
-                    log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", email, e.getMessage());
+                    log.error("Failed to send disband proposal notification", e);
                 }
-            });
+
+                String tokenVal = invitation.getInvitationToken();
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        mailService.sendDisbandProposalEmail(email, name, fundName, ownerName, ownerEmail, "Yêu cầu giải tán quỹ nhóm từ chủ quỹ", tokenVal);
+                        log.info("Đã gửi email đề xuất giải tán quỹ {} đến {}", fundName, email);
+                    } catch (Exception e) {
+                        log.error("Lỗi khi gửi email giải tán quỹ đến {}: {}", email, e.getMessage());
+                    }
+                });
+            }
         }
 
         return "Đã gửi yêu cầu giải tán quỹ nhóm đến tất cả thành viên. Quỹ sẽ được xóa sau khi tất cả thành viên xác nhận đồng ý.";

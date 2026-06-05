@@ -286,9 +286,35 @@ public class PersonalFundServiceImpl implements PersonalFundService {
     public PersonalFundSummaryResponse getSummary(Long userId) {
         log.info("getSummary: userId={}", userId);
         BigDecimal totalAssets = getTotalAssets(userId);
+
+        LocalDate startDate = LocalDate.now().minusDays(30);
+        LocalDate endDate = LocalDate.now();
+        List<Transaction> txs = transactionRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+
+        BigDecimal income = BigDecimal.ZERO;
+        BigDecimal expense = BigDecimal.ZERO;
+        for (Transaction tx : txs) {
+            if (tx.getShareFund() == null && tx.getPersonalFund() != null) {
+                if ("INCOME".equalsIgnoreCase(tx.getType())) {
+                    income = income.add(tx.getAmount());
+                } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
+                    expense = expense.add(tx.getAmount());
+                }
+            }
+        }
+
+        BigDecimal initialBalance = totalAssets.subtract(income).add(expense);
+        double growthRate = 0.0;
+        if (initialBalance.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal growth = totalAssets.subtract(initialBalance);
+            growthRate = growth.multiply(BigDecimal.valueOf(100))
+                    .divide(initialBalance, 2, RoundingMode.HALF_UP)
+                    .doubleValue();
+        }
+
         return PersonalFundSummaryResponse.builder()
                 .totalAssets(totalAssets)
-                .growthRate(12.5)
+                .growthRate(growthRate)
                 .build();
     }
 

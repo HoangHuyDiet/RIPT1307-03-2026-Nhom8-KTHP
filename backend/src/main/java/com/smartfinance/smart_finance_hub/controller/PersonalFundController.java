@@ -40,6 +40,7 @@ import java.util.List;
 public class PersonalFundController {
 
     private final PersonalFundService personalFundService;
+    private final com.smartfinance.smart_finance_hub.service.RecurringSettingService recurringSettingService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<PersonalFundResponse>> createFund(
@@ -198,7 +199,10 @@ public class PersonalFundController {
     }
 
     @PostMapping("/reminder")
-    public ResponseEntity<ApiResponse<Void>> reminder() {
+    public ResponseEntity<ApiResponse<Void>> reminder(
+            @Valid @RequestBody com.smartfinance.smart_finance_hub.dto.request.CreateRecurringSettingRequest request) {
+        Long userId = getCurrentUserId();
+        recurringSettingService.createSetting(request, userId);
         return ResponseEntity.ok(ApiResponse.success("Lên lịch nhắc thanh toán thành công!"));
     }
 

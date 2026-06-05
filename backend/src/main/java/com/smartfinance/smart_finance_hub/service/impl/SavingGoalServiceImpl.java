@@ -17,6 +17,7 @@ import com.smartfinance.smart_finance_hub.repository.TransactionRepository;
 import com.smartfinance.smart_finance_hub.repository.SavingGoalRepository;
 import com.smartfinance.smart_finance_hub.repository.UserRepository;
 import com.smartfinance.smart_finance_hub.service.SavingGoalService;
+import com.smartfinance.smart_finance_hub.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final PersonalFundRepository personalFundRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<SavingGoal> getAllGoals(Long userId) {
@@ -80,11 +82,38 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     .orElseThrow(() -> new RuntimeException("Category not found"));
         }
 
+        SavingGoalStatus oldStatus = goal.getStatus();
+
         goal.setName(request.getName());
         goal.setTargetAmount(request.getTargetAmount());
         goal.setCurrency(request.getCurrency());
         goal.setDueDate(request.getDueDate());
         goal.setCategory(category);
+
+        if (goal.getCurrentAmount().compareTo(goal.getTargetAmount()) >= 0) {
+            goal.setStatus(SavingGoalStatus.COMPLETED);
+            if (oldStatus != SavingGoalStatus.COMPLETED) {
+                try {
+                    notificationService.createAndSendNotification(
+                            goal.getUser(),
+                            "SYSTEM_INFO",
+                            null,
+                            null,
+                            goal.getTargetAmount(),
+                            "Chúc mừng bạn đã hoàn thành mục tiêu " + goal.getName() + "! Bạn có thể thực hiện rút tiền hoặc thanh toán ngay.",
+                            "Hệ thống",
+                            null,
+                            null,
+                            "MEMBER",
+                            "/saving-goals"
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send goal completion notification", e);
+                }
+            }
+        } else {
+            goal.setStatus(SavingGoalStatus.IN_PROGRESS);
+        }
 
         return savingGoalRepository.save(goal);
     }
@@ -108,29 +137,61 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         SavingGoal goal = savingGoalRepository.findByIdAndUserIdAndDeletedAtIsNull(goalId, userId)
                 .orElseThrow(() -> new RuntimeException("Saving goal not found"));
 
-        PersonalFund fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
+        PersonalFund fund = null;
+        if (request.getPersonalFundId() != null) {
+            fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
 
-        if (fund.getStatus() != FundStatus.ACTIVE) {
-            throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+            if (fund.getStatus() != FundStatus.ACTIVE) {
+                throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+            }
+
+            if (fund.getBalance().compareTo(request.getAmount()) < 0) {
+                throw new IllegalArgumentException(
+                        "Số dư quỹ '" + fund.getName() + "' không đủ! Số dư hiện tại: " + fund.getBalance());
+            }
         }
 
-        if (fund.getBalance().compareTo(request.getAmount()) < 0) {
+        java.math.BigDecimal remaining = goal.getTargetAmount().subtract(goal.getCurrentAmount());
+        if (request.getAmount().compareTo(remaining) > 0) {
             throw new IllegalArgumentException(
-                    "Số dư quỹ '" + fund.getName() + "' không đủ! Số dư hiện tại: " + fund.getBalance());
+                    "Số tiền nạp vượt quá mục tiêu! Bạn chỉ có thể nạp tối đa " + remaining + " nữa.");
         }
 
-        fund.setBalance(fund.getBalance().subtract(request.getAmount()));
-        personalFundRepository.save(fund);
+        if (fund != null) {
+            fund.setBalance(fund.getBalance().subtract(request.getAmount()));
+            personalFundRepository.save(fund);
+        }
 
         goal.setCurrentAmount(goal.getCurrentAmount().add(request.getAmount()));
 
         if (goal.getCurrentAmount().compareTo(goal.getTargetAmount()) >= 0) {
             goal.setStatus(SavingGoalStatus.COMPLETED);
+            try {
+                notificationService.createAndSendNotification(
+                        goal.getUser(),
+                        "SYSTEM_INFO",
+                        null,
+                        null,
+                        goal.getTargetAmount(),
+                        "Chúc mừng bạn đã hoàn thành mục tiêu " + goal.getName() + "! Bạn có thể thực hiện rút tiền hoặc thanh toán ngay.",
+                        "Hệ thống",
+                        null,
+                        null,
+                        "MEMBER",
+                        "/saving-goals"
+                );
+            } catch (Exception e) {
+                log.error("Failed to send goal completion notification", e);
+            }
         }
 
         savingGoalRepository.save(goal);
+
+        String descriptionStr = fund != null
+                ? "Nạp tiền vào mục tiêu: " + goal.getName() + " (từ quỹ " + fund.getName() + ")"
+                : "Nạp tiền vào mục tiêu: " + goal.getName() + " (từ ngân hàng)";
 
         Transaction transaction = Transaction.builder()
                 .user(goal.getUser())
@@ -139,7 +200,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                 .personalFund(fund)
                 .amount(request.getAmount())
                 .type("EXPENSE")
-                .description("Nạp tiền vào mục tiêu: " + goal.getName() + " (từ quỹ " + fund.getName() + ")")
+                .description(descriptionStr)
                 .date(java.time.LocalDate.now())
                 .isApproved(true)
                 .build();
@@ -163,12 +224,15 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     "Số dư mục tiêu không đủ để rút! Số dư hiện tại: " + goal.getCurrentAmount());
         }
 
-        PersonalFund fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
+        PersonalFund fund = null;
+        if (request.getPersonalFundId() != null) {
+            fund = personalFundRepository.findByIdAndUserId(request.getPersonalFundId(), userId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Không tìm thấy quỹ cá nhân với ID: " + request.getPersonalFundId()));
 
-        if (fund.getStatus() != FundStatus.ACTIVE) {
-            throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+            if (fund.getStatus() != FundStatus.ACTIVE) {
+                throw new IllegalArgumentException("Quỹ '" + fund.getName() + "' đã bị đóng!");
+            }
         }
 
         goal.setCurrentAmount(goal.getCurrentAmount().subtract(request.getAmount()));
@@ -180,8 +244,14 @@ public class SavingGoalServiceImpl implements SavingGoalService {
 
         savingGoalRepository.save(goal);
 
-        fund.setBalance(fund.getBalance().add(request.getAmount()));
-        personalFundRepository.save(fund);
+        if (fund != null) {
+            fund.setBalance(fund.getBalance().add(request.getAmount()));
+            personalFundRepository.save(fund);
+        }
+
+        String descriptionStr = fund != null
+                ? "Rút tiền từ mục tiêu: " + goal.getName() + " (về quỹ " + fund.getName() + ")"
+                : "Rút tiền từ mục tiêu: " + goal.getName() + " (về ngân hàng)";
 
         Transaction transaction = Transaction.builder()
                 .user(goal.getUser())
@@ -190,7 +260,9 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                 .personalFund(fund)
                 .amount(request.getAmount())
                 .type("INCOME")
-                .description("Rút tiền từ mục tiêu: " + goal.getName() + " (về quỹ " + fund.getName() + ")")
+                .description(descriptionStr)
+                .bankName(request.getBankName())
+                .bankAccount(request.getBankAccount())
                 .date(java.time.LocalDate.now())
                 .isApproved(true)
                 .build();
