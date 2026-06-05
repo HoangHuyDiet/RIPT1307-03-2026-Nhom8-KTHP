@@ -1,0 +1,11 @@
+title: "Lãi kép (Compound Interest)"
+description: "Sức mạnh của lãi kép trong tiết kiệm và đầu tư."
+content: |
+  Lãi kép thường được gọi là "kỳ quan thứ 8 của thế giới". Lãi kép là một khái niệm tài chính trong đó lợi nhuận thu được từ một khoản đầu tư được tái đầu tư để kiếm thêm lợi nhuận theo thời gian. Quá trình này cho phép cả khoản đầu tư ban đầu và lợi nhuận tích lũy tăng trưởng, có thể theo cấp số nhân, tùy thuộc vào số kỳ tính lãi. Lãi kép giúp tiền của bạn sinh lời bằng cách tái đầu tư lợi nhuận thu được, tạo ra một chu kỳ lợi nhuận gia tăng.
+  Cơ chế hoạt động của lãi kép: Giả sử bạn đầu tư 10.000 đô la vào công ty XYZ. Trong năm đầu tiên, giá cổ phiếu tăng 20%. Khoản đầu tư của bạn hiện trị giá 12.000 đô la. Dựa trên hiệu suất tốt của công ty, bạn tiếp tục nắm giữ cổ phiếu. Trong năm thứ 2, giá cổ phiếu tăng thêm 20%. Khoản đầu tư 12.000 đô la của bạn giờ đã tăng lên 14.400 đô la. Thay vì cổ phiếu của bạn tăng thêm 2.000 đô la (20%) như năm đầu tiên như năm đầu tiên, chúng sẽ tăng thêm 400 đô la, bởi vì 2.000 đô la bạn kiếm được trong năm đầu tiên cũng tăng trưởng 20%. Nếu bạn ngoại suy quá trình này, các con số sẽ bắt đầu trở nên rất lớn khi lợi nhuận từ khoản đầu tư trước đó của bạn bắt đầu mang lại thêm lợi nhuận. Trên thực tế, 10.000 đô la được đầu tư với lãi suất 20% mỗi năm trong 25 năm sẽ tăng lên gần 1.000.000 đô la, và đó là chưa tính thêm bất kỳ khoản tiền nào vào số tiền đầu tư ban đầu. 
+  Công thức tính lãi kép: Lãi kép = P [(1 + i)**n - 1]
+    + Trong đó: P = Vốn gốc, i = lãi suất danh nghĩa hàng năm tính theo phần trăm, và n = số kỳ ghép lãi.
+  Lời khuyên:
+    - Bắt đầu sớm: Thời gian quan trọng hơn số tiền bạn đầu tư ban đầu. Bạn càng bắt đầu sớm, lãi kép càng có nhiều thời gian để nhân lên số tiền của bạn.
+    - Tái đầu tư: Chìa khóa của lãi kép là bạn không được rút tiền lãi ra tiêu xài mà phải để nó nhập vào vốn gốc tiếp tục sinh lời.
+    - Quy tắc 72: Để nhẩm tính thời gian nhân đôi tài sản, lấy 72 chia cho lãi suất hàng năm. Ví dụ: Lãi suất 8%/năm thì mất 72/8 = 9 năm để nhân đôi số tiền.
