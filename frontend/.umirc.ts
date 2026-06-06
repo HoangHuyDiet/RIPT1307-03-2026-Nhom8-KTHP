@@ -31,15 +31,27 @@ export default defineConfig({
     },
 
     {
+      path: '/supportadmin',
+      component: '@/layouts/supportadminlayout',
+      routes: [
+        { path: '/supportadmin', redirect: '/supportadmin/chat' },
+        { path: '/supportadmin/chat', component: '@/pages/supportadmin/chat' },
+        { path: '/supportadmin/tickets', component: '@/pages/supportadmin/tickets' },
+        { path: '/supportadmin/accounts', component: '@/pages/supportadmin/accounts' },
+        { path: '/supportadmin/broadcast', component: '@/pages/supportadmin/broadcast' },
+      ],
+    },
+    {
       path: '/admin',
       component: '@/layouts/AdminLayout',
       routes: [
         { path: '/admin/users', component: '@/pages/admin/users' },
+        { path: '/admin/approvals', component: '@/pages/admin/approvals' },
         { path: '/admin/categories', component: '@/pages/admin/categories' },
       ],
     },
   ],
-  mock: false,
+  mock: {},
   npmClient: 'npm',
   utoopack: {},
   proxy: {

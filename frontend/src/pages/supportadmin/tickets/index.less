@@ -1,0 +1,52 @@
+.ticketsCard {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ebecf0;
+  background: #ffffff;
+
+  :global {
+    .ant-card-body {
+      padding: 24px;
+    }
+  }
+}
+
+.filterToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background: #f8fafc;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.ticketsTable {
+  :global {
+    .ant-table-thead > tr > th {
+      background: #fafbfc;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    
+    .ant-table-row {
+      &:hover {
+        background-color: #fafbfc;
+      }
+    }
+  }
+}
+
+.descriptions {
+  margin-top: 12px;
+  
+  :global {
+    .ant-descriptions-item-label {
+      font-weight: 600;
+      color: #4a5568;
+      width: 150px;
+      background-color: #fafbfc;
+    }
+  }
+}

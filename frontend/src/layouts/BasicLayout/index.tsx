@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons';
 import styles from './index.less';
 import NotificationsPopover from '../NotificationsLayout';
+import SupportWidget from '../SupportWidget';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const { Header, Sider, Content } = Layout;
@@ -50,6 +51,7 @@ export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
+  const { isAdmin, isSupportAdmin } = useAuthStore();
 
   const menuItems: MenuProps['items'] = [
     {
@@ -82,6 +84,25 @@ export default function BasicLayout() {
       icon: <BankOutlined />,
       label: <Link to="/funds">Quản lý quỹ nhóm</Link>,
     },
+    ...((isAdmin() || isSupportAdmin()) ? [
+      {
+        type: 'divider' as const,
+      },
+      ...(isAdmin() ? [
+        {
+          key: '/admin/users',
+          icon: <SettingOutlined />,
+          label: <Link to="/admin/users">Về Admin</Link>,
+        }
+      ] : []),
+      ...(isSupportAdmin() ? [
+        {
+          key: '/supportadmin',
+          icon: <SettingOutlined />,
+          label: <Link to="/supportadmin">Về Support Admin</Link>,
+        }
+      ] : [])
+    ] : [])
   ];
 
   const userMenuItems: MenuProps['items'] = [
@@ -168,6 +189,7 @@ export default function BasicLayout() {
           </div>
 
           <Space size="large" align="center" className={styles.rightActions}>
+            <SupportWidget />
             <NotificationsPopover />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Space align="center" className={styles.avatarWrapper}>

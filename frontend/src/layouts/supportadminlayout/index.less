@@ -166,6 +166,15 @@
     display: flex;
     align-items: center;
 
+    .backButton {
+      border-radius: 8px;
+      font-weight: 500;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .pageTitleWrapper {
       display: flex;
       align-items: center;
@@ -207,12 +216,18 @@
       align-items: center;
       gap: 6px;
     }
+
+    .roleTag {
+      border-radius: 6px;
+      font-weight: 700;
+      padding: 4px 10px;
+      font-size: 11px;
+    }
   }
 }
 
 .content {
   background: #F1F4F7;
-  min-height: calc(100vh - 68px);
   padding: 28px;
   overflow-y: auto;
 }
