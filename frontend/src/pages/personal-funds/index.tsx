@@ -46,6 +46,106 @@ import styles from './index.less';
 import api from '../../utils/api';
 import { exportTransactionsToExcel, exportTransactionsToPDF } from '../../utils/exportUtils';
 
+function parseBold(text: string, boldColor: string = 'inherit'): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let currentIndex = 0;
+  const boldRegex = /\*\*(.*?)\*\*/g;
+  let match;
+  
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > currentIndex) {
+      parts.push(text.substring(currentIndex, match.index));
+    }
+    parts.push(
+      <strong key={match.index} style={{ fontWeight: 700, color: boldColor }}>
+        {match[1]}
+      </strong>
+    );
+    currentIndex = boldRegex.lastIndex;
+  }
+  
+  if (currentIndex < text.length) {
+    parts.push(text.substring(currentIndex));
+  }
+  
+  return parts.length > 0 ? parts : text;
+}
+
+function renderMarkdown(content: string, textColor: string = '#202124', boldColor: string = 'inherit'): React.ReactNode {
+  if (!content) return null;
+  const lines = content.split('\n');
+  
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '6px', 
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontSize: '13px',
+      lineHeight: '1.5',
+      color: textColor
+    }}>
+      {lines.map((line, lineIndex) => {
+        let trimmed = line.trim();
+        
+        if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+          return <hr key={lineIndex} style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.2)', margin: '12px 0' }} />;
+        }
+        
+        if (trimmed.startsWith('#')) {
+          const headingLevel = (trimmed.match(/^#+/) || [''])[0].length;
+          const headingText = trimmed.replace(/^#+\s*/, '');
+          const fontSize = headingLevel === 1 ? '16px' : headingLevel === 2 ? '14px' : '13px';
+          return (
+            <div key={lineIndex} style={{ 
+              fontWeight: 700, 
+              fontSize, 
+              marginTop: '8px', 
+              marginBottom: '4px', 
+              color: boldColor 
+            }}>
+              {parseBold(headingText, boldColor)}
+            </div>
+          );
+        }
+        
+        const bulletMatch = trimmed.match(/^[\*\-]\s+(.*)$/);
+        if (bulletMatch) {
+          const restText = bulletMatch[1];
+          return (
+            <div key={lineIndex} style={{ display: 'flex', gap: '8px', paddingLeft: '8px', alignItems: 'flex-start' }}>
+              <span style={{ color: boldColor === 'inherit' ? 'currentColor' : boldColor, flexShrink: 0, marginTop: '2px' }}>•</span>
+              <div style={{ flex: 1 }}>{parseBold(restText, boldColor)}</div>
+            </div>
+          );
+        }
+        
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+        if (numMatch) {
+          const num = numMatch[1];
+          const restText = numMatch[2];
+          return (
+            <div key={lineIndex} style={{ display: 'flex', gap: '8px', paddingLeft: '8px', alignItems: 'flex-start' }}>
+              <span style={{ color: boldColor === 'inherit' ? 'currentColor' : boldColor, flexShrink: 0, fontWeight: 600 }}>{num}.</span>
+              <div style={{ flex: 1 }}>{parseBold(restText, boldColor)}</div>
+            </div>
+          );
+        }
+        
+        if (trimmed === '') {
+          return <div key={lineIndex} style={{ height: '6px' }} />;
+        }
+        
+        return (
+          <div key={lineIndex}>
+            {parseBold(trimmed, boldColor)}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const WalletIcon = () => (
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="10" width="40" height="30" rx="6" fill="url(#walletGradient)" stroke="#1A73E8" strokeWidth="3" />
@@ -886,7 +986,7 @@ export default function PersonalFundManagement() {
             <div className={styles.aiSuggestBanner}>
               <RobotOutlined style={{ fontSize: '16px', marginTop: '2px' }} />
               <div>
-                {aiTips.transfer.message}
+                {renderMarkdown(aiTips.transfer.message, '#1967D2', '#1967D2')}
               </div>
             </div>
           )}
@@ -1089,7 +1189,7 @@ export default function PersonalFundManagement() {
             <div className={styles.aiSuggestBanner} style={{ backgroundColor: '#E8F0FE', color: '#1967D2', borderLeftColor: '#1A73E8' }}>
               <RobotOutlined style={{ fontSize: '16px', marginTop: '2px' }} />
               <div>
-                {aiTips.reminder.message}
+                {renderMarkdown(aiTips.reminder.message, '#1967D2', '#1967D2')}
               </div>
             </div>
           )}
@@ -1605,7 +1705,7 @@ export default function PersonalFundManagement() {
                 <span>{aiTips.mainCard.title}</span>
               </div>
               <div className={styles.aiBody}>
-                {aiTips.mainCard.content}
+                {renderMarkdown(aiTips.mainCard.content, '#ffffff', '#ffffff')}
               </div>
               <Button
                 block

@@ -23,6 +23,7 @@ public class SecurityConfig {
   private static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/**",
       "/api/2fa/**",
+      "/api/payments/payos/webhook",
       "/api/funds/verify-token",
       "/ws/**",
       "/error"
@@ -47,7 +48,8 @@ public class SecurityConfig {
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-            .requestMatchers(ADMIN_ENDPOINTS).hasAnyRole("ADMIN", "SUPPORT_ADMIN")
+            .requestMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
+            .requestMatchers("/api/support/**").hasRole("SUPPORT_ADMIN")
             .anyRequest().authenticated()
         );
 

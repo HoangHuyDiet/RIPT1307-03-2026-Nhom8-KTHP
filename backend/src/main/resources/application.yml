@@ -48,6 +48,30 @@ jwt:
   secret: ${JWT_SECRET:DayLaKhoaBaoMatMacDinhChiDungChoMoiTruongLocalDeTest123456789}
   expiration: 86400000
 
+gemini:
+  api-key: AIzaSyCIkJepNd9uREewQXMTGXjb0ff9EnFF5F0
+  model: gemini-2.5-flash
+  embedding-model: gemini-embedding-001
+  temperature: 0.2
+
+ai:
+  enabled: ${AI_ENABLED:true}
+  access:
+    require-pro: ${AI_REQUIRE_PRO:false}
+    allowed-roles: ${AI_ALLOWED_ROLES:PRO,VIP,ADMIN,SUPPORT_ADMIN}
+    upgrade-message: "Vui lòng nâng cấp gói Pro để sử dụng trợ lý AI tài chính."
+  cache:
+    insight-ttl-minutes: 30
+    refresh-cooldown-seconds: 60
+  rag:
+    enabled: ${AI_RAG_ENABLED:false}
+    chunk-size-chars: 1200
+    chunk-overlap-chars: 150
+    top-k: 4
+    min-score: 0.70
+  prompt:
+    version: "v1.0"
+
 app:
   mail:
     from-name: Smart Finance Hub
@@ -56,3 +80,12 @@ app:
   2fa:
     otp-length: 6
     otp-expiry-seconds: 60
+
+payos:
+  api-base-url: ${PAYOS_API_BASE_URL:https://api-merchant.payos.vn}
+  client-id: ${PAYOS_CLIENT_ID:93fc5a85-28a3-40ef-a4e0-b57c9d4ac6b5}
+  api-key: ${PAYOS_API_KEY:aecdb0ce-0043-4706-9d5a-5cea9bef3329}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:d55e7da61d5d1d76ef94eea22390cd9fd7955b301b95517805d0cae94e772dcd}
+  return-url: ${PAYOS_RETURN_URL:${app.frontend-url}/pricing?payment=success}
+  cancel-url: ${PAYOS_CANCEL_URL:${app.frontend-url}/pricing?payment=cancelled}
+  webhook-url: https://fd94d43d838b5a.lhr.life/backend/api/payments/payos/webhook
