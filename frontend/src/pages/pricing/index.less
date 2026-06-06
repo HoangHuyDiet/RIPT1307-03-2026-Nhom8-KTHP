@@ -1,0 +1,380 @@
+.pricingPage {
+  min-height: 100%;
+  padding: 24px 28px 120px;
+  overflow-x: hidden;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(26, 115, 232, 0.12), transparent 32%),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 42%, #f7f9fc 100%);
+}
+
+.proActiveBanner {
+  max-width: 1320px;
+  margin: 0 auto 18px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+}
+
+.activeCard {
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12), 0 20px 50px rgba(245, 158, 11, 0.15) !important;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 30%) !important;
+}
+
+.activeBadge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: none;
+  border-radius: 999px;
+  padding: 5px 14px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.3);
+  white-space: nowrap;
+}
+
+.activeButton {
+  height: 46px;
+  margin-top: auto;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border: 1px solid #f59e0b !important;
+  color: #92400e !important;
+  cursor: default !important;
+}
+
+.hero {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.heroTag {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0 !important;
+  color: #111827 !important;
+  font-size: 32px !important;
+  line-height: 1.22 !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.4px;
+}
+
+.subtitle {
+  max-width: 720px;
+  margin: 12px auto 0 !important;
+  color: #4b5563;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.couponBox {
+  margin: 20px auto 0;
+  max-width: 680px;
+  padding: 14px 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  text-align: left;
+}
+
+.couponHint {
+  margin: 4px 0 0 !important;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.couponInput {
+  max-width: 210px;
+  height: 40px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+}
+
+.planGrid {
+  max-width: 1320px;
+  margin: 0 auto;
+  align-items: stretch;
+
+  :global(.ant-col) {
+    display: flex;
+  }
+}
+
+.planCard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  min-height: 520px;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    border-color: #bfdbfe;
+  }
+
+  :global(.ant-card-body) {
+    height: 100%;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.ant-typography h3),
+  :global(h3.ant-typography) {
+    margin: 0 0 8px !important;
+    color: #0f172a !important;
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+  }
+
+  :global(.ant-typography-secondary) {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  :global(.ant-card-body::before),
+  :global(.ant-card-body::after) {
+    display: none;
+  }
+}
+
+.highlightCard {
+  border: 2px solid #111827;
+  box-shadow: 0 26px 70px rgba(17, 24, 39, 0.18);
+}
+
+.freeCard {
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.badge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: none;
+  border-radius: 999px;
+  padding: 5px 14px;
+  background: #0b65d8;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(11, 101, 216, 0.25);
+}
+
+.priceBlock {
+  margin: 22px 0 16px;
+  min-height: 106px;
+}
+
+.price {
+  margin: 20px 0 6px;
+  color: #0f172a;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+
+  span {
+    color: #64748b;
+    font-size: 18px;
+    font-weight: 500;
+  }
+}
+
+.oldPrice {
+  display: block;
+  font-size: 14px;
+}
+
+.monthlyPrice {
+  display: block;
+  margin-bottom: 10px;
+  color: #059669;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.features {
+  width: 100%;
+  margin: 8px 0 22px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  :global(.ant-typography) {
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  :global(.anticon) {
+    flex: 0 0 16px;
+    color: #10b981;
+    margin-right: 0;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+}
+
+.primaryButton,
+.darkButton,
+.disabledButton {
+  height: 46px;
+  margin-top: auto;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.primaryButton {
+  background: #0b65d8;
+  border-color: #0b65d8;
+  box-shadow: 0 12px 30px rgba(11, 101, 216, 0.24);
+
+  &:hover {
+    background: #0757bd !important;
+    border-color: #0757bd !important;
+  }
+}
+
+.darkButton {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background: #020617 !important;
+    border-color: #020617 !important;
+    color: #ffffff !important;
+  }
+}
+
+.disabledButton {
+  background: #eef2f7 !important;
+  border: none !important;
+  color: #94a3b8 !important;
+}
+
+.footerNote {
+  max-width: 1240px;
+  margin: 24px auto 0;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #475569;
+
+  :global(.ant-typography) {
+    font-size: 14px;
+  }
+}
+
+.checkoutModal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.qrBox {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.checkoutInfo {
+  display: grid;
+  gap: 12px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+}
+
+@media (max-width: 992px) {
+  .pricingPage {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 28px !important;
+  }
+
+  .couponBox {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .couponInput {
+    max-width: none;
+  }
+
+  .planCard {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 993px) {
+  .price {
+    font-size: 26px;
+  }
+
+  .planCard {
+    :global(.ant-card-body) {
+      padding: 26px 20px;
+    }
+  }
+
+  .features {
+    :global(.ant-typography) {
+      font-size: 13.5px;
+    }
+  }
+}
