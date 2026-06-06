@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, history } from 'umi';
-import { Row, Col, Card, Space, Button, Progress, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Skeleton, Pagination } from 'antd';
+import { Row, Col, Card, Space, Button, Progress, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Pagination } from 'antd';
 import { PlusOutlined, HomeOutlined, CarOutlined, SafetyOutlined, CompassOutlined, LineChartOutlined, FolderOpenOutlined, RobotOutlined, DeleteOutlined, EditOutlined, DollarCircleOutlined, FlagOutlined, PushpinOutlined, PushpinFilled, MedicineBoxOutlined, BookOutlined, ShoppingOutlined, AppstoreOutlined, LaptopOutlined, BankOutlined, GoldOutlined, GiftOutlined, TrophyOutlined, HeartOutlined, CoffeeOutlined, RocketOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import styles from './index.less';
@@ -165,6 +165,39 @@ export default function SavingGoals() {
   const [highlightedGoalId, setHighlightedGoalId] = useState<number | null>(null);
 
   const pinnedGoals = goals.filter(g => g.isPinned).slice(0, 5);
+
+  const goalAiTips = useMemo(() => {
+    if (goals.length === 0) {
+      return [
+        'Tạo mục tiêu đầu tiên với số tiền và hạn hoàn thành rõ ràng để dễ theo dõi tiến độ.',
+        'Nên bắt đầu bằng quỹ dự phòng 1-3 tháng chi phí thiết yếu trước các mục tiêu dài hạn.',
+        'Chia mục tiêu lớn thành khoản gửi nhỏ hằng tuần để giảm áp lực tích lũy.',
+      ];
+    }
+
+    const activeGoals = goals.filter(goal => goal.currentAmount < goal.targetAmount);
+    const overdueGoals = activeGoals.filter(goal => goal.dueDate && dayjs(goal.dueDate).isBefore(dayjs(), 'day'));
+    const nearDueGoals = activeGoals.filter(goal => {
+      if (!goal.dueDate) return false;
+      const days = dayjs(goal.dueDate).diff(dayjs().startOf('day'), 'day');
+      return days >= 0 && days <= 14;
+    });
+    const avgProgress = Math.round(
+      goals.reduce((sum, goal) => sum + Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100)), 0) / goals.length,
+    );
+
+    const tips: string[] = [];
+    if (overdueGoals.length > 0) {
+      tips.push(`Có ${overdueGoals.length} mục tiêu đã quá hạn, nên điều chỉnh hạn hoặc tăng khoản gửi định kỳ.`);
+    }
+    if (nearDueGoals.length > 0) {
+      tips.push(`Có ${nearDueGoals.length} mục tiêu sắp đến hạn trong 14 ngày, hãy ưu tiên bổ sung tiền cho nhóm này.`);
+    }
+    tips.push(`Tiến độ trung bình các mục tiêu hiện khoảng ${avgProgress}%, nên rà lại mục tiêu dưới 30% trước.`);
+    tips.push('Ghim tối đa 5 mục tiêu quan trọng để theo dõi nhanh và tránh bỏ sót kế hoạch chính.');
+
+    return tips.slice(0, 3);
+  }, [goals]);
 
   const scrollToGoal = (goalId: number) => {
     const sortedGoals = [...goals].sort((a, b) => getUrgencyScore(a) - getUrgencyScore(b));
@@ -539,7 +572,14 @@ export default function SavingGoals() {
                 </Space>
               </div>
               <div style={{ padding: '16px 0 8px 0' }}>
-                <Skeleton active paragraph={{ rows: 3 }} />
+                <div className={styles.aiTipList}>
+                  {goalAiTips.map((tip) => (
+                    <div key={tip} className={styles.aiTipItem}>
+                      <span>✓</span>
+                      <p>{tip}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className={styles.aiCardFooter}>
                 <Button type="link" size="small" className={styles.aiActionLink}>
