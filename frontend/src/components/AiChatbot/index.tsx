@@ -7,6 +7,14 @@ import styles from './index.less';
 
 const { Text } = Typography;
 const SESSION_STORAGE_KEY = 'smart_finance_ai_session_id';
+const CANNOT_ANSWER_TEXT = 'Hiện tôi đang không thể trả lời câu hỏi này, để giải quyết thắc mắc này bạn vui lòng liên hệ với support admin.';
+const CANNOT_ANSWER_CODES = new Set([
+  'AI_DISABLED',
+  'AI_UNAVAILABLE',
+  'AI_RATE_LIMITED',
+  'OUTPUT_VALIDATION_FAILED',
+  'AI_SERVICE_ERROR',
+]);
 
 type ChatMessage = {
   id: string;
@@ -127,8 +135,8 @@ function renderMessageContent(content: string, isAi: boolean = true): React.Reac
 
 export default function AiChatbot() {
   const user = useAuthStore((state) => state.user);
-  const userId = user?.id;
-  const userSessionKey = userId ? `smart_finance_ai_session_id_${userId}` : SESSION_STORAGE_KEY;
+  const userIdentity = user?.id || user?.email || user?.username || user?.name;
+  const userSessionKey = userIdentity ? `${SESSION_STORAGE_KEY}_${userIdentity}` : SESSION_STORAGE_KEY;
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -147,6 +155,9 @@ export default function AiChatbot() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (userSessionKey !== SESSION_STORAGE_KEY) {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
     const storedSessionId = localStorage.getItem(userSessionKey);
     setSessionId(storedSessionId || undefined);
     setMessages([
@@ -156,7 +167,7 @@ export default function AiChatbot() {
         content: 'Chào Anh, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.',
       },
     ]);
-  }, [userId, userSessionKey]);
+  }, [userIdentity, userSessionKey]);
 
   useEffect(() => {
     getAiStatus()
@@ -167,6 +178,43 @@ export default function AiChatbot() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
+
+  const saveSessionId = (nextSessionId?: string) => {
+    setSessionId(nextSessionId);
+    if (nextSessionId) {
+      localStorage.setItem(userSessionKey, nextSessionId);
+    }
+  };
+
+  const resolveResponseContent = (response: Awaited<ReturnType<typeof sendAiChat>>) => {
+    if (response.errorCode && CANNOT_ANSWER_CODES.has(response.errorCode)) {
+      return CANNOT_ANSWER_TEXT;
+    }
+    if (response.errorCode) {
+      return errorText[response.errorCode] || CANNOT_ANSWER_TEXT;
+    }
+    return response.reply || CANNOT_ANSWER_TEXT;
+  };
+
+  const appendAiResponse = (response: Awaited<ReturnType<typeof sendAiChat>>) => {
+    saveSessionId(response.sessionId);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-a`,
+        role: 'ai',
+        content: resolveResponseContent(response),
+        citations: response.citations || [],
+        errorCode: response.errorCode,
+      },
+    ]);
+  };
+
+  const isSessionOwnerError = (error: any) => {
+    const statusCode = error?.response?.status;
+    const message = error?.response?.data?.message || '';
+    return statusCode === 403 && /session does not belong/i.test(message);
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -189,19 +237,31 @@ export default function AiChatbot() {
         {
           id: `${Date.now()}-a`,
           role: 'ai',
-          content: response.reply || errorText[response.errorCode || ''] || 'AI chưa có phản hồi.',
+          content: resolveResponseContent(response),
           citations: response.citations || [],
           errorCode: response.errorCode,
         },
       ]);
       getAiStatus().then(setStatus).catch(() => undefined);
     } catch (error: any) {
+      if (isSessionOwnerError(error)) {
+        localStorage.removeItem(userSessionKey);
+        setSessionId(undefined);
+        try {
+          const response = await sendAiChat(text);
+          appendAiResponse(response);
+          getAiStatus().then(setStatus).catch(() => undefined);
+          return;
+        } catch (retryError: any) {
+          error = retryError;
+        }
+      }
       setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-e`,
           role: 'ai',
-          content: error?.response?.data?.message || 'Không thể kết nối AI. Hãy thử lại sau.',
+          content: CANNOT_ANSWER_TEXT,
           errorCode: 'AI_UNAVAILABLE',
         },
       ]);

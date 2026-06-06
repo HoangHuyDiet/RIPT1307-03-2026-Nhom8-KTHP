@@ -9,6 +9,7 @@ import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.GoogleLoginRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
+import com.smartfinance.smart_finance_hub.dto.request.RefreshTokenRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
 import jakarta.validation.Valid;
@@ -94,6 +95,18 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
         response.put("message", "Đăng nhập bằng Google thành công");
+        response.put("data", loginResponse);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, Object>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        LoginResponse loginResponse = authService.refreshToken(request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Làm mới phiên đăng nhập thành công");
         response.put("data", loginResponse);
 
         return ResponseEntity.ok(response);

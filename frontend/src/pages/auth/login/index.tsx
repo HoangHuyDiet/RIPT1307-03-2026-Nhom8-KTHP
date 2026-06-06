@@ -30,6 +30,7 @@ export default function Login() {
           loginData.token,
           { email: loginData.email, name: loginData.displayName },
           roles,
+          loginData.refreshToken,
         );
         history.push(roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN') ? '/admin/users' : '/dashboard');
       } catch (error: any) {
@@ -59,7 +60,8 @@ export default function Login() {
       useAuthStore.getState().setAuth(
         data.data.token, 
         { email: data.data.email, name: data.data.displayName },
-        roles
+        roles,
+        data.data.refreshToken,
       );
       
       if (roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN')) {

@@ -29,6 +29,7 @@ export default function Register() {
           loginData.token,
           { email: loginData.email, name: loginData.displayName },
           loginData.roles || [],
+          loginData.refreshToken,
         );
         history.push('/dashboard');
       } catch (error: any) {

@@ -7,6 +7,7 @@ import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.GoogleLoginRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
+import com.smartfinance.smart_finance_hub.dto.request.RefreshTokenRequest;
 import java.util.UUID;
 
 import com.smartfinance.smart_finance_hub.entity.Role;
@@ -116,6 +117,7 @@ public class AuthServiceImpl implements AuthService {
     private LoginResponse buildLoginResponse(User user) {
         CustomUserDetails userDetails = CustomUserDetails.build(user);
         String token = jwtUtils.generateToken(userDetails);
+        String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         List<String> roleNames = (user.getUserRoles() != null)
             ? user.getUserRoles().stream()
@@ -126,6 +128,7 @@ public class AuthServiceImpl implements AuthService {
 
         return LoginResponse.builder()
             .token(token)
+            .refreshToken(refreshToken)
             .email(user.getEmail())
             .displayName(user.getDisplayName())
             .roles(roleNames)
@@ -222,6 +225,29 @@ public class AuthServiceImpl implements AuthService {
         User userWithRoles = userRepository.findByEmailWithRoles(email).orElse(user);
         log.info("Google login success: {}", email);
         return buildLoginResponse(userWithRoles);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LoginResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        if (!jwtUtils.validateJwtToken(refreshToken) || !jwtUtils.isRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
+
+        String email = jwtUtils.getEmailFromJwtToken(refreshToken);
+        User user = userRepository.findByEmailWithRoles(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với email: " + email));
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa");
+        }
+
+        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản chưa được kích hoạt");
+        }
+
+        return buildLoginResponse(user);
     }
 
     @Override
