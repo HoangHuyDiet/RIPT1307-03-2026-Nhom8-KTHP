@@ -36,19 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
         String email = jwtUtils.getEmailFromJwtToken(jwt);
-        List<String> roles = jwtUtils.getRolesFromJwtToken(jwt);
-
-        log.info("Xác thực thành công token cho user: {}, roles: {}", email, roles);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-        // Sử dụng roles từ JWT để tạo authorities
-        var authorities = roles.stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
+        log.info("Xác thực thành công token cho user: {}, roles: {}", email, userDetails.getAuthorities());
 
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-            userDetails, null, authorities);
+            userDetails, null, userDetails.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

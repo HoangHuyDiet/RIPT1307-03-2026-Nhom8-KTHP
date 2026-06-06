@@ -9,6 +9,7 @@ interface AuthState {
   isAdmin: () => boolean;
   isSupportAdmin: () => boolean;
   hasAdminAccess: () => boolean;
+  isPro: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -43,5 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const roles = get().roles;
     return roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN');
   },
+  isPro: () => get().roles.includes('PRO'),
 }));
+
 

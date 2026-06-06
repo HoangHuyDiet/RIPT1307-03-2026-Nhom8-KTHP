@@ -5,7 +5,10 @@ import com.smartfinance.smart_finance_hub.dto.LoginResponse;
 import com.smartfinance.smart_finance_hub.dto.RegisterRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.GoogleLoginRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
+import java.util.UUID;
+
 import com.smartfinance.smart_finance_hub.entity.Role;
 import com.smartfinance.smart_finance_hub.entity.User;
 import com.smartfinance.smart_finance_hub.entity.UserRole;
@@ -27,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,7 +63,6 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(newUser);
 
-        // Gán role USER mặc định cho user mới
         Role userRole = roleRepository.findByName("USER")
             .orElseThrow(() -> new RuntimeException("Role USER không tồn tại trong hệ thống!"));
         UserRole ur = UserRole.builder()
@@ -110,45 +113,125 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    private LoginResponse buildLoginResponse(User user) {
+        CustomUserDetails userDetails = CustomUserDetails.build(user);
+        String token = jwtUtils.generateToken(userDetails);
+
+        List<String> roleNames = (user.getUserRoles() != null)
+            ? user.getUserRoles().stream()
+                .filter(ur -> ur.getExpiredAt() == null || ur.getExpiredAt().isAfter(java.time.LocalDateTime.now()))
+                .map(ur -> ur.getRole().getName())
+                .collect(Collectors.toList())
+            : Collections.emptyList();
+
+        return LoginResponse.builder()
+            .token(token)
+            .email(user.getEmail())
+            .displayName(user.getDisplayName())
+            .roles(roleNames)
+            .build();
+    }
+
+    private User createGoogleUser(String email, String displayName) {
+        User newUser = User.builder()
+            .email(email)
+            .password(passwordEncoder.encode("GOOGLE_AUTH_" + UUID.randomUUID()))
+            .displayName(displayName == null || displayName.isBlank() ? email : displayName)
+            .status(UserStatus.ACTIVE)
+            .build();
+        userRepository.save(newUser);
+
+        Role userRole = roleRepository.findByName("USER")
+            .orElseThrow(() -> new RuntimeException("Role USER không tồn tại trong hệ thống!"));
+        userRoleRepository.save(UserRole.builder()
+            .user(newUser)
+            .role(userRole)
+            .build());
+        return newUser;
+    }
+
     @Override
     public LoginResponse login(LoginRequest request) {
-      log.info("login request: {}", request.getEmail());
+        log.info("login request: {}", request.getEmail());
 
-      // Sử dụng findByEmailWithRoles để load roles cùng lúc
-      User user = userRepository.findByEmailWithRoles(request.getEmail())
-          .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không đúng"));
+        User user = userRepository.findByEmailWithRoles(request.getEmail())
+            .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không đúng"));
 
-      if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-        throw new IllegalArgumentException("Email hoặc mật khẩu không đúng");
-      }
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Email hoặc mật khẩu không đúng");
+        }
 
-      if (UserStatus.INACTIVE.equals(user.getStatus())) {
-        throw new IllegalStateException("Tài khoản chưa xác thực OTP. Vui lòng kiểm tra email");
-      }
+        if (UserStatus.INACTIVE.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản chưa xác thực OTP. Vui lòng kiểm tra email");
+        }
 
-      if (UserStatus.BANNED.equals(user.getStatus())) {
-        throw new IllegalStateException("Tài khoản đã bị khóa");
-      }
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa");
+        }
 
-      CustomUserDetails userDetails = CustomUserDetails.build(user);
-      String token = jwtUtils.generateToken(userDetails);
-
-      // Lấy danh sách tên roles
-      List<String> roleNames = (user.getUserRoles() != null)
-          ? user.getUserRoles().stream()
-              .map(ur -> ur.getRole().getName())
-              .collect(Collectors.toList())
-          : Collections.emptyList();
-
-      log.info("login success: {}, roles: {}", request.getEmail(), roleNames);
-
-      return LoginResponse.builder()
-          .token(token)
-          .email(user.getEmail())
-          .displayName(user.getDisplayName())
-          .roles(roleNames)
-          .build();
+        log.info("login success: {}", request.getEmail());
+        return buildLoginResponse(user);
     }
+
+    @Override
+    @Transactional
+    public LoginResponse loginWithGoogle(GoogleLoginRequest request) {
+        log.info("Google login request with token: {}", request.getToken());
+        Map<String, Object> profile;
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setBearerAuth(request.getToken());
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            
+            org.springframework.http.ResponseEntity<Map> response = restTemplate.exchange(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                Map.class
+            );
+            profile = response.getBody();
+        } catch (Exception e) {
+            log.error("Lỗi khi kết nối với Google API để lấy thông tin user info: {}", e.getMessage(), e);
+            throw new IllegalArgumentException("Không thể xác thực tài khoản Google (lỗi kết nối hoặc token không hợp lệ)");
+        }
+
+        if (profile == null || profile.get("email") == null) {
+            throw new IllegalArgumentException("Không thể xác thực tài khoản Google");
+        }
+
+        String email = String.valueOf(profile.get("email")).trim().toLowerCase();
+        boolean emailVerified = Boolean.parseBoolean(String.valueOf(profile.getOrDefault("email_verified", "false")));
+        if (!emailVerified) {
+            throw new IllegalArgumentException("Email Google chưa được xác thực");
+        }
+
+        String displayName = String.valueOf(profile.getOrDefault("name", email));
+        User user = userRepository.findByEmailWithRoles(email)
+            .orElseGet(() -> createGoogleUser(email, displayName));
+
+        if (UserStatus.BANNED.equals(user.getStatus())) {
+            throw new IllegalStateException("Tài khoản đã bị khóa");
+        }
+
+        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
+            user.setStatus(UserStatus.ACTIVE);
+            userRepository.save(user);
+        }
+
+        User userWithRoles = userRepository.findByEmailWithRoles(email).orElse(user);
+        log.info("Google login success: {}", email);
+        return buildLoginResponse(userWithRoles);
+    }
+
+    @Override
+    public LoginResponse getMe(String email) {
+        log.info("getMe request for email: {}", email);
+        User user = userRepository.findByEmailWithRoles(email)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với email: " + email));
+        return buildLoginResponse(user);
+    }
+
 
     @Override
     @Transactional
@@ -202,12 +285,10 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalStateException("Tài khoản đã bị khóa, không thể đổi mật khẩu");
         }
 
-        // Kiểm tra mật khẩu cũ có đúng không
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
         }
 
-        // Mật khẩu cũ đúng -> Gửi OTP
         try {
             twoFactorAuthService.sendOtp(email);
             log.info("Đã gửi mã OTP đổi mật khẩu cho: {}", email);
@@ -225,18 +306,15 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
 
-        // Kiểm tra lại mật khẩu cũ (double-check bảo mật)
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác!");
         }
 
-        // Xác thực OTP
         boolean isValid = twoFactorAuthService.verifyOtp(email, request.getOtpCode());
         if (!isValid) {
             throw new IllegalArgumentException("Mã OTP không chính xác hoặc đã hết hạn!");
         }
 
-        // OTP hợp lệ -> Đổi mật khẩu
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 

@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -110,10 +111,6 @@ public class AuthController {
       return ResponseEntity.ok(response);
     }
 
-    // =============================================
-    // Đổi mật khẩu (cho User đã đăng nhập, kèm OTP)
-    // =============================================
-
     @PostMapping("/request-password-change")
     public ResponseEntity<Map<String, Object>> requestPasswordChange(
             @Valid @RequestBody RequestPasswordChangeRequest request) {
@@ -140,6 +137,21 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
         response.put("message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, Object>> getMe() {
+        String email = getAuthenticatedEmail();
+        log.info("getMe request for email: {}", email);
+
+        com.smartfinance.smart_finance_hub.dto.LoginResponse loginResponse = authService.getMe(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Lấy thông tin người dùng thành công");
+        response.put("data", loginResponse);
 
         return ResponseEntity.ok(response);
     }

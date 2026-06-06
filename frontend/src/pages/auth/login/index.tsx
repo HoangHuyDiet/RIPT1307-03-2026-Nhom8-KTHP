@@ -24,8 +24,14 @@ export default function Login() {
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
 
-        useAuthStore.getState().setAuth(data.token, data.user);
-        history.push('/dashboard');
+        const loginData = data.data;
+        const roles = loginData.roles || [];
+        useAuthStore.getState().setAuth(
+          loginData.token,
+          { email: loginData.email, name: loginData.displayName },
+          roles,
+        );
+        history.push(roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN') ? '/admin/users' : '/dashboard');
       } catch (error: any) {
         message.error('Đăng nhập bằng Google thất bại!');
       } finally {
