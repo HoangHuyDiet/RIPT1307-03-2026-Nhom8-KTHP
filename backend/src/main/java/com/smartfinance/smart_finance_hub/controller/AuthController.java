@@ -7,6 +7,7 @@ import com.smartfinance.smart_finance_hub.dto.ResendOtpRequest;
 import com.smartfinance.smart_finance_hub.dto.VerifyRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ChangePasswordRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ForgotPasswordRequest;
+import com.smartfinance.smart_finance_hub.dto.request.GoogleLoginRequest;
 import com.smartfinance.smart_finance_hub.dto.request.RequestPasswordChangeRequest;
 import com.smartfinance.smart_finance_hub.dto.request.ResetPasswordOtpRequest;
 import com.smartfinance.smart_finance_hub.service.AuthService;
@@ -83,6 +84,19 @@ public class AuthController {
       response.put("data", loginResponse);
 
       return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<Map<String, Object>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        log.info("Google login request");
+        LoginResponse loginResponse = authService.loginWithGoogle(request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Đăng nhập bằng Google thành công");
+        response.put("data", loginResponse);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/forgot-password")
