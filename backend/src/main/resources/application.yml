@@ -49,7 +49,7 @@ jwt:
   expiration: 86400000
 
 gemini:
-  api-key: AIzaSyCIkJepNd9uREewQXMTGXjb0ff9EnFF5F0
+  api-key: ${GEMINI_API_KEY:AIzaSyCIkJepNd9uREewQXMTGXjb0ff9EnFF5F0}
   model: gemini-2.5-flash
   embedding-model: gemini-embedding-001
   temperature: 0.2
