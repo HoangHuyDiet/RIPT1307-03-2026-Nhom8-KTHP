@@ -110,7 +110,6 @@
       <scope>runtime</scope>
     </dependency>
 
-		<!-- LangChain4j AI/RAG -->
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j</artifactId>

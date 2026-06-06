@@ -432,7 +432,7 @@ export default function PersonalFundManagement() {
 
   const fundTransactions = useMemo(() => {
     if (!selectedFundForStatement) return [];
-    return transactions.filter(tx => tx.fund === selectedFundForStatement.name);
+    return transactions.filter(tx => tx.fundId === selectedFundForStatement.id || tx.fund === selectedFundForStatement.name);
   }, [selectedFundForStatement, transactions]);
 
   const filteredTransactions = useMemo(() => {
@@ -518,7 +518,7 @@ export default function PersonalFundManagement() {
         targetId,
         amount: transferAmount,
         description,
-        date: dayjs().format('YYYY-MM-DD')
+        date: values.transferDate ? values.transferDate.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       };
       await api.post('/personal-funds/transfer', requestData);
       message.success(`Đã chuyển tiền nội bộ thành công!`);
@@ -559,7 +559,7 @@ export default function PersonalFundManagement() {
   };
 
   const handleReminder = async (values: any) => {
-    const { title, paymentDate } = values;
+    const { title, paymentDate, amount } = values;
     const formattedDate = paymentDate ? paymentDate.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
     try {
       const targetCategory = categories.find(
@@ -571,7 +571,7 @@ export default function PersonalFundManagement() {
         title,
         paymentDate: formattedDate,
         repeat: !!values.repeat,
-        amount: 350000,
+        amount: amount || 350000,
         type: 'EXPENSE',
         frequency: values.repeat ? 'MONTHLY' : 'DAILY',
         startDate: formattedDate,
@@ -672,7 +672,6 @@ export default function PersonalFundManagement() {
     <div className={styles.fundListGrid}>
       <div className={styles.sectionHeader}>
         <h2 className={styles.sectionTitle}>Danh sách Quỹ</h2>
-        <span className={styles.viewAllLink} onClick={() => message.info('Danh sách đầy đủ đang tải')}>Xem tất cả</span>
       </div>
 
       <Row gutter={[20, 20]}>
@@ -1025,7 +1024,7 @@ export default function PersonalFundManagement() {
                 label="Ngày chuyển"
                 initialValue={dayjs()}
               >
-                <DatePicker style={{ width: '100%' }} format="MM/DD/YYYY" />
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1158,7 +1157,7 @@ export default function PersonalFundManagement() {
           <div className={styles.infoBanner}>
             <CheckCircleOutlined style={{ fontSize: '16px', marginTop: '2px' }} />
             <div>
-              AI nhận thấy việc thanh toán từ Vietcombank sẽ giúp bạn tích thêm <strong>1.250 điểm</strong> thưởng trong tháng này.
+              {aiTips?.payBill?.message || 'Giao dịch thanh toán sẽ được tự động ghi nhận vào lịch sử chi tiêu.'}
             </div>
           </div>
         </Form>
@@ -1200,6 +1199,20 @@ export default function PersonalFundManagement() {
             rules={[{ required: true, message: 'Vui lòng nhập tên hóa đơn/khoản chi!' }]}
           >
             <Input placeholder="Ví dụ: Tiền điện nước, Tiền học phí, Internet..." />
+          </Form.Item>
+
+          <Form.Item
+            name="amount"
+            label="Số tiền cần thanh toán (đ)"
+            rules={[{ required: true, message: 'Vui lòng nhập số tiền!' }]}
+          >
+            <InputNumber
+              className={styles.amountInputNumber}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
+              placeholder="Nhập số tiền"
+              style={{ width: '100%' }}
+            />
           </Form.Item>
 
           <Form.Item
@@ -1274,7 +1287,6 @@ export default function PersonalFundManagement() {
               </Form.Item>
             </Col>
           </Row>
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -1282,7 +1294,7 @@ export default function PersonalFundManagement() {
                 label="Ngày chuyển"
                 initialValue={dayjs()}
               >
-                <DatePicker style={{ width: '100%' }} format="MM/DD/YYYY" />
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
             <Col span={12}>

@@ -96,9 +96,9 @@ public class DataInitializer implements CommandLineRunner {
     private void createRoleIfNotExists(String name, String description) {
         if (!roleRepository.existsByName(name)) {
             Role role = Role.builder()
-                .name(name)
-                .description(description)
-                .build();
+                    .name(name)
+                    .description(description)
+                    .build();
             roleRepository.save(role);
             log.info("Đã tạo role: {}", name);
         } else {
@@ -128,10 +128,10 @@ public class DataInitializer implements CommandLineRunner {
     private void createSystemCategoryIfNotExists(String name, String type, String description) {
         if (!categoryRepository.existsActiveSystemCategoryName(name, type)) {
             Category category = Category.builder()
-                .name(name)
-                .type(type)
-                .description(description)
-                .build();
+                    .name(name)
+                    .type(type)
+                    .description(description)
+                    .build();
             categoryRepository.save(category);
             log.info("Đã tạo danh mục hệ thống: {} ({})", name, type);
         } else {
@@ -144,7 +144,8 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE categories MODIFY user_id BIGINT NULL");
             log.info("Đã đảm bảo categories.user_id cho phép NULL để lưu danh mục hệ thống");
         } catch (Exception error) {
-            log.warn("Không thể cập nhật nullable cho categories.user_id, bỏ qua nếu schema đã đúng: {}", error.getMessage());
+            log.warn("Không thể cập nhật nullable cho categories.user_id, bỏ qua nếu schema đã đúng: {}",
+                    error.getMessage());
         }
     }
 }

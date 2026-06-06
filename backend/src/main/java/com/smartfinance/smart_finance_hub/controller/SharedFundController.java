@@ -30,6 +30,7 @@ public class SharedFundController {
     private final com.smartfinance.smart_finance_hub.repository.CategoryRepository categoryRepository;
     private final com.smartfinance.smart_finance_hub.repository.UserRepository userRepository;
     private final com.smartfinance.smart_finance_hub.repository.TransactionRepository transactionRepository;
+    private final com.smartfinance.smart_finance_hub.service.NotificationService notificationService;
 
     @GetMapping("/list")
     public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> listFunds() {
@@ -84,30 +85,58 @@ public class SharedFundController {
     @GetMapping("/my-notifications")
     public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<java.util.List<java.util.Map<String, Object>>>> getMyNotifications() {
         Long userId = getCurrentUserId();
-        java.util.List<Transaction> rejectedTransactions =
-                transactionRepository.findSharedFundTransactionsByUserIdAndStatusWithDetails(userId, "REJECTED");
-
-        java.util.List<java.util.Map<String, Object>> notifications = new java.util.ArrayList<>();
-        for (Transaction tx : rejectedTransactions) {
-            java.util.Map<String, Object> n = new java.util.HashMap<>();
-            n.put("id", "rejected_" + tx.getId());
-            n.put("type", "INCOME".equalsIgnoreCase(tx.getType()) ? "DEPOSIT_REJECTED" : "WITHDRAW_REJECTED");
-            n.put("fundId", tx.getShareFund() != null ? tx.getShareFund().getId() : null);
-            n.put("fundName", tx.getShareFund() != null ? tx.getShareFund().getName() : "");
-            n.put("amount", tx.getAmount());
-            n.put("description", tx.getRejectReason() != null && !tx.getRejectReason().isBlank()
-                    ? "Ly do tu choi: " + tx.getRejectReason()
-                    : "Chu quy khong neu ly do");
-            n.put("requesterName", tx.getUser() != null && tx.getUser().getDisplayName() != null
-                    ? tx.getUser().getDisplayName()
-                    : "Nguoi dung");
-            n.put("date", tx.getUpdatedAt() != null ? tx.getUpdatedAt().toString() : (tx.getDate() != null ? tx.getDate().toString() : ""));
-            n.put("read", false);
-            n.put("targetRole", "MEMBER");
-            notifications.add(n);
-        }
-
+        java.util.List<java.util.Map<String, Object>> notifications = notificationService.getMyNotifications(userId);
         return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Lay thong bao thanh cong!", notifications));
+    }
+
+    @PostMapping("/my-notifications/read")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> readNotification(
+            @RequestBody Map<String, String> body) {
+        Long userId = getCurrentUserId();
+        Long notifId = parseNotificationId(body.get("id"));
+        if (notifId != null) {
+            notificationService.markAsRead(notifId, userId);
+        }
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Da doc"));
+    }
+
+    @PostMapping("/my-notifications/read-all")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> readAllNotifications() {
+        Long userId = getCurrentUserId();
+        notificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Da doc het"));
+    }
+
+    @PostMapping("/my-notifications/delete")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> deleteNotification(
+            @RequestBody Map<String, String> body) {
+        Long userId = getCurrentUserId();
+        Long notifId = parseNotificationId(body.get("id"));
+        if (notifId != null) {
+            notificationService.deleteNotification(notifId, userId);
+        }
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Da xoa"));
+    }
+
+    @PostMapping("/my-notifications/delete-all")
+    public ResponseEntity<com.smartfinance.smart_finance_hub.dto.response.ApiResponse<Void>> deleteAllNotifications() {
+        Long userId = getCurrentUserId();
+        notificationService.deleteAllNotifications(userId);
+        return ResponseEntity.ok(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Da xoa het"));
+    }
+
+    private Long parseNotificationId(String idStr) {
+        if (idStr == null) return null;
+        String clean = idStr;
+        int lastUnderScore = idStr.lastIndexOf('_');
+        if (lastUnderScore != -1) {
+            clean = idStr.substring(lastUnderScore + 1);
+        }
+        try {
+            return Long.parseLong(clean);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @PostMapping
