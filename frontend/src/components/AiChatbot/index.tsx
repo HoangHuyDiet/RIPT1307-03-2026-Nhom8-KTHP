@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Input, Space, Spin, Tag, Typography } from 'antd';
 import { CloseOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons';
 import { getAiStatus, sendAiChat, type AiAvailability, type AiCitation } from '@/services/ai';
+import { useAuthStore } from '@/store/useAuthStore';
 import styles from './index.less';
 
 const { Text } = Typography;
@@ -125,10 +126,14 @@ function renderMessageContent(content: string, isAi: boolean = true): React.Reac
 }
 
 export default function AiChatbot() {
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+  const userSessionKey = userId ? `smart_finance_ai_session_id_${userId}` : SESSION_STORAGE_KEY;
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<string | undefined>(() => {
-    return localStorage.getItem(SESSION_STORAGE_KEY) || undefined;
+    return localStorage.getItem(userSessionKey) || undefined;
   });
   const [status, setStatus] = useState<AiAvailability | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -140,6 +145,18 @@ export default function AiChatbot() {
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem(userSessionKey);
+    setSessionId(storedSessionId || undefined);
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'ai',
+        content: 'Chào Anh, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.',
+      },
+    ]);
+  }, [userId, userSessionKey]);
 
   useEffect(() => {
     getAiStatus()
@@ -165,7 +182,7 @@ export default function AiChatbot() {
       const response = await sendAiChat(text, sessionId);
       setSessionId(response.sessionId);
       if (response.sessionId) {
-        localStorage.setItem(SESSION_STORAGE_KEY, response.sessionId);
+        localStorage.setItem(userSessionKey, response.sessionId);
       }
       setMessages((prev) => [
         ...prev,
