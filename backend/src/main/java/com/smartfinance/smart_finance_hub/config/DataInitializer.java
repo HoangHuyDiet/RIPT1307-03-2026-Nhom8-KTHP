@@ -51,13 +51,22 @@ public class DataInitializer implements CommandLineRunner {
         createPermissionIfNotExists("RAG_REBUILD", "Kích hoạt rebuild Vector Store thủ công");
         createPermissionIfNotExists("RAG_STATUS_VIEW", "Xem trạng thái RAG Vector Store");
 
-        // Gán toàn bộ cho SUPPORT_ADMIN
         List<String> supportPermissions = List.of(
             "CONSULTATION_VIEW_QUEUE", "CONSULTATION_ASSIGN_SELF",
             "CONSULTATION_VIEW_ASSIGNED", "CONSULTATION_REPLY",
-            "CONSULTATION_COMPLETE", "RAG_REBUILD", "RAG_STATUS_VIEW"
+            "CONSULTATION_COMPLETE", "RAG_REBUILD", "RAG_STATUS_VIEW",
+            // New Support Admin Permissions
+            "SUPPORT_USER_VIEW", "SUPPORT_USER_TOGGLE_STATUS", "SUPPORT_LOCK_REQUEST_CREATE",
+            "SUPPORT_LOCK_REQUEST_VIEW", "SUPPORT_LOCK_REQUEST_DELETE", "SUPPORT_AUDIT_LOG_VIEW",
+            "SUPPORT_CHAT_VIEW", "SUPPORT_CHAT_SEND", "SUPPORT_CHAT_RESOLVE",
+            "SUPPORT_BROADCAST_VIEW", "SUPPORT_BROADCAST_CREATE"
         );
         assignPermissionsToRole("SUPPORT_ADMIN", supportPermissions);
+
+        // Admin permissions for Lock Request
+        createPermissionIfNotExists("LOCK_REQUEST_APPROVE", "Phê duyệt yêu cầu khóa tài khoản");
+        createPermissionIfNotExists("LOCK_REQUEST_REJECT", "Từ chối yêu cầu khóa tài khoản");
+        assignPermissionsToRole("ADMIN", List.of("LOCK_REQUEST_APPROVE", "LOCK_REQUEST_REJECT"));
     }
 
     private void createPermissionIfNotExists(String name, String description) {

@@ -1,6 +1,6 @@
 -- ============================================================
 -- SMART FINANCE HUB - DATABASE SCHEMA
--- 20 tables | MySQL 8.0+
+-- 23 tables | MySQL 8.0+
 -- ============================================================
 -- Run:
 --   mysql -u root -p < data/schema.sql
@@ -319,8 +319,8 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     assigned_admin_id   BIGINT          NULL,
     subject             VARCHAR(255)    NOT NULL,
     description         TEXT            NOT NULL,
-    priority            VARCHAR(20)     NOT NULL DEFAULT 'MEDIUM' COMMENT 'LOW / MEDIUM / HIGH / URGENT',
-    status              VARCHAR(20)     NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN / IN_PROGRESS / RESOLVED / CLOSED',
+    priority            VARCHAR(20)     NOT NULL DEFAULT 'MEDIUM' COMMENT 'LOW / MEDIUM / HIGH',
+    status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / RESOLVED',
     created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -339,6 +339,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     entity_type     VARCHAR(100)    NOT NULL,
     details         TEXT            NULL,
     ip_address      VARCHAR(45)     NULL,
+    status          VARCHAR(20)     NULL DEFAULT 'SUCCESS' COMMENT 'SUCCESS / WARNING / FAILED',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -362,3 +363,46 @@ CREATE TABLE IF NOT EXISTS external_integrations (
     INDEX idx_integrations_user (user_id),
     INDEX idx_integrations_provider (provider_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='External integrations';
+
+CREATE TABLE IF NOT EXISTS lock_requests (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    target_user_id  BIGINT          NOT NULL COMMENT 'User bị đề xuất khóa',
+    requested_by_id BIGINT          NOT NULL COMMENT 'Support Admin gửi yêu cầu',
+    reason          TEXT            NOT NULL COMMENT 'Lý do khóa tài khoản',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / APPROVED / REJECTED',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_lock_target_user FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lock_requested_by FOREIGN KEY (requested_by_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_lock_requests_target (target_user_id),
+    INDEX idx_lock_requests_by (requested_by_id),
+    INDEX idx_lock_requests_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lock account requests from Support Admin to Admin';
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id                  BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    support_ticket_id   BIGINT          NOT NULL,
+    sender              VARCHAR(10)     NOT NULL DEFAULT 'USER' COMMENT 'USER / ADMIN',
+    content             TEXT            NOT NULL,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_chat_msg_ticket FOREIGN KEY (support_ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
+    INDEX idx_chat_messages_ticket (support_ticket_id),
+    INDEX idx_chat_messages_created (support_ticket_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Chat messages within support tickets';
+
+CREATE TABLE IF NOT EXISTS broadcasts (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    title           VARCHAR(255)    NOT NULL,
+    content         TEXT            NOT NULL,
+    target          VARCHAR(100)    NOT NULL DEFAULT 'ALL' COMMENT 'ALL / VIP / SUBSCRIBED / specific email',
+    urgency         VARCHAR(20)     NOT NULL DEFAULT 'INFO' COMMENT 'INFO / WARNING / CRITICAL',
+    created_by_id   BIGINT          NOT NULL COMMENT 'Support Admin tạo broadcast',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_broadcast_creator FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_broadcasts_creator (created_by_id),
+    INDEX idx_broadcasts_target (target),
+    INDEX idx_broadcasts_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='System broadcast notifications';
