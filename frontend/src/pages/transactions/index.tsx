@@ -389,18 +389,22 @@ export default function TransactionsManager() {
   }, [transactions]);
 
   return (
-    <div className={styles.premiumContainer}>
+    <div className={styles.fundsWrapper}>
+      <div className={styles.headerSection}>
+        <div className={styles.titleInfo}>
+          <h1 className={styles.pageTitle}>Quản lý Giao dịch</h1>
+          <p className={styles.pageSubtitle}>Quản lý dòng tiền vào/ra, tra cứu lịch sử và phân tích chi tiêu chi tiết.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <Button icon={<PlusOutlined />} type="primary" className={styles.actionBtn} onClick={handleOpenAdd}>
+            Thêm mới
+          </Button>
+        </div>
+      </div>
+
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={17}>
           <div className={styles.leftSection}>
-            <div className={styles.sectionHeader}>
-              <Title level={3} className={styles.mainTitle}>Giao dịch</Title>
-              <Space size="middle" className={styles.actionButtons}>
-                <Button icon={<PlusOutlined />} type="primary" className={styles.addBtn} onClick={handleOpenAdd}>
-                  Thêm mới
-                </Button>
-              </Space>
-            </div>
 
             <div className={styles.filterBarRow}>
               <Space size="middle" className={styles.capsuleFilters}>

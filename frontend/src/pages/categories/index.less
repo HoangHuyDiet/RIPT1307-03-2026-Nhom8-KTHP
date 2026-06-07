@@ -1,35 +1,61 @@
-.container {
-  padding: 24px;
-  min-height: 100vh;
-  background: #f6f8fb;
+.fundsWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 4px;
+}
+
+.headerSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .titleInfo {
+    .pageTitle {
+      margin: 0 0 4px 0;
+      font-weight: 700;
+      color: #202124;
+      font-size: 26px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .pageSubtitle {
+      margin: 0;
+      color: #5F6368;
+      font-size: 14px;
+    }
+  }
+
+  .headerActions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .actionBtn {
+      height: 40px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+    }
+  }
 }
 
 .tableCard {
   border-radius: 14px;
   border: none;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-
-.title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #202124;
-}
-
-.subtitle {
-  margin: 6px 0 0;
-  color: #5f6368;
-  font-size: 13px;
 }
 
 .typeTabs {

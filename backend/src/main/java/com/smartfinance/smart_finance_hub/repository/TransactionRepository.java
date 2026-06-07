@@ -107,6 +107,24 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             Long personalFundId, LocalDate startDate, LocalDate endDate);
 
     Page<Transaction> findByPersonalFundIdAndType(Long personalFundId, String type, Pageable pageable);
+
+    @Query("SELECT new com.smartfinance.smart_finance_hub.dto.response.CategoryExpenseResponse(c.name, SUM(t.amount)) " +
+           "FROM Transaction t JOIN t.category c " +
+           "WHERE t.user.id = :userId AND t.type = 'EXPENSE' AND t.isApproved = true " +
+           "AND FUNCTION('MONTH', t.date) = :month AND FUNCTION('YEAR', t.date) = :year " +
+           "GROUP BY c.name")
+    List<com.smartfinance.smart_finance_hub.dto.response.CategoryExpenseResponse> getExpenseByCategory(
+            @Param("userId") Long userId, 
+            @Param("month") int month, 
+            @Param("year") int year);
+
+    @Query("SELECT new com.smartfinance.smart_finance_hub.dto.response.CashFlowResponse(FUNCTION('MONTH', t.date), t.type, SUM(t.amount)) " +
+           "FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.isApproved = true AND FUNCTION('YEAR', t.date) = :year " +
+           "GROUP BY FUNCTION('MONTH', t.date), t.type")
+    List<com.smartfinance.smart_finance_hub.dto.response.CashFlowResponse> getCashFlowByYear(
+            @Param("userId") Long userId, 
+            @Param("year") int year);
 }
 
 

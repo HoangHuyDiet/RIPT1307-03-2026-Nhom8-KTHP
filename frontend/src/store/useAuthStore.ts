@@ -59,7 +59,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const roles = get().roles;
     return roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN');
   },
-  isPro: () => get().roles.includes('PRO'),
+  isPro: () => {
+    const roles = get().roles;
+    return roles.includes('PRO') || roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN');
+  },
   updateUser: (updates) => {
     const currentUser = get().user;
     if (currentUser) {

@@ -27,6 +27,7 @@ import NotificationsPopover from '../NotificationsLayout';
 import SupportWidget from '../SupportWidget';
 import { useAuthStore } from '@/store/useAuthStore';
 import AiChatbot from '@/components/AiChatbot';
+import DefaultFooter from '@/components/DefaultFooter';
 
 const { Header, Sider, Content } = Layout;
 
@@ -296,7 +297,10 @@ export default function BasicLayout() {
           </Space>
         </Header>
         <Content className={styles.content}>
-          <Outlet />
+          <div className={styles.pageContentWrapper}>
+            <Outlet />
+          </div>
+          <DefaultFooter />
         </Content>
       </Layout>
 

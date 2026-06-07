@@ -1,68 +1,78 @@
-.container {
-  padding: 24px;
-  min-height: 100vh;
-  background-color: #f6f8fb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+.fundsWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 4px;
+}
 
-  .headerRow {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-bottom: 24px;
-  }
+.headerSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 
-  .searchWrapper {
-    width: 320px;
+  .titleInfo {
+    .pageTitle {
+      margin: 0 0 4px 0;
+      font-weight: 700;
+      color: #202124;
+      font-size: 26px;
+      font-family: 'Inter', sans-serif;
+    }
 
-    .searchBar {
-      border-radius: 20px;
-      background-color: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      padding: 6px 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-      transition: all 0.3s;
-      
-      :global(.ant-input) {
-        background-color: transparent;
-      }
-      
-      &:focus-within, &:hover {
-        border-color: #1a73e8;
-        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
-      }
+    .pageSubtitle {
+      margin: 0;
+      color: #5F6368;
+      font-size: 14px;
     }
   }
 
-  .sectionHeader {
+  .headerActions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
+    gap: 12px;
+    flex-wrap: wrap;
 
-  .sectionTitle {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1a1d20;
-    margin: 0 !important;
-  }
+    .actionBtn {
+      height: 40px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: none;
+      transition: all 0.2s ease;
 
-  .createBtn {
-    border-radius: 24px;
-    font-weight: 600;
-    height: 40px;
-    padding: 0 20px;
-    background-color: #1a73e8;
-    border: none;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    &:hover {
-      background-color: #155cb0 !important;
+      &:hover {
+        transform: translateY(-1px);
+      }
     }
   }
+}
+
+.searchWrapper {
+  width: 320px;
+
+  .searchBar {
+    border-radius: 20px;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 6px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s;
+    
+    :global(.ant-input) {
+      background-color: transparent;
+    }
+    
+    &:focus-within, &:hover {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+    }
+  }
+}
 
   .metricCard {
     border-radius: 16px;
@@ -941,7 +951,6 @@
       }
     }
   }
-}
 
 .submitBtn {
   background-color: #1a73e8;

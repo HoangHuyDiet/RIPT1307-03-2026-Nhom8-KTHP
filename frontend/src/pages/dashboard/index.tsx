@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Row, Col, Card, Typography, Space, Button, Skeleton, Select, Avatar, Alert, Tag } from 'antd';
 import {
   PlusOutlined,
@@ -144,6 +144,8 @@ export default function DashboardBlank() {
   const [aiInsight, setAiInsight] = useState<AiInsight | null>(null);
   const [loadingAiInsight, setLoadingAiInsight] = useState(false);
   const [aiInsightError, setAiInsightError] = useState<string | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [cashFlowFilter, setCashFlowFilter] = useState('6m');
 
   useEffect(() => {
     const fetchRecentTransactions = async () => {
@@ -160,6 +162,40 @@ export default function DashboardBlank() {
       }
     };
     fetchRecentTransactions();
+  }, []);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      setLoadingStats(true);
+      try {
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+
+        const [pieRes, columnRes] = await Promise.all([
+          api.get(`/statistics/expense-by-category?month=${currentMonth}&year=${currentYear}`),
+          api.get(`/statistics/cash-flow?year=${currentYear}`)
+        ]);
+
+        const pieFormatted = pieRes.data.data.map((item: any) => ({
+          category: item.categoryName,
+          value: item.value
+        }));
+        setPieData(pieFormatted);
+
+        const columnFormatted = columnRes.data.data.map((item: any) => ({
+          month: `Tháng ${item.month}`,
+          type: item.type === 'INCOME' ? 'Thu nhập' : 'Chi tiêu',
+          amount: item.amount
+        }));
+        setColumnData(columnFormatted);
+
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu thống kê:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchDashboardStats();
   }, []);
 
   const fetchAiInsight = async (forceRefresh = false) => {
@@ -214,8 +250,31 @@ export default function DashboardBlank() {
     } : {}),
   };
 
+  const filteredColumnData = useMemo(() => {
+    if (!columnData.length) return [];
+    
+    let monthsToKeep = 6;
+    if (cashFlowFilter === '1m') monthsToKeep = 1;
+    if (cashFlowFilter === '3m') monthsToKeep = 3;
+    if (cashFlowFilter === '6m') monthsToKeep = 6;
+    if (cashFlowFilter === '1y') monthsToKeep = 12;
+    if (cashFlowFilter === '2y') monthsToKeep = 24;
+    if (cashFlowFilter === '3y') monthsToKeep = 36;
+    
+    const uniqueMonths = Array.from(new Set(columnData.map(d => d.month)));
+    
+    uniqueMonths.sort((a, b) => {
+      const m1 = parseInt(a.replace('Tháng ', ''));
+      const m2 = parseInt(b.replace('Tháng ', ''));
+      return m1 - m2;
+    });
+
+    const recentMonths = uniqueMonths.slice(-monthsToKeep);
+    return columnData.filter(d => recentMonths.includes(d.month));
+  }, [columnData, cashFlowFilter]);
+
   const columnConfig = {
-    data: columnData,
+    data: filteredColumnData,
     xField: 'month',
     yField: 'amount',
     colorField: 'type',
@@ -230,13 +289,24 @@ export default function DashboardBlank() {
         },
       ],
     },
-    ...(CHART_COLORS.columnColors && CHART_COLORS.columnColors.length > 0 ? {
-      scale: {
-        color: {
-          range: CHART_COLORS.columnColors,
+    scale: {
+      color: {
+        domain: ['Thu nhập', 'Chi tiêu'],
+        range: ['#34A853', '#EA4335'],
+      },
+    },
+    yAxis: {
+      type: 'log',
+      label: {
+        formatter: (v: any) => {
+          const num = Number(v);
+          if (num >= 1000000000) return `${(num / 1000000000).toFixed(0)} Tỷ`;
+          if (num >= 1000000) return `${(num / 1000000).toFixed(0)} Tr`;
+          if (num >= 1000) return `${(num / 1000).toFixed(0)} N`;
+          return num.toString();
         },
       },
-    } : {}),
+    },
   };
 
   const showFreeAiTips = !!aiInsight?.errorCode || !!(aiStatus && !aiStatus.aiAvailable);
@@ -308,7 +378,8 @@ export default function DashboardBlank() {
                     <Text type="secondary" style={{ fontSize: '12px' }}>Chi phí</Text>
                   </Space>
                   <Select
-                    defaultValue="6m"
+                    value={cashFlowFilter}
+                    onChange={(val) => setCashFlowFilter(val)}
                     size="small"
                     style={{ width: 110 }}
                     bordered={false}

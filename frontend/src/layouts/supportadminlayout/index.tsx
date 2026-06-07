@@ -47,7 +47,7 @@ export default function SupportAdminLayout() {
     {
       key: '/supportadmin/chat',
       icon: <MessageOutlined />,
-      label: <Link to="/supportadmin/chat">Hỗ trợ VIP</Link>,
+      label: <Link to="/supportadmin/chat">Hỗ trợ Pro</Link>,
     },
     {
       key: '/supportadmin/tickets',
@@ -83,8 +83,8 @@ export default function SupportAdminLayout() {
 
   const MODULE_DETAILS: Record<string, { title: string; subtitle: string }> = {
     chat: {
-      title: 'Hỗ trợ VIP',
-      subtitle: 'Kênh hỗ trợ và chat trực tuyến dành cho khách hàng VIP'
+      title: 'Hỗ trợ Pro',
+      subtitle: 'Kênh hỗ trợ và chat trực tuyến dành cho khách hàng Pro'
     },
     tickets: {
       title: 'Hỗ trợ User thường',

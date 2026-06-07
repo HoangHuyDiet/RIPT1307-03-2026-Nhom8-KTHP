@@ -153,8 +153,8 @@ export default function SupportWidget() {
     setChatLoading(true);
     try {
       const res = await api.post('/user/support/chat-session/create', {
-        title: 'Hỗ trợ VIP trực tuyến',
-        description: 'Bắt đầu phiên hỗ trợ VIP',
+        title: 'Hỗ trợ Pro trực tuyến',
+        description: 'Bắt đầu phiên hỗ trợ Pro',
         priority: 'HIGH',
         email: user?.email,
         name: user?.name
@@ -310,7 +310,7 @@ export default function SupportWidget() {
           <div className={styles.chatContentArea}>
             {chatLoading ? (
               <div className={styles.chatLoadingContainer}>
-                <Spin size="large" tip="Đang kết nối tổng đài Pro/VIP..." />
+                <Spin size="large" tip="Đang kết nối tổng đài ..." />
               </div>
             ) : chatData ? (
               <div className={styles.chatContainer}>
@@ -318,9 +318,9 @@ export default function SupportWidget() {
                   {chatData.messages && chatData.messages.map((msg, index) => (
                     <div
                       key={index}
-                      className={`${styles.msgRow} ${msg.sender === 'user' ? styles.msgRowRight : styles.msgRowLeft}`}
+                      className={`${styles.msgRow} ${msg.sender.toLowerCase() === 'user' ? styles.msgRowRight : styles.msgRowLeft}`}
                     >
-                      {msg.sender === 'admin' && (
+                      {msg.sender.toLowerCase() === 'admin' && (
                         <Avatar icon={<UserOutlined />} size="small" style={{ marginRight: 8, backgroundColor: '#1A73E8', flexShrink: 0 }} />
                       )}
                       <div className={styles.msgBubbleAndTime}>
@@ -367,9 +367,9 @@ export default function SupportWidget() {
             ) : (
               <div className={styles.noChatContainer}>
                 <InfoCircleOutlined style={{ fontSize: 48, color: '#fa8c16', marginBottom: 16 }} />
-                <Title level={4} style={{ margin: '0 0 8px 0' }}>Kết nối Hotline Pro/VIP</Title>
-                <Paragraph style={{ textAlign: 'center', color: '#5F6368', padding: '0 24px' }}>
-                  Chào mừng quý khách Pro/VIP! Quý khách có quyền truy cập kênh chat bảo mật trực tiếp 24/7 với Support Admin của Smart Finance.
+                <Title level={4} style={{ margin: '0 0 8px 0' }}>Kết nối Hotline Pro</Title>
+                <Paragraph style={{ color: '#5f6368', marginBottom: 24 }}>
+                  Chào mừng quý khách ! Quý khách có quyền truy cập kênh chat bảo mật trực tiếp 24/7 với Support Admin của Smart Finance.
                 </Paragraph>
                 <Button type="primary" size="large" onClick={handleStartVipSession} style={{ marginTop: 16 }}>
                   Bắt đầu kết nối chat ngay
