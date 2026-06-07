@@ -255,7 +255,44 @@
       font-size: 13px;
       color: #5f6368;
       line-height: 1.6;
+      display: none;
+    }
+
+    .aiTipIntro {
       display: block;
+      margin-bottom: 12px;
+      color: #5f6368;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .aiTipList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .aiTipItem {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f8fbff;
+      border: 1px solid #e1ecff;
+
+      span {
+        color: #10b981;
+        font-weight: 700;
+        line-height: 1.55;
+      }
+
+      p {
+        margin: 0;
+        color: #334155;
+        font-size: 13px;
+        line-height: 1.55;
+      }
     }
 
     .miniChart {

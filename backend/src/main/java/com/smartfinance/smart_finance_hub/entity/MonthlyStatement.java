@@ -35,6 +35,30 @@ public class MonthlyStatement {
     @Column(name = "ai_summary", columnDefinition = "TEXT")
     private String aiSummary;
 
+    @Column(name = "cached_insight", columnDefinition = "TEXT")
+    private String cachedInsight;
+
+    @Column(name = "snapshot_hash", length = 64)
+    private String snapshotHash;
+
+    @Column(name = "knowledge_base_hash", length = 64)
+    private String knowledgeBaseHash;
+
+    @Column(name = "ai_model", length = 80)
+    private String aiModel;
+
+    @Column(name = "prompt_version", length = 30)
+    private String promptVersion;
+
+    @Column(name = "insight_cached_at")
+    private LocalDateTime insightCachedAt;
+
+    @Column(name = "insight_expires_at")
+    private LocalDateTime insightExpiresAt;
+
+    @Column(name = "last_ai_refresh_at")
+    private LocalDateTime lastAiRefreshAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -24,7 +24,13 @@ export default function Register() {
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
 
-        useAuthStore.getState().setAuth(data.token, data.user);
+        const loginData = data.data;
+        useAuthStore.getState().setAuth(
+          loginData.token,
+          { email: loginData.email, name: loginData.displayName },
+          loginData.roles || [],
+          loginData.refreshToken,
+        );
         history.push('/dashboard');
       } catch (error: any) {
         message.error('Đăng nhập bằng Google thất bại!');

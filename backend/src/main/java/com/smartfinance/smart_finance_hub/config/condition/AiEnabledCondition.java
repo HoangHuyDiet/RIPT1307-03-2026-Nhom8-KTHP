@@ -5,10 +5,11 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 public class AiEnabledCondition implements Condition {
+
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        String aiEnabled = context.getEnvironment().getProperty("ai.enabled");
-        String geminiKey = context.getEnvironment().getProperty("gemini.api-key");
-        return "true".equalsIgnoreCase(aiEnabled) && geminiKey != null && !geminiKey.trim().isEmpty();
+        String aiEnabled = context.getEnvironment().getProperty("ai.enabled", "false");
+        String geminiKey = context.getEnvironment().getProperty("gemini.api-key", "");
+        return "true".equalsIgnoreCase(aiEnabled) && geminiKey != null && !geminiKey.isBlank();
     }
 }
