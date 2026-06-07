@@ -46,17 +46,14 @@ export default function UserTicketsQueue() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filters & Sorting States
   const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
   const [priorityFilter, setPriorityFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED'>('ALL');
 
-  // Selected Ticket Modal State
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [resolving, setResolving] = useState(false);
 
-  // Fetch all support requests (chat sessions / tickets)
   const fetchTickets = async () => {
     setLoading(true);
     try {
@@ -119,7 +116,6 @@ export default function UserTicketsQueue() {
       title: 'Yêu cầu hỗ trợ',
       key: 'request',
       render: (_: any, record: SupportTicket) => {
-        // Find user description from messages or lastMessage
         const content = record.messages && record.messages[0] ? record.messages[0].content : record.lastMessage;
         return (
           <div style={{ maxWidth: 350 }}>
@@ -181,7 +177,6 @@ export default function UserTicketsQueue() {
 
   return (
     <Card className={styles.ticketsCard}>
-      {/* Filters Toolbar */}
       <div className={styles.filterToolbar}>
         <Space size="middle" wrap>
           <div>
@@ -219,7 +214,6 @@ export default function UserTicketsQueue() {
         </div>
       </div>
 
-      {/* Tickets Table */}
       <Table
         dataSource={processedTickets}
         columns={columns}
@@ -232,7 +226,6 @@ export default function UserTicketsQueue() {
         }}
       />
 
-      {/* Ticket Details Modal */}
       {selectedTicket && (
         <Modal
           title={

@@ -13,9 +13,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests cho CustomUserDetails — đảm bảo RBAC & permission loading đúng.
- */
 class CustomUserDetailsTest {
 
     @Test
@@ -40,7 +37,6 @@ class CustomUserDetailsTest {
 
         Collection<? extends GrantedAuthority> authorities = details.getAuthorities();
 
-        // Phải có cả role và permissions
         assertTrue(authorities.stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_USER")));
         assertTrue(authorities.stream()
@@ -54,7 +50,6 @@ class CustomUserDetailsTest {
     void shouldFilterExpiredRoles() {
         User user = createTestUser();
 
-        // Thêm role hết hạn
         Role expiredRole = Role.builder().id(2L).name("SUPPORT_ADMIN").build();
         UserRole expiredUserRole = UserRole.builder()
             .user(user)
@@ -65,10 +60,8 @@ class CustomUserDetailsTest {
 
         CustomUserDetails details = CustomUserDetails.build(user, List.of());
 
-        // Không nên có ROLE_SUPPORT_ADMIN
         assertFalse(details.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_SUPPORT_ADMIN")));
-        // Vẫn có ROLE_USER (chưa hết hạn)
         assertTrue(details.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_USER")));
     }
@@ -93,7 +86,7 @@ class CustomUserDetailsTest {
         User user = createTestUser();
         CustomUserDetails details = CustomUserDetails.build(user, null);
         assertNotNull(details);
-        assertFalse(details.getAuthorities().isEmpty()); // vẫn có ROLE_USER
+        assertFalse(details.getAuthorities().isEmpty()); 
     }
 
     private User createTestUser() {
@@ -101,7 +94,7 @@ class CustomUserDetailsTest {
         UserRole ur = UserRole.builder()
             .user(null)
             .role(userRole)
-            .expiredAt(null) // Không hết hạn
+            .expiredAt(null) 
             .build();
 
         User user = User.builder()

@@ -29,7 +29,6 @@ public class KnowledgeChunk {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    /** ID tham chiếu trong InMemoryEmbeddingStore */
     @Column(name = "embedding_id", length = 100)
     private String embeddingId;
 

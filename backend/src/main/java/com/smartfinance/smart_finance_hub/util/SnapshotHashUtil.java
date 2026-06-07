@@ -9,10 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-/**
- * Tính SHA-256 hash từ FinancialSnapshotDTO (ổn định key order).
- * Dùng để kiểm tra snapshot thay đổi — quyết định có gọi Gemini hay trả cache.
- */
 @Slf4j
 public final class SnapshotHashUtil {
 
@@ -29,7 +25,6 @@ public final class SnapshotHashUtil {
             return bytesToHex(hash);
         } catch (JsonProcessingException | NoSuchAlgorithmException e) {
             log.error("Lỗi khi tính snapshot hash", e);
-            // Trả về null — caller sẽ coi là cache miss
             return null;
         }
     }

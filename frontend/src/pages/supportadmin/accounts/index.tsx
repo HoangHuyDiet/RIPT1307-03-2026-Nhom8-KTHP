@@ -162,7 +162,7 @@ export default function AccountControl() {
       message.success(`Đã cập nhật trạng thái tài khoản ${user.email} thành công!`);
       await fetchUsers();
 
-      const newStatus = checked ? 'ACTIVE' : 'BANNED';
+      const newStatus: 'ACTIVE' | 'BANNED' = checked ? 'ACTIVE' : 'BANNED';
       if (selectedUser && selectedUser.id === user.id) {
         const updated = { ...selectedUser, status: newStatus };
         setSelectedUser(updated);

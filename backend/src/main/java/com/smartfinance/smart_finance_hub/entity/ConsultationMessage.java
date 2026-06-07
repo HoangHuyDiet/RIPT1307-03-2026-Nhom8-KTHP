@@ -26,7 +26,6 @@ public class ConsultationMessage {
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    /** USER, ADVISOR, SYSTEM */
     @Column(name = "sender_type", nullable = false, length = 20)
     private String senderType;
 

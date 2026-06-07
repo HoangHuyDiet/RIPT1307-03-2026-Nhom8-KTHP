@@ -35,14 +35,12 @@ public class DataInitializer implements CommandLineRunner {
         allowSystemCategoriesWithoutUser();
         createDefaultSystemCategories();
 
-        // Khởi tạo permissions AI/Consultation/RAG
         initializeAiPermissions();
 
         log.info("=== DataInitializer: Đã khởi tạo dữ liệu mặc định thành công ===");
     }
 
     private void initializeAiPermissions() {
-        // Tạo permissions
         createPermissionIfNotExists("CONSULTATION_VIEW_QUEUE", "Xem hàng chờ tư vấn");
         createPermissionIfNotExists("CONSULTATION_ASSIGN_SELF", "Nhận yêu cầu tư vấn");
         createPermissionIfNotExists("CONSULTATION_VIEW_ASSIGNED", "Xem yêu cầu đã nhận");
@@ -55,7 +53,6 @@ public class DataInitializer implements CommandLineRunner {
             "CONSULTATION_VIEW_QUEUE", "CONSULTATION_ASSIGN_SELF",
             "CONSULTATION_VIEW_ASSIGNED", "CONSULTATION_REPLY",
             "CONSULTATION_COMPLETE", "RAG_REBUILD", "RAG_STATUS_VIEW",
-            // New Support Admin Permissions
             "SUPPORT_USER_VIEW", "SUPPORT_USER_TOGGLE_STATUS", "SUPPORT_LOCK_REQUEST_CREATE",
             "SUPPORT_LOCK_REQUEST_VIEW", "SUPPORT_LOCK_REQUEST_DELETE", "SUPPORT_AUDIT_LOG_VIEW",
             "SUPPORT_CHAT_VIEW", "SUPPORT_CHAT_SEND", "SUPPORT_CHAT_RESOLVE",
@@ -63,7 +60,6 @@ public class DataInitializer implements CommandLineRunner {
         );
         assignPermissionsToRole("SUPPORT_ADMIN", supportPermissions);
 
-        // Admin permissions for Lock Request
         createPermissionIfNotExists("LOCK_REQUEST_APPROVE", "Phê duyệt yêu cầu khóa tài khoản");
         createPermissionIfNotExists("LOCK_REQUEST_REJECT", "Từ chối yêu cầu khóa tài khoản");
         assignPermissionsToRole("ADMIN", List.of("LOCK_REQUEST_APPROVE", "LOCK_REQUEST_REJECT"));

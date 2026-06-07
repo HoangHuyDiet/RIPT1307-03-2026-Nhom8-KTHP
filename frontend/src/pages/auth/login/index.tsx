@@ -92,7 +92,7 @@ export default function Login() {
       </div>
 
       <div className={styles.header}>
-        <Title level={3} className={styles.title}>Welcome back</Title>
+        <Title level={3} className={styles.title}>Chào mừng trở lại</Title>
         <Text type="secondary" className={styles.subtitle}>Vui lòng nhập thông tin để đăng nhập.</Text>
       </div>
 
@@ -116,9 +116,9 @@ export default function Login() {
         </Form.Item>
 
         <Form.Item
-          label={<span className={styles.inputLabel}>Password</span>}
+          label={<span className={styles.inputLabel}>Mật khẩu</span>}
           name="password"
-          rules={[{ required: true, message: 'Please enter your password!' }, { min: 6, message: 'Password must be at least 6 characters!' }]}
+          rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }, { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }]}
         >
           <Input.Password
             prefix={<LockOutlined className={styles.inputIcon} />}
@@ -128,20 +128,20 @@ export default function Login() {
 
         <div className={styles.formActions}>
           <Form.Item name="remember" valuePropName="checked" noStyle>
-            <Checkbox className={styles.checkboxText}>Remember me</Checkbox>
+            <Checkbox className={styles.checkboxText}>Ghi nhớ đăng nhập</Checkbox>
           </Form.Item>
           <a className={styles.loginForgot} href="/auth/forgot-password">
-            Forgot password?
+            Quên mật khẩu?
           </a>
         </div>
 
         <Form.Item style={{ marginBottom: '24px' }}>
           <Button type="primary" htmlType="submit" className={styles.loginButton} block loading={loading}>
-            Sign In {!loading && <span className={styles.arrowIcon}>→</span>}
+            Đăng nhập {!loading && <span className={styles.arrowIcon}>→</span>}
           </Button>
         </Form.Item>
 
-        <Divider className={styles.divider}>Or continue with</Divider>
+        <Divider className={styles.divider}>Hoặc tiếp tục với</Divider>
 
         <div className={styles.socialLogin}>
           <Button
@@ -158,7 +158,7 @@ export default function Login() {
         </div>
 
         <div className={styles.registerLink}>
-          Don't have an account? <Link to="/auth/register">Sign up</Link>
+          Chưa có tài khoản? <Link to="/auth/register">Đăng ký</Link>
         </div>
       </Form>
     </div>

@@ -28,9 +28,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     User user = userRepository.findByEmailWithRoles(email)
         .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
-    // Query permissions riêng biệt — tránh MultipleBagFetchException
     List<String> permissions = userRoleRepository.findPermissionNamesByEmail(email);
 
     return CustomUserDetails.build(user, permissions);
   }
-}
+}

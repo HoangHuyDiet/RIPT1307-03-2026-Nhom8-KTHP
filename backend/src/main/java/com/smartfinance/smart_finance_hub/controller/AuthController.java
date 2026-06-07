@@ -183,9 +183,6 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy email của user đang đăng nhập từ SecurityContext (JWT token).
-     */
     private String getAuthenticatedEmail() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails) {

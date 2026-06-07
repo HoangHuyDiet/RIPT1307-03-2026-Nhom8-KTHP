@@ -112,10 +112,8 @@ export default function NotificationCenter() {
   };
 
   const handleNotificationClick = async (item: FundNotification) => {
-    // 1. Luôn luôn gọi hàm markAsReadLocal(item.id) từ store để cập nhật trạng thái đã đọc
     markAsReadLocal(item.id);
 
-    // Đồng thời gọi API đánh dấu đã đọc trên server để đồng bộ
     if (!item.read) {
       try {
         await request.post('/funds/my-notifications/read', { id: item.id });
@@ -127,12 +125,10 @@ export default function NotificationCenter() {
       }
     }
 
-    // 2. Nếu loại thông báo thuộc mảng ngoại lệ thì dừng lại, không điều hướng
     if (EXCLUDED_NAV_TYPES.includes(item.type)) {
       return;
     }
 
-    // 3. Nếu có link_action hoặc actionUrl thì điều hướng
     const targetUrl = item.link_action || item.actionUrl;
     if (targetUrl) {
       history.push(targetUrl);

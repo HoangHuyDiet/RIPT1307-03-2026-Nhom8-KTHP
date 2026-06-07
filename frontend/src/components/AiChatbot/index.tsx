@@ -136,6 +136,7 @@ function renderMessageContent(content: string, isAi: boolean = true): React.Reac
 export default function AiChatbot() {
   const user = useAuthStore((state) => state.user);
   const userIdentity = user?.id || user?.email || user?.username || user?.name;
+  const userName = user?.name || user?.username || user?.email?.split('@')[0] || 'bạn';
   const userSessionKey = userIdentity ? `${SESSION_STORAGE_KEY}_${userIdentity}` : SESSION_STORAGE_KEY;
 
   const [open, setOpen] = useState(false);
@@ -148,7 +149,7 @@ export default function AiChatbot() {
     {
       id: 'welcome',
       role: 'ai',
-      content: 'Chào Anh, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.',
+      content: `Chào ${userName}, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.`,
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -164,10 +165,10 @@ export default function AiChatbot() {
       {
         id: 'welcome',
         role: 'ai',
-        content: 'Chào Anh, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.',
+        content: `Chào ${userName}, mình có thể hỗ trợ đọc tình hình thu chi, mục tiêu tiết kiệm và gợi ý hành động tài chính.`,
       },
     ]);
-  }, [userIdentity, userSessionKey]);
+  }, [userIdentity, userSessionKey, userName]);
 
   useEffect(() => {
     getAiStatus()
@@ -307,17 +308,14 @@ export default function AiChatbot() {
     return null;
   };
 
-  if (!open) {
-    return (
-      <div className={styles.aiChatbot}>
-        <Button type="primary" className={styles.fab} icon={<RobotOutlined />} onClick={() => setOpen(true)} />
-      </div>
-    );
-  }
-
   return (
     <div className={styles.aiChatbot}>
-      <div className={styles.panel}>
+      <div className={styles.headerIcon} onClick={() => setOpen(!open)}>
+        <RobotOutlined style={{ color: open ? '#1a73e8' : undefined }} />
+      </div>
+
+      {open && (
+        <div className={styles.panel}>
         <div className={styles.header}>
           <div className={styles.headerTitle}>
             <Text strong style={{ color: '#fff' }}>Smart Finance AI</Text>
@@ -369,7 +367,8 @@ export default function AiChatbot() {
             disabled={loading || !!(status?.proRequired && !status.aiAccessible)}
           />
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

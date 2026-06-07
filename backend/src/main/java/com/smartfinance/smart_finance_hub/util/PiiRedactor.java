@@ -4,10 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.regex.Pattern;
 
-/**
- * Redact PII before sending to LLM.
- * Protects: Email, Phone, Bank account number, National ID.
- */
 @Slf4j
 public final class PiiRedactor {
 
@@ -22,26 +18,23 @@ public final class PiiRedactor {
         "(?:\\+?84|0)\\d{9,10}"
     );
 
-    // Bank: STK/TK + space/colon + 8-19 digits
     private static final Pattern BANK_ACCOUNT_PATTERN;
     static {
-        // Build pattern programmatically to avoid encoding issues
         String keywords = "STK|TK|" +
-            "t\u00e0i kho\u1ea3n|" +    // tài khoản
-            "s\u1ed1 TK|" +              // số TK
-            "s\u1ed1 t\u00e0i kho\u1ea3n"; // số tài khoản
+            "t\u00e0i kho\u1ea3n|" +    
+            "s\u1ed1 TK|" +              
+            "s\u1ed1 t\u00e0i kho\u1ea3n"; 
         BANK_ACCOUNT_PATTERN = Pattern.compile(
             "(?:" + keywords + ")\\s*:?\\s*\\d{8,19}",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
         );
     }
 
-    // CMND (9 digits) / CCCD (12 digits)
     private static final Pattern ID_CARD_PATTERN;
     static {
         String keywords = "CMND|CCCD|" +
-            "c\u0103n c\u01b0\u1edbc|" +  // căn cước
-            "ch\u1ee9ng minh";             // chứng minh
+            "c\u0103n c\u01b0\u1edbc|" +  
+            "ch\u1ee9ng minh";             
         ID_CARD_PATTERN = Pattern.compile(
             "(?:" + keywords + ")\\s*:?\\s*\\d{9}(?:\\d{3})?",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
