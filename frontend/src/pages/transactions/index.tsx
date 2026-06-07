@@ -19,11 +19,13 @@ import {
   Table,
   Tag,
   Typography,
+  Tooltip,
 } from 'antd';
 import {
   BankOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
+  ClockCircleOutlined,
   CoffeeOutlined,
   CreditCardOutlined,
   DollarCircleOutlined,
@@ -396,6 +398,11 @@ export default function TransactionsManager() {
           <p className={styles.pageSubtitle}>Quản lý dòng tiền vào/ra, tra cứu lịch sử và phân tích chi tiêu chi tiết.</p>
         </div>
         <div className={styles.headerActions}>
+          <Tooltip title="Tính năng đang được phát triển">
+            <Button icon={<ClockCircleOutlined />} disabled className={styles.actionBtn}>
+              Giao dịch định kỳ
+            </Button>
+          </Tooltip>
           <Button icon={<PlusOutlined />} type="primary" className={styles.actionBtn} onClick={handleOpenAdd}>
             Thêm mới
           </Button>
