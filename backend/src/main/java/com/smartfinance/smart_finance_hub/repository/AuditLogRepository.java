@@ -12,6 +12,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     List<AuditLog> findByUserId(Long userId);
 
+    List<AuditLog> findByUserEmailOrderByCreatedAtDesc(String email);
+
     List<AuditLog> findByAction(String action);
 
     List<AuditLog> findByEntityType(String entityType);

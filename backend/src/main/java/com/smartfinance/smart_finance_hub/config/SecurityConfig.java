@@ -49,7 +49,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
             .requestMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-            .requestMatchers("/api/support/**").hasRole("SUPPORT_ADMIN")
+            .requestMatchers("/api/support/**").hasAnyRole("SUPPORT_ADMIN", "ADMIN")
             .anyRequest().authenticated()
         );
 

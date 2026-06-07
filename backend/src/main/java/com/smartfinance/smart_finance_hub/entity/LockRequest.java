@@ -1,5 +1,6 @@
 package com.smartfinance.smart_finance_hub.entity;
 
+import com.smartfinance.smart_finance_hub.enums.LockRequestStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -9,40 +10,33 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "support_tickets")
+@Table(name = "lock_requests")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SupportTicket {
+public class LockRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "target_user_id", nullable = false)
+    private User targetUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_admin_id")
-    private User assignedAdmin;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String subject;
+    @JoinColumn(name = "requested_by_id", nullable = false)
+    private User requestedBy;
 
     @NotBlank
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String description;
+    private String reason;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String priority = "MEDIUM";
-
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private String status = "PENDING";
+    private LockRequestStatus status = LockRequestStatus.PENDING;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -51,7 +45,4 @@ public class SupportTicket {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "supportTicket", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<ChatMessage> chatMessages;
 }
