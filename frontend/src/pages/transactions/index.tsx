@@ -12,7 +12,6 @@ import {
   InputNumber,
   message,
   Modal,
-  Progress,
   Row,
   Segmented,
   Select,
@@ -519,20 +518,6 @@ export default function TransactionsManager() {
               </div>
             </Card>
 
-            <Card bordered={false} className={styles.patternCard}>
-              <div className={styles.cardHeader}>
-                <Text strong style={{ fontSize: '15px', color: '#202124' }}>Mẫu chi tiêu</Text>
-              </div>
-              <div className={styles.patternBody}>
-                <div className={styles.patternItem}>
-                  <div className={styles.patternMeta}>
-                    <Text className={styles.patternName}>Nguồn tiền đã lọc</Text>
-                    <Text className={styles.patternPercent} style={{ color: '#1A73E8' }}>{personalFundId ? '1' : 'Tất cả'}</Text>
-                  </div>
-                  <Progress percent={personalFundId ? 100 : 65} showInfo={false} strokeWidth={6} strokeColor="#1A73E8" />
-                </div>
-              </div>
-            </Card>
           </Space>
         </Col>
       </Row>
