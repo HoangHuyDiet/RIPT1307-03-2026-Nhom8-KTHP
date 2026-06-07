@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://api.smartfinancehub.com/backend/api/:match*"
+    },
+    {
+      "source": "/ws/:match*",
+      "destination": "https://api.smartfinancehub.com/backend/ws/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
