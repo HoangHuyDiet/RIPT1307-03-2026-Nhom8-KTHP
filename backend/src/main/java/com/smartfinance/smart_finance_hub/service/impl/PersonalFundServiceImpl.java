@@ -405,7 +405,7 @@ public class PersonalFundServiceImpl implements PersonalFundService {
     public List<TransactionResponse> getRecentTransactions(Long userId) {
         log.info("getRecentTransactions: userId={}", userId);
         org.springframework.data.domain.Pageable limit20 = org.springframework.data.domain.PageRequest.of(0, 20, org.springframework.data.domain.Sort.by("date").descending().and(org.springframework.data.domain.Sort.by("createdAt").descending()));
-        org.springframework.data.domain.Page<Transaction> page = transactionRepository.findByUserIdAndShareFundIsNull(userId, limit20);
+        org.springframework.data.domain.Page<Transaction> page = transactionRepository.findByUserId(userId, limit20);
         return page.getContent().stream()
                 .map(TransactionResponse::from)
                 .collect(Collectors.toList());
