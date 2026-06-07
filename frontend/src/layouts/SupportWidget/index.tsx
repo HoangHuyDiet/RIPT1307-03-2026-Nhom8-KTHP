@@ -47,9 +47,9 @@ interface ChatRequest {
 }
 
 export default function SupportWidget() {
-  const { user, roles } = useAuthStore();
-  const [modalVisible, setModalVisible] = useState(false); // Modal for normal users
-  const [drawerVisible, setDrawerVisible] = useState(false); // Drawer/Chat for VIP users
+  const { user, roles, isPro } = useAuthStore();
+  const [modalVisible, setModalVisible] = useState(false); 
+  const [drawerVisible, setDrawerVisible] = useState(false); 
   const [submitting, setSubmitting] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatData, setChatData] = useState<ChatRequest | null>(null);
@@ -61,17 +61,14 @@ export default function SupportWidget() {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastMsgCountRef = useRef(0);
 
-  // Check if current user is VIP
-  const isVipUser = roles.includes('VIP') || roles.includes('VIP_USER') || user?.email === 'dana@gmail.com';
+  const isVipUser = roles.includes('VIP') || roles.includes('VIP_USER') || user?.email === 'admin@smartfinance.com' || isPro();
 
-  // Fetch the active chat session for VIP user
   const fetchVipChatSession = async (showLoading = false) => {
     if (showLoading) setChatLoading(true);
     try {
-      const res = await api.get('/support/chat-requests');
+      const res = await api.get('/user/support/chat-session');
       const allChats: ChatRequest[] = res.data.data || [];
-      // Find the most recent active or resolved chat session of this user
-      const myChat = allChats.find(c => c.email === user?.email);
+      const myChat = allChats.length > 0 ? allChats[0] : null;
       setChatData(myChat || null);
     } catch (error: any) {
       console.error('Failed to fetch support chat session:', error);
@@ -80,14 +77,12 @@ export default function SupportWidget() {
     }
   };
 
-  // Helper to check if scrolled near bottom
   const isNearBottom = () => {
     if (!chatBodyRef.current) return false;
     const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current;
     return scrollHeight - scrollTop - clientHeight < 100;
   };
 
-  // Smart auto-scroll to bottom of chat
   useEffect(() => {
     if (!chatBodyRef.current || !chatData?.messages) return;
 
@@ -105,13 +100,11 @@ export default function SupportWidget() {
     lastMsgCountRef.current = currentCount;
   }, [chatData?.messages]);
 
-  // Handle support trigger click
   const handleSupportClick = () => {
     if (isVipUser) {
       setDrawerVisible(true);
       fetchVipChatSession(true);
       
-      // Start polling for new messages every 3 seconds
       pollIntervalRef.current = setInterval(() => {
         fetchVipChatSession(false);
       }, 3000);
@@ -120,7 +113,6 @@ export default function SupportWidget() {
     }
   };
 
-  // Cleanup polling on unmount or drawer close
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
     if (pollIntervalRef.current) {
@@ -137,11 +129,10 @@ export default function SupportWidget() {
     };
   }, []);
 
-  // Submit support request (Normal User)
   const handleRequestSubmit = async (values: any) => {
     setSubmitting(true);
     try {
-      await api.post('/support/chat-requests/create', {
+      await api.post('/user/support/chat-session/create', {
         title: values.title,
         description: values.description,
         priority: values.priority,
@@ -158,11 +149,10 @@ export default function SupportWidget() {
     }
   };
 
-  // Start a new support session for VIP
   const handleStartVipSession = async () => {
     setChatLoading(true);
     try {
-      const res = await api.post('/support/chat-requests/create', {
+      const res = await api.post('/user/support/chat-session/create', {
         title: 'Hỗ trợ VIP trực tuyến',
         description: 'Bắt đầu phiên hỗ trợ VIP',
         priority: 'HIGH',
@@ -178,7 +168,6 @@ export default function SupportWidget() {
     }
   };
 
-  // Send message in VIP Chat
   const handleSendChatMessage = async () => {
     if (!chatInput.trim() || !chatData) return;
     setSending(true);
@@ -192,13 +181,12 @@ export default function SupportWidget() {
         time: timeStr
       };
       
-      await api.post('/support/chat-requests/send', {
+      await api.post('/user/support/chat-session/send', {
         chatId: chatData.id,
         message: newMsg
       });
       
       setChatInput('');
-      // Optimistic update
       setChatData(prev => {
         if (!prev) return null;
         return {
@@ -217,12 +205,10 @@ export default function SupportWidget() {
 
   return (
     <>
-      {/* Support hotline trigger button */}
       <div className={styles.supportWrapper} onClick={handleSupportClick} title="Tổng đài hỗ trợ kỹ thuật">
         <CustomerServiceOutlined className={styles.supportIcon} />
       </div>
 
-      {/* 1. Modal for Normal Users */}
       <Modal
         title={
           <Space>
@@ -288,10 +274,8 @@ export default function SupportWidget() {
         </Form>
       </Modal>
 
-      {/* 2. Floating Live Chat for VIP Users */}
       {drawerVisible && (
         <div className={styles.floatingChatBox}>
-          {/* Header */}
           <div className={styles.chatHeader}>
             <div className={styles.drawerTitleWrapper}>
               <Badge dot={chatLoading ? false : chatData?.status === 'PENDING'} color="#52c41a" offset={[-2, 28]}>
@@ -323,15 +307,13 @@ export default function SupportWidget() {
             />
           </div>
 
-          {/* Content area */}
           <div className={styles.chatContentArea}>
             {chatLoading ? (
               <div className={styles.chatLoadingContainer}>
-                <Spin size="large" tip="Đang kết nối tổng đài VIP..." />
+                <Spin size="large" tip="Đang kết nối tổng đài Pro/VIP..." />
               </div>
             ) : chatData ? (
               <div className={styles.chatContainer}>
-                {/* Messages body */}
                 <div className={styles.chatBody} ref={chatBodyRef}>
                   {chatData.messages && chatData.messages.map((msg, index) => (
                     <div
@@ -351,7 +333,6 @@ export default function SupportWidget() {
                   ))}
                 </div>
 
-                {/* Chat footer */}
                 <div className={styles.chatFooter}>
                   {chatData.status === 'PENDING' ? (
                     <div className={styles.inputArea}>
@@ -386,9 +367,9 @@ export default function SupportWidget() {
             ) : (
               <div className={styles.noChatContainer}>
                 <InfoCircleOutlined style={{ fontSize: 48, color: '#fa8c16', marginBottom: 16 }} />
-                <Title level={4} style={{ margin: '0 0 8px 0' }}>Kết nối Hotline VIP</Title>
+                <Title level={4} style={{ margin: '0 0 8px 0' }}>Kết nối Hotline Pro/VIP</Title>
                 <Paragraph style={{ textAlign: 'center', color: '#5F6368', padding: '0 24px' }}>
-                  Chào mừng quý khách VIP! Quý khách có quyền truy cập kênh chat bảo mật trực tiếp 24/7 với Support Admin của Smart Finance.
+                  Chào mừng quý khách Pro/VIP! Quý khách có quyền truy cập kênh chat bảo mật trực tiếp 24/7 với Support Admin của Smart Finance.
                 </Paragraph>
                 <Button type="primary" size="large" onClick={handleStartVipSession} style={{ marginTop: 16 }}>
                   Bắt đầu kết nối chat ngay

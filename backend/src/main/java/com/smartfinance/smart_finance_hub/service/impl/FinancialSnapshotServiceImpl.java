@@ -88,7 +88,6 @@ public class FinancialSnapshotServiceImpl implements FinancialSnapshotService {
             .expenseByCategory(expenseByCategory)
             .incomeByCategory(incomeByCategory);
 
-        // Upcoming recurring
         List<RecurringSetting> activeRecurring = recurringSettingRepository
             .findByUserIdAndIsActive(userId, true);
 

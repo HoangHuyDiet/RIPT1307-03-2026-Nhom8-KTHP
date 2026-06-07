@@ -20,7 +20,6 @@ public class ConsultationController {
 
     private final ConsultationService consultationService;
 
-    /** POST /api/consultations — Tạo yêu cầu tư vấn mới */
     @PostMapping
     public ResponseEntity<ConsultationDTO> create(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -30,7 +29,6 @@ public class ConsultationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
-    /** GET /api/consultations — Xem danh sách yêu cầu của mình */
     @GetMapping
     public ResponseEntity<Page<ConsultationDTO>> list(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -40,7 +38,6 @@ public class ConsultationController {
         return ResponseEntity.ok(page);
     }
 
-    /** GET /api/consultations/{id} — Xem chi tiết yêu cầu */
     @GetMapping("/{id}")
     public ResponseEntity<ConsultationDTO> detail(
             @AuthenticationPrincipal CustomUserDetails userDetails,

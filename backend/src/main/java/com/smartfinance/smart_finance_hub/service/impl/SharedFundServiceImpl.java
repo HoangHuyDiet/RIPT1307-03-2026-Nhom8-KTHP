@@ -534,7 +534,6 @@ public class SharedFundServiceImpl implements SharedFundService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
 
-        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
         java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(userId);
         for (ShareFund existing : existingFunds) {
             if (existing.getName().trim().equalsIgnoreCase(trimmedName)) {
@@ -600,7 +599,6 @@ public class SharedFundServiceImpl implements SharedFundService {
             }
         }
 
-        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
         Long creatorId = fund.getCreatedByUser().getId();
         java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(creatorId);
         for (ShareFund existing : existingFunds) {

@@ -58,7 +58,6 @@ public class AiGenerationService {
 
         } catch (Exception e) {
             log.error("Lỗi khi sinh phản hồi từ AI: {}", e.getMessage());
-            // Chủ động ném lỗi AI_RATE_LIMITED theo yêu cầu
             if (e.getMessage() != null && e.getMessage().contains("429")) {
                 throw new AiException(AiErrorCode.AI_RATE_LIMITED, "Hệ thống AI đang quá tải.");
             }

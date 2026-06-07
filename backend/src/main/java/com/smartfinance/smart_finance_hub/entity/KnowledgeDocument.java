@@ -22,7 +22,6 @@ public class KnowledgeDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Khóa ổn định để upsert — không thay đổi khi đổi title */
     @Column(name = "source_key", nullable = false, length = 100)
     private String sourceKey;
 

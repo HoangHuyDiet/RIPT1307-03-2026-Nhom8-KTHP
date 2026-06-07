@@ -22,7 +22,6 @@ public class CustomUserDetails implements UserDetails {
   private String password;
   private Collection<? extends GrantedAuthority> authorities;
 
-  // Giữ backward compatibility cho code hiện tại
   public static CustomUserDetails build(User user) {
     List<GrantedAuthority> authorities = Collections.emptyList();
 
@@ -42,21 +41,15 @@ public class CustomUserDetails implements UserDetails {
   }
 
 
-  /**
-   * Build với permissions nạp độc lập từ query riêng — tránh MultipleBagFetchException.
-   * Lọc role hết hạn và nạp permissions dạng GrantedAuthority.
-   */
   public static CustomUserDetails build(User user, List<String> permissionNames) {
     List<GrantedAuthority> authorities = new ArrayList<>();
 
-    // Nạp Roles (lọc role hết hạn)
     if (user.getUserRoles() != null) {
       user.getUserRoles().stream()
           .filter(ur -> ur.getExpiredAt() == null || ur.getExpiredAt().isAfter(LocalDateTime.now()))
           .forEach(ur -> authorities.add(new SimpleGrantedAuthority("ROLE_" + ur.getRole().getName())));
     }
 
-    // Nạp Permissions (từ query riêng biệt)
     if (permissionNames != null) {
       permissionNames.stream()
           .distinct()

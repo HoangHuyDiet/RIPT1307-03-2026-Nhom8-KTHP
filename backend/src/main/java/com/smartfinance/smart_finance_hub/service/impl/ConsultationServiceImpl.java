@@ -39,7 +39,6 @@ public class ConsultationServiceImpl implements ConsultationService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User không tồn tại: " + userId));
 
-        // Build financial snapshot theo consent scope
         String currentMonth = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
         FinancialSnapshotDTO snapshot = snapshotService.buildSnapshot(
             userId, currentMonth, request.getConsentScopes());
@@ -120,7 +119,6 @@ public class ConsultationServiceImpl implements ConsultationService {
         ConsultationRequest consultation = consultationRepository.findById(consultationId)
             .orElseThrow(() -> new RuntimeException("Yêu cầu tư vấn không tồn tại: " + consultationId));
 
-        // Chỉ advisor được gán mới có quyền hoàn thành
         if (consultation.getAdvisor() == null || !consultation.getAdvisor().getId().equals(advisorId)) {
             throw new SecurityException("Bạn không có quyền hoàn thành yêu cầu tư vấn này");
         }
@@ -141,7 +139,6 @@ public class ConsultationServiceImpl implements ConsultationService {
         ConsultationRequest consultation = consultationRepository.findById(consultationId)
             .orElseThrow(() -> new RuntimeException("Yêu cầu tư vấn không tồn tại: " + consultationId));
 
-        // Kiểm tra quyền truy cập
         if (!isAdvisor && !consultation.getUser().getId().equals(requesterId)) {
             throw new SecurityException("Bạn không có quyền xem yêu cầu tư vấn này");
         }

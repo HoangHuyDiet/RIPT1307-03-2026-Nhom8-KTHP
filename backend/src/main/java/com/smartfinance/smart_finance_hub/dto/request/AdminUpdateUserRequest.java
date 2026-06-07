@@ -17,11 +17,10 @@ public class AdminUpdateUserRequest {
     private String email;
 
     @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
-    private String password; // null = không đổi password
-
+    private String password; 
     private String displayName;
 
-    private String status; // ACTIVE, INACTIVE, BANNED
+    private String status; 
 
-    private List<String> roles; // null = không đổi roles
+    private List<String> roles;
 }

@@ -11,6 +11,7 @@ interface AuthState {
   isSupportAdmin: () => boolean;
   hasAdminAccess: () => boolean;
   isPro: () => boolean;
+  updateUser: (updates: any) => void;
 }
 
 const cleanRoles = (roles: any): string[] => {
@@ -40,8 +41,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const cleaned = cleanRoles(roles);
     if (cleaned.length > 0) {
       localStorage.setItem('roles', JSON.stringify(cleaned));
+    } else {
+      localStorage.removeItem('roles');
     }
-    set({ token, refreshToken: refreshToken || get().refreshToken, user: user || null, roles: cleaned.length > 0 ? cleaned : get().roles });
+    set({ token, refreshToken: refreshToken || get().refreshToken, user: user || null, roles: cleaned });
   },
   logout: () => {
     localStorage.removeItem('token');
@@ -57,4 +60,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN');
   },
   isPro: () => get().roles.includes('PRO'),
+  updateUser: (updates) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      const updatedUser = { ...currentUser, ...updates };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+    }
+  },
 }));

@@ -203,10 +203,8 @@ export default function NotificationsPopover() {
   };
 
   const handleNotificationClick = async (item: FundNotification) => {
-    // 1. Luôn luôn gọi hàm markAsRead(item.id) từ store để cập nhật trạng thái đã đọc
     markAsRead(item.id);
 
-    // Đồng thời gọi API đánh dấu đã đọc trên server để đồng bộ
     if (!item.read) {
       try {
         await request.post('/funds/my-notifications/read', { id: item.id });
@@ -216,15 +214,12 @@ export default function NotificationsPopover() {
       }
     }
 
-    // 2. Tự động đóng cửa sổ Popover chứa danh sách thông báo
     setPopoverOpen(false);
 
-    // 3. Nếu thuộc EXCLUDED_NAV_TYPES thì dừng lại, không điều hướng
     if (EXCLUDED_NAV_TYPES.includes(item.type)) {
       return;
     }
 
-    // 4. Nếu có link_action hoặc actionUrl thì điều hướng
     const targetUrl = item.link_action || item.actionUrl;
     if (targetUrl) {
       history.push(targetUrl);

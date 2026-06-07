@@ -65,8 +65,7 @@ public class AiServiceImpl implements AiService {
     @Value("${ai.prompt.version:v1.0}")
     private String promptVersion;
 
-    private static final String DISCLAIMER =
-        "Thông tin do AI tạo ra chỉ mang tính tham khảo. Hãy tham vấn chuyên gia tài chính trước quyết định lớn.";
+    private static final String DISCLAIMER = "Thông tin do AI tạo ra chỉ mang tính tham khảo. Hãy tham vấn chuyên gia tài chính trước quyết định lớn.";
 
     @Autowired
     public AiServiceImpl(
@@ -104,13 +103,13 @@ public class AiServiceImpl implements AiService {
         if (!rateLimitService.allowChat(userId)) {
             auditService.record(userId, "AI_RATE_LIMITED", "chat rate limit exceeded");
             return AiChatResponse.builder()
-                .sessionId(request.getSessionId())
-                .reply(fallbackFactory.rateLimited())
-                .aiEnabled(isAiEnabled())
-                .ragAvailable(false)
-                .errorCode(AiErrorCode.AI_RATE_LIMITED.name())
-                .citations(Collections.emptyList())
-                .build();
+                    .sessionId(request.getSessionId())
+                    .reply(fallbackFactory.rateLimited())
+                    .aiEnabled(isAiEnabled())
+                    .ragAvailable(false)
+                    .errorCode(AiErrorCode.AI_RATE_LIMITED.name())
+                    .citations(Collections.emptyList())
+                    .build();
         }
 
         chatPersistence.validateSessionAccessIfExists(request.getSessionId(), userId);
@@ -118,17 +117,17 @@ public class AiServiceImpl implements AiService {
         if (!isAiEnabled()) {
             auditService.record(userId, "AI_DISABLED", "chat requested while AI unavailable");
             return AiChatResponse.builder()
-                .sessionId(request.getSessionId())
-                .reply(fallbackFactory.aiDisabled())
-                .aiEnabled(false)
-                .ragAvailable(false)
-                .errorCode(AiErrorCode.AI_DISABLED.name())
-                .citations(Collections.emptyList())
-                .build();
+                    .sessionId(request.getSessionId())
+                    .reply(fallbackFactory.aiDisabled())
+                    .aiEnabled(false)
+                    .ragAvailable(false)
+                    .errorCode(AiErrorCode.AI_DISABLED.name())
+                    .citations(Collections.emptyList())
+                    .build();
         }
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
         String sessionId = request.getSessionId();
         if (sessionId == null || sessionId.isBlank()) {
@@ -148,7 +147,8 @@ public class AiServiceImpl implements AiService {
         boolean ragAvailable = availability.isRagAvailable();
         if (retrievalService.isPresent() && ragAvailable) {
             try {
-                List<KnowledgeRetrievedSegmentDTO> segments = retrievalService.get().retrieveRelevant(request.getMessage());
+                List<KnowledgeRetrievedSegmentDTO> segments = retrievalService.get()
+                        .retrieveRelevant(request.getMessage());
                 knowledgeContext = buildKnowledgeContext(segments, citations);
             } catch (Exception e) {
                 ragAvailable = false;
@@ -156,7 +156,8 @@ public class AiServiceImpl implements AiService {
             }
         }
 
-        String prompt = promptBuilder.buildChatPrompt(PiiRedactor.redact(request.getMessage()), snapshot, knowledgeContext);
+        String prompt = promptBuilder.buildChatPrompt(PiiRedactor.redact(request.getMessage()), snapshot,
+                knowledgeContext);
 
         String aiReply;
         AiErrorCode errorCode = null;
@@ -182,25 +183,25 @@ public class AiServiceImpl implements AiService {
         chatPersistence.saveMessage(session, user, ChatRole.AI, aiReply);
 
         return AiChatResponse.builder()
-            .sessionId(sessionId)
-            .reply(aiReply)
-            .aiEnabled(errorCode == null)
-            .ragAvailable(ragAvailable)
-            .errorCode(errorCode != null ? errorCode.name() : null)
-            .disclaimer(DISCLAIMER)
-            .citations(citations)
-            .build();
+                .sessionId(sessionId)
+                .reply(aiReply)
+                .aiEnabled(errorCode == null)
+                .ragAvailable(ragAvailable)
+                .errorCode(errorCode != null ? errorCode.name() : null)
+                .disclaimer(DISCLAIMER)
+                .citations(citations)
+                .build();
     }
 
     @Override
     public AiInsightDTO getMonthlyInsight(Long userId, String month, boolean forceRefresh) {
         if (!isAiEnabled()) {
             return AiInsightDTO.builder()
-                .month(month)
-                .summary(fallbackFactory.aiDisabled())
-                .fromCache(false)
-                .errorCode(AiErrorCode.AI_DISABLED.name())
-                .build();
+                    .month(month)
+                    .summary(fallbackFactory.aiDisabled())
+                    .fromCache(false)
+                    .errorCode(AiErrorCode.AI_DISABLED.name())
+                    .build();
         }
 
         FinancialSnapshotDTO snapshot = snapshotService.buildFullSnapshot(userId, month);
@@ -208,19 +209,19 @@ public class AiServiceImpl implements AiService {
         String knowledgeBaseHash = availabilityService.getAvailability().getKnowledgeBaseHash();
 
         Optional<MonthlyStatement> existingStatement = statementRepository
-            .findByUserIdAndMonth(userId, month);
+                .findByUserIdAndMonth(userId, month);
 
         if (existingStatement.isPresent()
-            && isInsightCacheValid(existingStatement.get(), snapshotHash, knowledgeBaseHash)
-            && (!forceRefresh || isRefreshCooldownActive(existingStatement.get()))) {
+                && isInsightCacheValid(existingStatement.get(), snapshotHash, knowledgeBaseHash)
+                && (!forceRefresh || isRefreshCooldownActive(existingStatement.get()))) {
             MonthlyStatement stmt = existingStatement.get();
             log.info("AI insight cache hit for user {} month {}", userId, month);
             return AiInsightDTO.builder()
-                .month(month)
-                .summary(stmt.getCachedInsight())
-                .fromCache(true)
-                .generatedAt(stmt.getInsightCachedAt() != null ? stmt.getInsightCachedAt().toString() : null)
-                .build();
+                    .month(month)
+                    .summary(stmt.getCachedInsight())
+                    .fromCache(true)
+                    .generatedAt(stmt.getInsightCachedAt() != null ? stmt.getInsightCachedAt().toString() : null)
+                    .build();
         }
 
         String prompt = promptBuilder.buildInsightPrompt(snapshot);
@@ -244,11 +245,11 @@ public class AiServiceImpl implements AiService {
         LocalDateTime now = LocalDateTime.now();
         MonthlyStatement statement = existingStatement.orElseGet(() -> {
             User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             return MonthlyStatement.builder()
-                .user(user)
-                .month(month)
-                .build();
+                    .user(user)
+                    .month(month)
+                    .build();
         });
 
         statement.setCachedInsight(insight);
@@ -262,27 +263,27 @@ public class AiServiceImpl implements AiService {
         statementRepository.save(statement);
 
         return AiInsightDTO.builder()
-            .month(month)
-            .summary(insight)
-            .fromCache(false)
-            .generatedAt(now.toString())
-            .build();
+                .month(month)
+                .summary(insight)
+                .fromCache(false)
+                .generatedAt(now.toString())
+                .build();
     }
 
     private boolean isInsightCacheValid(MonthlyStatement stmt, String snapshotHash, String knowledgeBaseHash) {
         return snapshotHash != null
-            && snapshotHash.equals(stmt.getSnapshotHash())
-            && safeEquals(knowledgeBaseHash, stmt.getKnowledgeBaseHash())
-            && safeEquals(aiModelName, stmt.getAiModel())
-            && safeEquals(promptVersion, stmt.getPromptVersion())
-            && stmt.getCachedInsight() != null
-            && stmt.getInsightExpiresAt() != null
-            && stmt.getInsightExpiresAt().isAfter(LocalDateTime.now());
+                && snapshotHash.equals(stmt.getSnapshotHash())
+                && safeEquals(knowledgeBaseHash, stmt.getKnowledgeBaseHash())
+                && safeEquals(aiModelName, stmt.getAiModel())
+                && safeEquals(promptVersion, stmt.getPromptVersion())
+                && stmt.getCachedInsight() != null
+                && stmt.getInsightExpiresAt() != null
+                && stmt.getInsightExpiresAt().isAfter(LocalDateTime.now());
     }
 
     private boolean isRefreshCooldownActive(MonthlyStatement stmt) {
         return stmt.getLastAiRefreshAt() != null
-            && stmt.getLastAiRefreshAt().plusSeconds(refreshCooldownSeconds).isAfter(LocalDateTime.now());
+                && stmt.getLastAiRefreshAt().plusSeconds(refreshCooldownSeconds).isAfter(LocalDateTime.now());
     }
 
     private String buildKnowledgeContext(List<KnowledgeRetrievedSegmentDTO> segments, List<AiCitationDTO> citations) {
@@ -293,9 +294,9 @@ public class AiServiceImpl implements AiService {
         for (KnowledgeRetrievedSegmentDTO retrieved : segments) {
             kbBuilder.append("- ").append(resolveSegmentText(retrieved)).append("\n");
             AiCitationDTO citation = toCitation(retrieved);
-            if (citation.getTitle() != null && citations.stream().noneMatch(existing ->
-                safeEquals(existing.getTitle(), citation.getTitle())
-                    && safeEquals(existing.getSourceKey(), citation.getSourceKey()))) {
+            if (citation.getTitle() != null
+                    && citations.stream().noneMatch(existing -> safeEquals(existing.getTitle(), citation.getTitle())
+                            && safeEquals(existing.getSourceKey(), citation.getSourceKey()))) {
                 citations.add(citation);
             }
         }
@@ -304,11 +305,11 @@ public class AiServiceImpl implements AiService {
 
     private AiCitationDTO toCitation(KnowledgeRetrievedSegmentDTO retrieved) {
         return AiCitationDTO.builder()
-            .title(firstNonBlank(retrieved.getTitle(), metadataValue(retrieved, "title")))
-            .sourceKey(firstNonBlank(retrieved.getSourceKey(), metadataValue(retrieved, "sourceKey")))
-            .sourceUrl(firstNonBlank(retrieved.getSourceUrl(), metadataValue(retrieved, "sourceUrl")))
-            .score(retrieved.getScore())
-            .build();
+                .title(firstNonBlank(retrieved.getTitle(), metadataValue(retrieved, "title")))
+                .sourceKey(firstNonBlank(retrieved.getSourceKey(), metadataValue(retrieved, "sourceKey")))
+                .sourceUrl(firstNonBlank(retrieved.getSourceUrl(), metadataValue(retrieved, "sourceUrl")))
+                .score(retrieved.getScore())
+                .build();
     }
 
     private AiErrorCode classifyAiError(Exception e) {
@@ -334,9 +335,9 @@ public class AiServiceImpl implements AiService {
 
     private String generate(String prompt) {
         return aiModelClient
-            .filter(AiModelClient::isAvailable)
-            .orElseThrow(() -> new IllegalStateException("AI model client is not available"))
-            .generate(prompt);
+                .filter(AiModelClient::isAvailable)
+                .orElseThrow(() -> new IllegalStateException("AI model client is not available"))
+                .generate(prompt);
     }
 
     private String resolveSegmentText(KnowledgeRetrievedSegmentDTO retrieved) {

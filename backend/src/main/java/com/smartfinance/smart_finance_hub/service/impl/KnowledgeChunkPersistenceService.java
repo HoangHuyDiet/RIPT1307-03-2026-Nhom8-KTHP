@@ -9,10 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Service riêng cho các thao tác persistence trên KnowledgeChunk.
- * Dùng REQUIRES_NEW để tránh self-invocation proxy bypass.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j

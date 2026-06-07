@@ -36,7 +36,6 @@ let users: User[] = [
 ];
 
 let categories: Category[] = [
-  // EXPENSE
   { id: 1, name: 'Ăn uống', type: 'EXPENSE', description: 'Chi tiêu cho ăn uống hàng ngày', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
   { id: 2, name: 'Di chuyển', type: 'EXPENSE', description: 'Xăng xe, taxi, xe bus, giao thông', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
   { id: 3, name: 'Hóa đơn & Tiện ích', type: 'EXPENSE', description: 'Điện, nước, internet, điện thoại', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
@@ -46,7 +45,7 @@ let categories: Category[] = [
   { id: 7, name: 'Giáo dục', type: 'EXPENSE', description: 'Học phí, sách vở, khóa học', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
   { id: 8, name: 'Nhà ở', type: 'EXPENSE', description: 'Thuê nhà, sửa chữa, nội thất', system: false, createdAt: '2026-02-01', updatedAt: '2026-02-01' },
   { id: 9, name: 'Đầu tư', type: 'EXPENSE', description: 'Cổ phiếu, quỹ đầu tư, tiết kiệm', system: false, createdAt: '2026-03-01', updatedAt: '2026-03-01' },
-  // INCOME
+
   { id: 10, name: 'Lương', type: 'INCOME', description: 'Thu nhập từ lương hàng tháng', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
   { id: 11, name: 'Thưởng', type: 'INCOME', description: 'Thưởng hiệu suất, thưởng dự án', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
   { id: 12, name: 'Kinh doanh', type: 'INCOME', description: 'Thu nhập từ kinh doanh tự do', system: true, createdAt: '2026-01-01', updatedAt: '2026-01-01' },
@@ -59,7 +58,6 @@ let nextUserId = users.length + 1;
 let nextCategoryId = categories.length + 1;
 
 export default {
-  // ─── USERS ──────────────────────────────────────────────────────────────────
 
   'GET /api/admin/users': (req: any, res: any) => {
     res.json({ success: true, data: users });
@@ -107,7 +105,6 @@ export default {
     res.json({ success: true });
   },
 
-  // ─── CATEGORIES ─────────────────────────────────────────────────────────────
 
   'GET /api/admin/categories': (req: any, res: any) => {
     const { type } = req.query;

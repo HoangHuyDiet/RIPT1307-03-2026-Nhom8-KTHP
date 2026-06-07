@@ -134,7 +134,6 @@ export default function SystemBroadcast() {
     }
   };
 
-  // Helper to render target group nicely
   const renderTargetTag = (target: string) => {
     if (target === 'ALL') return <Tag color="blue">Tất cả</Tag>;
     if (target === 'VIP') return <Tag color="gold">VIP</Tag>;

@@ -20,10 +20,6 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
 
     boolean existsByUserIdAndRoleId(Long userId, Long roleId);
 
-    /**
-     * Query riêng biệt lấy danh sách permission name — tránh MultipleBagFetchException.
-     * Lọc các role chưa hết hạn.
-     */
     @Query("""
         SELECT DISTINCT p.name
         FROM UserRole ur

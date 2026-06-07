@@ -34,7 +34,6 @@ public class AdminServiceImpl implements AdminService {
     private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ======================== READ ========================
 
     @Override
     public List<AdminUserResponse> getAllUsers() {
@@ -52,14 +51,12 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + userId));
 
-        // Re-fetch with roles
         User userWithRoles = userRepository.findByEmailWithRoles(user.getEmail())
             .orElseThrow(() -> new RuntimeException("Lỗi hệ thống"));
 
         return mapToAdminUserResponse(userWithRoles);
     }
 
-    // ======================== CREATE ========================
 
     @Override
     @Transactional
@@ -70,7 +67,6 @@ public class AdminServiceImpl implements AdminService {
             throw new IllegalArgumentException("Email đã tồn tại: " + request.getEmail());
         }
 
-        // Xác định status
         UserStatus status = UserStatus.ACTIVE;
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             try {
@@ -80,7 +76,6 @@ public class AdminServiceImpl implements AdminService {
             }
         }
 
-        // Tạo user
         User user = User.builder()
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
@@ -89,7 +84,6 @@ public class AdminServiceImpl implements AdminService {
             .build();
         userRepository.save(user);
 
-        // Gán roles
         List<String> roleNames = (request.getRoles() != null && !request.getRoles().isEmpty())
             ? request.getRoles()
             : List.of("USER");
@@ -106,14 +100,12 @@ public class AdminServiceImpl implements AdminService {
 
         log.info("Đã tạo user {} với roles {}", request.getEmail(), roleNames);
 
-        // Re-fetch with roles
         User createdUser = userRepository.findByEmailWithRoles(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Lỗi hệ thống"));
 
         return mapToAdminUserResponse(createdUser);
     }
 
-    // ======================== UPDATE ========================
 
     @Override
     @Transactional
@@ -123,7 +115,6 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + userId));
 
-        // Cập nhật email (nếu có)
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (!request.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
                 throw new IllegalArgumentException("Email đã tồn tại: " + request.getEmail());
@@ -131,17 +122,14 @@ public class AdminServiceImpl implements AdminService {
             user.setEmail(request.getEmail());
         }
 
-        // Cập nhật displayName (nếu có)
         if (request.getDisplayName() != null && !request.getDisplayName().isBlank()) {
             user.setDisplayName(request.getDisplayName());
         }
 
-        // Cập nhật password (nếu có)
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        // Cập nhật status (nếu có)
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             try {
                 user.setStatus(UserStatus.valueOf(request.getStatus().toUpperCase()));
@@ -152,7 +140,6 @@ public class AdminServiceImpl implements AdminService {
 
         userRepository.save(user);
 
-        // Cập nhật roles (nếu có) - xóa cũ, gán mới
         if (request.getRoles() != null) {
             List<UserRole> existingRoles = userRoleRepository.findByUserId(userId);
             userRoleRepository.deleteAll(existingRoles);
@@ -171,7 +158,6 @@ public class AdminServiceImpl implements AdminService {
 
         log.info("Đã cập nhật user id={}", userId);
 
-        // Re-fetch with roles
         User updatedUser = userRepository.findByEmailWithRoles(user.getEmail())
             .orElseThrow(() -> new RuntimeException("Lỗi hệ thống"));
 
@@ -196,14 +182,12 @@ public class AdminServiceImpl implements AdminService {
         userRepository.save(user);
         log.info("Đã cập nhật status user {} thành {}", userId, status);
 
-        // Re-fetch with roles
         User updatedUser = userRepository.findByEmailWithRoles(user.getEmail())
             .orElseThrow(() -> new RuntimeException("Lỗi hệ thống"));
 
         return mapToAdminUserResponse(updatedUser);
     }
 
-    // ======================== DELETE ========================
 
     @Override
     @Transactional
@@ -213,7 +197,6 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + userId));
 
-        // Kiểm tra không cho xóa ADMIN
         User userWithRoles = userRepository.findByEmailWithRoles(user.getEmail())
             .orElseThrow(() -> new RuntimeException("Lỗi hệ thống"));
 
@@ -225,16 +208,13 @@ public class AdminServiceImpl implements AdminService {
             throw new IllegalArgumentException("Không thể xóa tài khoản Admin!");
         }
 
-        // Xóa user_role trước (do foreign key)
         List<UserRole> roles = userRoleRepository.findByUserId(userId);
         userRoleRepository.deleteAll(roles);
 
-        // Xóa user
         userRepository.delete(user);
         log.info("Đã xóa user id={}, email={}", userId, user.getEmail());
     }
 
-    // ======================== STATS ========================
 
     @Override
     public AdminDashboardStats getDashboardStats() {
@@ -259,7 +239,6 @@ public class AdminServiceImpl implements AdminService {
             .build();
     }
 
-    // ======================== MAPPER ========================
 
     private AdminUserResponse mapToAdminUserResponse(User user) {
         List<String> roleNames = (user.getUserRoles() != null)

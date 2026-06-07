@@ -146,10 +146,13 @@ public class AuthServiceImpl implements AuthService {
 
         Role userRole = roleRepository.findByName("USER")
             .orElseThrow(() -> new RuntimeException("Role USER không tồn tại trong hệ thống!"));
-        userRoleRepository.save(UserRole.builder()
+        UserRole ur = UserRole.builder()
             .user(newUser)
             .role(userRole)
-            .build());
+            .build();
+        userRoleRepository.save(ur);
+        
+        newUser.setUserRoles(Collections.singletonList(ur));
         return newUser;
     }
 

@@ -12,7 +12,7 @@ export interface ExportTransaction {
   categoryName?: string;
   fund?: string;
   personalFundName?: string;
-  type: string; // 'INCOME' | 'EXPENSE'
+  type: string; 
   amount: number;
 }
 
@@ -111,7 +111,7 @@ export function exportTransactionsToExcel(
     ]);
   });
 
-  wsData.push([]); // Empty row
+  wsData.push([]); 
   wsData.push(['', '', '', '', '', 'Tổng thu:', summary.totalIncome]);
   wsData.push(['', '', '', '', '', 'Tổng chi:', -summary.totalExpense]);
   wsData.push(['', '', '', '', '', 'Số dư:', summary.balance]);
@@ -119,19 +119,19 @@ export function exportTransactionsToExcel(
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   ws['!cols'] = [
-    { wch: 5 },   // STT
-    { wch: 20 },  // Ngày
-    { wch: 35 },  // Mô tả
-    { wch: 15 },  // Danh mục
-    { wch: 18 },  // Quỹ
-    { wch: 10 },  // Loại
-    { wch: 18 },  // Số tiền
+    { wch: 5 },   
+    { wch: 20 },  
+    { wch: 35 },  
+    { wch: 15 },  
+    { wch: 18 },  
+    { wch: 10 },  
+    { wch: 18 },  
   ];
 
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Title row
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Subtitle row
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Date row
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, 
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, 
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, 
   ];
 
   const wb = XLSX.utils.book_new();
@@ -268,12 +268,12 @@ export async function exportTransactionsToPDF(
       cellPadding: 3,
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 12 },  // STT
-      1: { cellWidth: 32 },                      // Ngày
-      2: { cellWidth: 'auto' },                   // Mô tả
-      3: { cellWidth: 28 },                       // Danh mục
-      4: { halign: 'center', cellWidth: 16 },     // Loại
-      5: { halign: 'right', cellWidth: 30 },      // Số tiền
+      0: { halign: 'center', cellWidth: 12 },  
+      1: { cellWidth: 32 },                      
+      2: { cellWidth: 'auto' },                   
+      3: { cellWidth: 28 },                       
+      4: { halign: 'center', cellWidth: 16 },     
+      5: { halign: 'right', cellWidth: 30 },      
     },
     alternateRowStyles: {
       fillColor: [241, 244, 247], // #F1F4F7

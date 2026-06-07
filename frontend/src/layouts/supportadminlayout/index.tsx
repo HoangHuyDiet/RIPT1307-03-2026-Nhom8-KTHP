@@ -22,7 +22,6 @@ export default function SupportAdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
-  // Get activeKey from location.pathname, e.g. /supportadmin/accounts -> accounts
   let activeKey = 'chat';
   if (location.pathname.includes('/accounts')) {
     activeKey = 'accounts';

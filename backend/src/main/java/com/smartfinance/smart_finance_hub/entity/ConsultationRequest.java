@@ -27,15 +27,12 @@ public class ConsultationRequest {
     @Column(name = "user_question", nullable = false, columnDefinition = "TEXT")
     private String userQuestion;
 
-    /** JSON chuỗi chứa danh sách ConsentScope đã chọn, ví dụ: ["TRANSACTIONS","SAVING_GOALS"] */
     @Column(name = "consent_scope", length = 500)
     private String consentScope;
 
-    /** Snapshot tài chính tại thời điểm tạo yêu cầu (JSON) */
     @Column(name = "financial_snapshot_json", columnDefinition = "TEXT")
     private String financialSnapshotJson;
 
-    /** Bản nháp AI tự động sinh (JSON) — chuyên viên cần kiểm duyệt */
     @Column(name = "ai_draft_json", columnDefinition = "TEXT")
     private String aiDraftJson;
 
@@ -54,11 +51,9 @@ public class ConsultationRequest {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    /** Lời khuyên cuối cùng đã kiểm duyệt của chuyên viên */
     @Column(name = "final_advice", columnDefinition = "TEXT")
     private String finalAdvice;
 
-    /** Optimistic locking — chống race condition khi 2 chuyên viên nhận cùng lúc */
     @Version
     private Long version;
 

@@ -190,9 +190,7 @@ public class MailServiceImpl implements MailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
-            // Gmail SMTP only allows sending from the authenticated account
             helper.setFrom(fromEmail, fromName);
-            // Set replyTo so replies go to the actual person
             if (senderEmail != null && !senderEmail.trim().isEmpty()) {
                 helper.setReplyTo(senderEmail);
             }

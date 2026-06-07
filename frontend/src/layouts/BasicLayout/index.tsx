@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation, history } from 'umi';
-import { Layout, Menu, Avatar, Dropdown, Space, Input } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Space, Input, Modal, Button, Upload, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   AppstoreFilled,
@@ -16,6 +16,11 @@ import {
   SearchOutlined,
   SettingOutlined,
   TagsOutlined,
+  LeftOutlined,
+  RightOutlined,
+  ThunderboltFilled,
+  UploadOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import NotificationsPopover from '../NotificationsLayout';
@@ -53,7 +58,41 @@ export default function BasicLayout() {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const isPro = useAuthStore((state) => state.isPro());
-  const { isAdmin, isSupportAdmin } = useAuthStore();
+  const { isAdmin, isSupportAdmin, updateUser } = useAuthStore();
+  const [isAvatarModalVisible, setAvatarModalVisible] = useState(false);
+  const [newAvatarUrl, setNewAvatarUrl] = useState('');
+
+  const handleAvatarSave = () => {
+    updateUser({ avatar: newAvatarUrl.trim() });
+    setAvatarModalVisible(false);
+  };
+
+  const handleAvatarClick = () => {
+    setNewAvatarUrl(user?.avatar || '');
+    setAvatarModalVisible(true);
+  };
+
+  const uploadProps = {
+    beforeUpload: (file: File) => {
+      const isImage = file.type.startsWith('image/');
+      if (!isImage) {
+        message.error('Bạn chỉ có thể tải lên file hình ảnh!');
+        return false;
+      }
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        message.error('Hình ảnh phải nhỏ hơn 5MB!');
+        return false;
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setNewAvatarUrl(reader.result as string);
+      };
+      return false;
+    },
+    showUploadList: false,
+  };
 
   const menuItems: MenuProps['items'] = [
     {
@@ -86,11 +125,7 @@ export default function BasicLayout() {
       icon: <BankOutlined />,
       label: <Link to="/funds">Quản lý quỹ nhóm</Link>,
     },
-    {
-      key: '/pricing',
-      icon: <CrownOutlined />,
-      label: <Link to="/pricing">Gói Pro</Link>,
-    },
+
     ...((isAdmin() || isSupportAdmin()) ? [
       {
         type: 'divider' as const,
@@ -166,7 +201,14 @@ export default function BasicLayout() {
         theme="light"
         width={260}
         className={styles.sider}
+        trigger={null}
       >
+        <div 
+          className={styles.collapseTrigger} 
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? <RightOutlined style={{ fontSize: 12, color: '#8c8c8c' }} /> : <LeftOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />}
+        </div>
         <div className={styles.logoContainer}>
           <div className={styles.logoIcon}>
             <BankOutlined />
@@ -180,7 +222,7 @@ export default function BasicLayout() {
             </div>
           )}
         </div>
-        <div style={{ padding: '0 12px' }}>
+        <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           <Menu
             theme="light"
             mode="inline"
@@ -188,6 +230,29 @@ export default function BasicLayout() {
             items={menuItems}
             className={styles.menu}
           />
+        </div>
+        
+        <div className={styles.upgradeWrapper}>
+          {!collapsed ? (
+            <div className={styles.upgradeBtn} onClick={() => history.push('/pricing')}>
+              <ThunderboltFilled />
+              <span>Upgrade to Pro</span>
+            </div>
+          ) : (
+            <div className={styles.upgradeBtnCollapsed} onClick={() => history.push('/pricing')}>
+              <ThunderboltFilled />
+            </div>
+          )}
+        </div>
+
+        <div className={styles.siderFooter} onClick={handleAvatarClick}>
+          <Avatar size={40} src={user?.avatar || "https://api.dicebear.com/7.x/notionists/svg?seed=Admin"} />
+          {!collapsed && (
+            <div className={styles.userInfo}>
+              <div className={styles.userName}>{user?.name || user?.displayName || 'Người dùng'}</div>
+              <div className={styles.userPlan}>{isPro ? 'Tài khoản Pro' : 'Tài khoản thường'}</div>
+            </div>
+          )}
         </div>
       </Sider>
       <Layout className={styles.mainLayout}>
@@ -203,12 +268,13 @@ export default function BasicLayout() {
           </div>
 
           <Space size="large" align="center" className={styles.rightActions}>
+            <AiChatbot />
             <SupportWidget />
             <NotificationsPopover />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Space align="center" className={styles.avatarWrapper}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <Avatar size={40} className={styles.avatar} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
+                  <Avatar size={40} className={styles.avatar} src={user?.avatar || "https://api.dicebear.com/7.x/notionists/svg?seed=Admin"} />
                   {isPro && (
                     <CrownOutlined
                       style={{
@@ -232,8 +298,44 @@ export default function BasicLayout() {
         <Content className={styles.content}>
           <Outlet />
         </Content>
-        <AiChatbot />
       </Layout>
+
+      <Modal
+        title="Thay đổi ảnh đại diện"
+        open={isAvatarModalVisible}
+        onCancel={() => setAvatarModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setAvatarModalVisible(false)}>
+            Hủy
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleAvatarSave}>
+            Lưu thay đổi
+          </Button>,
+        ]}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '16px 0' }}>
+          <Avatar size={80} src={newAvatarUrl || "https://api.dicebear.com/7.x/notionists/svg?seed=Admin"} />
+          
+          <Space>
+            <Upload {...uploadProps}>
+              <Button icon={<UploadOutlined />}>Tải ảnh từ máy</Button>
+            </Upload>
+            <Button danger icon={<DeleteOutlined />} onClick={() => setNewAvatarUrl('')}>
+              Xóa ảnh
+            </Button>
+          </Space>
+
+          <Input 
+            placeholder="Hoặc nhập đường dẫn hình ảnh (URL) mới" 
+            value={newAvatarUrl} 
+            onChange={(e) => setNewAvatarUrl(e.target.value)}
+          />
+          <span style={{ fontSize: 13, color: '#8c8c8c' }}>
+            Mẹo: Tải ảnh từ máy cá nhân hoặc nhập liên kết ảnh bất kỳ.
+          </span>
+        </div>
+      </Modal>
+
     </Layout>
   );
 }
