@@ -298,24 +298,6 @@ export default {
     });
   },
 
-  'POST /api/funds/:id/invite': (req: any, res: any) => {
-    const { email } = req.body;
-    const { id } = req.params;
-    
-    console.log(`[Mock BE] Đã tạo lời mời cho quỹ ${id} đến email: ${email}`);
-    
-    res.send({
-      success: true,
-      data: {
-        invitationId: 'inv-' + Date.now(),
-        invitedEmail: email,
-        status: 'PENDING',
-        expiresAt: new Date(Date.now() + 86400000).toISOString()
-      },
-      message: 'Đã gửi lời mời thành công'
-    });
-  },
-
   'POST /api/funds/:id/respond': (req: any, res: any) => {
     const { invitationId, action } = req.body;
     const { id } = req.params;
