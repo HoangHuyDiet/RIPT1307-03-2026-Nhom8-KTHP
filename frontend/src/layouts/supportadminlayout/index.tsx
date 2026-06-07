@@ -101,7 +101,7 @@ export default function SupportAdminLayout() {
   };
 
   return (
-    <Layout className={styles.layout}>
+    <Layout className={styles.layout} hasSider>
       <Sider
         collapsible
         collapsed={collapsed}
