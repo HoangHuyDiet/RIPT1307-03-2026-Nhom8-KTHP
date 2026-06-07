@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://api.smartfinancehub.com/backend/api/:match*"
+      "destination": "https://ript1307-03-2026-nhom8-kthp.onrender.com/backend/api/:match*"
     },
     {
       "source": "/ws/:match*",
-      "destination": "https://api.smartfinancehub.com/backend/ws/:match*"
+      "destination": "https://ript1307-03-2026-nhom8-kthp.onrender.com/backend/ws/:match*"
     },
     {
       "source": "/(.*)",
