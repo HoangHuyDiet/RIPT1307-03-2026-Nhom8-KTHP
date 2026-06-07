@@ -1,6 +1,6 @@
 -- ============================================================
 -- SMART FINANCE HUB - DATABASE SCHEMA
--- 23 tables | MySQL 8.0+
+-- 33 tables | MySQL 8.0+
 -- ============================================================
 -- Run:
 --   mysql -u root -p < data/schema.sql
@@ -406,3 +406,182 @@ CREATE TABLE IF NOT EXISTS broadcasts (
     INDEX idx_broadcasts_target (target),
     INDEX idx_broadcasts_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='System broadcast notifications';
+
+-- ============================================================
+-- MODULE 5: KNOWLEDGE BASE (RAG)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS knowledge_documents (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    source_key      VARCHAR(100)    NOT NULL UNIQUE COMMENT 'Unique identifier for source',
+    title           VARCHAR(255)    NOT NULL,
+    category        VARCHAR(100),
+    jurisdiction    VARCHAR(50),
+    language        VARCHAR(10),
+    source_type     VARCHAR(50),
+    source_name     VARCHAR(255),
+    source_url      VARCHAR(500),
+    content         LONGTEXT        NOT NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'DRAFT',
+    version         VARCHAR(20),
+    reviewed_at     DATETIME,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_knowledge_docs_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge base documents for AI';
+
+CREATE TABLE IF NOT EXISTS knowledge_chunks (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    document_id     BIGINT          NOT NULL,
+    chunk_index     INT             NOT NULL,
+    content         TEXT            NOT NULL,
+    embedding_id    VARCHAR(100),
+    content_hash    VARCHAR(64),
+    embedding_model VARCHAR(50),
+    embedded_at     DATETIME,
+    
+    CONSTRAINT fk_knowledge_chunks_doc FOREIGN KEY (document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+    INDEX idx_chunk_document (document_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Text chunks for embeddings';
+
+
+-- ============================================================
+-- MODULE 6: AI CHAT & CONSULTATION
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    session_id      VARCHAR(50)     NOT NULL UNIQUE,
+    user_id         BIGINT          NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_ai_chat_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_ai_chat_sessions_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ai_chat_messages (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    session_id      BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL,
+    role            VARCHAR(10)     NOT NULL COMMENT 'USER or MODEL',
+    content         TEXT            NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_ai_chat_messages_session FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ai_chat_messages_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_chat_session_created (session_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consultation_requests (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    user_question   TEXT            NOT NULL,
+    consent_scope   VARCHAR(500),
+    financial_snapshot_json TEXT,
+    ai_draft_json   TEXT,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'NEW',
+    advisor_id      BIGINT,
+    assigned_at     DATETIME,
+    completed_at    DATETIME,
+    final_advice    TEXT,
+    version         BIGINT          NOT NULL DEFAULT 0,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_consult_req_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_consult_req_advisor FOREIGN KEY (advisor_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_consult_req_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consultation_messages (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    consultation_id BIGINT          NOT NULL,
+    sender_id       BIGINT          NOT NULL,
+    sender_type     VARCHAR(20)     NOT NULL,
+    content         TEXT            NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_consult_msg_req FOREIGN KEY (consultation_id) REFERENCES consultation_requests(id) ON DELETE CASCADE,
+    CONSTRAINT fk_consult_msg_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================
+-- MODULE 7: SUBSCRIPTIONS & PAYMENTS
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    code            VARCHAR(50)     NOT NULL UNIQUE,
+    name            VARCHAR(120)    NOT NULL,
+    description     VARCHAR(500),
+    price           DECIMAL(12,2)   NOT NULL,
+    duration_days   INT             NOT NULL,
+    active          TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    plan_id         BIGINT          NOT NULL,
+    status          VARCHAR(20)     NOT NULL,
+    started_at      DATETIME        NOT NULL,
+    expired_at      DATETIME        NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_user_subs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_subs_plan FOREIGN KEY (plan_id) REFERENCES subscription_plans(id) ON DELETE CASCADE,
+    INDEX idx_user_subscriptions_user_status (user_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS payment_orders (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    order_code      BIGINT          NOT NULL UNIQUE,
+    user_id         BIGINT          NOT NULL,
+    plan_id         BIGINT          NOT NULL,
+    amount          DECIMAL(12,2)   NOT NULL,
+    status          VARCHAR(20)     NOT NULL,
+    description     VARCHAR(80)     NOT NULL,
+    payos_payment_link_id VARCHAR(100),
+    checkout_url    VARCHAR(1000),
+    qr_code         VARCHAR(2000),
+    paid_at         DATETIME,
+    payos_reference VARCHAR(100),
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_payment_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_payment_order_plan FOREIGN KEY (plan_id) REFERENCES subscription_plans(id) ON DELETE CASCADE,
+    INDEX idx_payment_orders_user_status (user_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================
+-- MODULE 8: NOTIFICATIONS
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    type            VARCHAR(50)     NOT NULL,
+    fund_id         BIGINT,
+    fund_name       VARCHAR(100),
+    amount          DECIMAL(19,4),
+    description     VARCHAR(1000),
+    requester_name  VARCHAR(100),
+    bank_account    VARCHAR(100),
+    bank_name       VARCHAR(100),
+    is_read         TINYINT(1)      NOT NULL DEFAULT 0,
+    is_deleted      TINYINT(1)      NOT NULL DEFAULT 0,
+    target_role     VARCHAR(20),
+    link_action     VARCHAR(255),
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_notifications_user_type (user_id, type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
