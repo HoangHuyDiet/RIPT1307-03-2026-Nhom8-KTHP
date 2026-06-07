@@ -22,6 +22,7 @@ spring:
     password: ${MAIL_PASSWORD:your-app-password}
     properties:
       mail:
+        debug: ${MAIL_DEBUG:false}
         smtp:
           auth: true
           starttls:
@@ -49,7 +50,7 @@ jwt:
   expiration: 86400000
 
 gemini:
-  api-key: ${GEMINI_API_KEY:AQ.Ab8RN6IUssh0qJqHQ0XJXuWG_xO911inraD-oiOnOYQRz_rJ7Q}
+  api-key: ${GEMINI_API_KEY:}
   model: gemini-2.5-flash
   embedding-model: gemini-embedding-001
   temperature: 0.2
