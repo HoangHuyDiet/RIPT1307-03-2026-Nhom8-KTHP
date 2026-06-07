@@ -69,30 +69,32 @@ export default function GroupListView({ groups, activities, onSelectGroup, onFun
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.headerRow}>
-        <div className={styles.searchWrapper}>
-          <Input
-            prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
-            placeholder="Tìm kiếm quỹ..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={styles.searchBar}
-            allowClear
-          />
+    <div className={styles.fundsWrapper}>
+      <div className={styles.headerSection}>
+        <div className={styles.titleInfo}>
+          <h1 className={styles.pageTitle}>Quản lý Quỹ nhóm</h1>
+          <p className={styles.pageSubtitle}>Tạo và quản lý quỹ chung cùng bạn bè, người thân, theo dõi tiến độ đóng góp.</p>
         </div>
-      </div>
-
-      <div className={styles.sectionHeader}>
-        <Title level={3} className={styles.sectionTitle}>Quản Lý Quỹ Nhóm</Title>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          onClick={() => setIsModalOpen(true)}
-          className={styles.createBtn}
-        >
-          Tạo Quỹ Nhóm
-        </Button>
+        <div className={styles.headerActions}>
+          <div className={styles.searchWrapper}>
+            <Input
+              prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
+              placeholder="Tìm kiếm quỹ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.searchBar}
+              allowClear
+            />
+          </div>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={() => setIsModalOpen(true)}
+            className={styles.actionBtn}
+          >
+            Tạo Quỹ Nhóm
+          </Button>
+        </div>
       </div>
 
       <Row gutter={[24, 24]}>

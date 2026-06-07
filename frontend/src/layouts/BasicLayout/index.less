@@ -298,10 +298,14 @@
   min-height: 280px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 80px;
   -ms-overflow-style: none;
 
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.pageContentWrapper {
+  min-height: calc(100vh - 64px - 48px - 280px); 
+  padding-bottom: 40px;
 }

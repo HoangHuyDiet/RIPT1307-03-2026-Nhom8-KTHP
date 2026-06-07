@@ -58,7 +58,7 @@ gemini:
 ai:
   enabled: ${AI_ENABLED:true}
   access:
-    require-pro: ${AI_REQUIRE_PRO:false}
+    require-pro: ${AI_REQUIRE_PRO:true}
     allowed-roles: ${AI_ALLOWED_ROLES:PRO,VIP,ADMIN,SUPPORT_ADMIN}
     upgrade-message: "Vui lòng nâng cấp gói Pro để sử dụng trợ lý AI tài chính."
   cache:

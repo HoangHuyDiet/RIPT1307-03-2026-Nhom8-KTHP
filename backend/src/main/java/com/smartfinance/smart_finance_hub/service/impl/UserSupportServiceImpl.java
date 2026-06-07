@@ -85,9 +85,11 @@ public class UserSupportServiceImpl implements UserSupportService {
 
         supportTicketRepository.save(newTicket);
 
+        MessageSender initialSender = "Hỗ trợ Pro trực tuyến".equals(request.getTitle()) ? MessageSender.ADMIN : MessageSender.USER;
+
         ChatMessage msg = ChatMessage.builder()
                 .supportTicket(newTicket)
-                .sender(MessageSender.USER)
+                .sender(initialSender)
                 .content(request.getDescription())
                 .build();
         chatMessageRepository.save(msg);

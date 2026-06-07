@@ -136,7 +136,7 @@ export default function SystemBroadcast() {
 
   const renderTargetTag = (target: string) => {
     if (target === 'ALL') return <Tag color="blue">Tất cả</Tag>;
-    if (target === 'VIP') return <Tag color="gold">VIP</Tag>;
+    if (target === 'VIP') return <Tag color="gold">Pro</Tag>;
     if (target === 'SUBSCRIBED') return <Tag color="purple">Liên kết NH</Tag>;
     return <Tag color="orange">Đích danh: {target}</Tag>;
   };
@@ -173,7 +173,7 @@ export default function SystemBroadcast() {
           >
             <Select>
               <Select.Option value="ALL">Tất cả người dùng (All Users)</Select.Option>
-              <Select.Option value="VIP">Nhóm thành viên VIP (VIP Users)</Select.Option>
+              <Select.Option value="VIP">Nhóm thành viên Pro (Pro Users)</Select.Option>
               <Select.Option value="SUBSCRIBED">Người dùng liên kết ngân hàng</Select.Option>
               <Select.Option value="SPECIFIC">Đích danh (Cá nhân người dùng cụ thể)</Select.Option>
             </Select>

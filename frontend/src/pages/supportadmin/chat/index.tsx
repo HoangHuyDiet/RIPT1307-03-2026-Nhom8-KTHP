@@ -37,9 +37,9 @@ interface ChatRequest {
 }
 
 const QUICK_REPLIES = [
-  { key: '/chao', label: '/chao - Lời chào khách hàng VIP', text: 'Xin chào quý khách VIP, bộ phận hỗ trợ kỹ thuật có thể giúp gì cho quý khách ạ?' },
-  { key: '/giaiquyet', label: '/giaiquyet - Thông báo đang xử lý', text: 'Yêu cầu của quý khách đã được ghi nhận. Hệ thống đang kiểm tra và sẽ phản hồi trong vòng 5 phút.' },
-  { key: '/kethuc', label: '/kethuc - Chào tạm biệt khách hàng', text: 'Vấn đề của quý khách đã được xử lý xong. Cảm ơn quý khách đã liên hệ với Support VIP!' },
+  { key: '/chao', label: '/chao - Lời chào khách hàng Pro', text: 'Xin chào quý khách , bộ phận hỗ trợ kỹ thuật có thể giúp gì cho quý khách ạ?' },
+  { key: '/hdsd', label: '/hdsd - Hướng dẫn sử dụng', text: 'Quý khách vui lòng tham khảo tài liệu hướng dẫn tại link: https://docs.smartfinance.com' },
+  { key: '/kethuc', label: '/kethuc - Chào tạm biệt khách hàng', text: 'Vấn đề của quý khách đã được xử lý xong. Cảm ơn quý khách đã liên hệ với Support Admin!' },
   { key: '/nap-tien', label: '/nap-tien - Lỗi giao dịch nạp quỹ', text: 'Quý khách vui lòng cung cấp mã giao dịch và ảnh chụp biên lai chuyển tiền để chúng tôi đối soát.' },
   { key: '/quen-pass', label: '/quen-pass - Hướng dẫn khôi phục mật khẩu', text: 'Quý khách hãy nhấn vào liên kết "Quên mật khẩu" tại trang đăng nhập và kiểm tra hòm thư Email.' }
 ];
@@ -141,7 +141,7 @@ export default function HelpdeskVIP() {
     <div className={styles.chatSplitLayout}>
       <div className={styles.chatSider}>
         <div className={styles.siderHeader}>
-          <Text className={styles.siderTitle}>Yêu cầu hỗ trợ VIP</Text>
+          <Text className={styles.siderTitle}>Yêu cầu hỗ trợ Pro</Text>
         </div>
         <List
           itemLayout="horizontal"

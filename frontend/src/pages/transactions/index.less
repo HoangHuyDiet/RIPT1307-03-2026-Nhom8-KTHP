@@ -1,32 +1,64 @@
-.premiumContainer {
-  padding: 24px;
-  min-height: 100vh;
-  background-color: #f6f8fb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+.fundsWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 4px;
+}
 
-  .leftSection {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.03);
+.headerSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .titleInfo {
+    .pageTitle {
+      margin: 0 0 4px 0;
+      font-weight: 700;
+      color: #202124;
+      font-size: 26px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .pageSubtitle {
+      margin: 0;
+      color: #5F6368;
+      font-size: 14px;
+    }
   }
 
-  .sectionHeader {
+  .headerActions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
+    gap: 12px;
     flex-wrap: wrap;
-    gap: 16px;
-  }
 
-  .mainTitle {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1a1d20;
-    margin: 0 !important;
+    .actionBtn {
+      height: 40px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+    }
   }
+}
+
+.leftSection {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
 
   .filterBarRow {
     display: flex;
@@ -328,7 +360,47 @@
     }
   }
 
-}
+
+
+  .patternCard {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+
+    :global(.ant-card-body) {
+      padding: 20px;
+    }
+
+    .patternBody {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .patternItem {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .patternMeta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .patternName {
+      font-size: 13px;
+      color: #5f6368;
+      font-weight: 500;
+    }
+
+    .patternPercent {
+      font-size: 13px;
+      font-weight: 700;
+    }
+  }
+
 
 .fundOption {
   display: flex;
