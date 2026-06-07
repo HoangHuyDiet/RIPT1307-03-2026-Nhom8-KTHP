@@ -86,7 +86,10 @@ export default function NotificationsPopover() {
       );
       setServerRequests(txLists.flat());
       const myNotificationsRes = await request.get('/funds/my-notifications');
-      setServerMemberNotifications(myNotificationsRes.data || []);
+      const filteredNotifications = (myNotificationsRes.data || []).filter(
+        (n: any) => !(n.targetRole === 'OWNER' && n.type.includes('REQUEST'))
+      );
+      setServerMemberNotifications(filteredNotifications);
     } catch (e) {
       console.error(e);
     }
@@ -114,11 +117,15 @@ export default function NotificationsPopover() {
       onConnect: () => {
         client.subscribe('/user/queue/notifications', (frame) => {
           const notification = JSON.parse(frame.body);
-          addNotification({
-            ...notification,
-            id: String(notification.id || `ws_${Date.now()}`),
-            read: false,
-          });
+          if (notification.targetRole === 'OWNER' && notification.type.includes('REQUEST')) {
+            fetchPendingFundRequests();
+          } else {
+            addNotification({
+              ...notification,
+              id: String(notification.id || `ws_${Date.now()}`),
+              read: false,
+            });
+          }
         });
       },
       onStompError: (frame) => {

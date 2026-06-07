@@ -35,7 +35,8 @@ public class TransactionResponse {
 
     public static TransactionResponse from(Transaction transaction) {
         String categoryVal = transaction.getCategory() != null ? transaction.getCategory().getName() : null;
-        String fundVal = transaction.getPersonalFund() != null ? transaction.getPersonalFund().getName() : null;
+        String fundVal = transaction.getPersonalFund() != null ? transaction.getPersonalFund().getName() : 
+                         (transaction.getShareFund() != null ? transaction.getShareFund().getName() + " (Quỹ nhóm)" : null);
 
         return TransactionResponse.builder()
                 .id(transaction.getId())

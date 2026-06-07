@@ -67,15 +67,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
    
     List<Transaction> findByUserIdAndDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
 
-    Page<Transaction> findByUserIdAndShareFundIsNull(Long userId, Pageable pageable);
+    Page<Transaction> findByUserId(Long userId, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndType(
             Long userId, String type, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndDateBetween(
             Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndDateBetween(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
     @Query("""
@@ -83,7 +83,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             left join t.category c
             left join t.personalFund pf
             where t.user.id = :userId
-              and t.shareFund is null
               and (:type is null or t.type = :type)
               and (:categoryId is null or c.id = :categoryId)
               and (:personalFundId is null or pf.id = :personalFundId)

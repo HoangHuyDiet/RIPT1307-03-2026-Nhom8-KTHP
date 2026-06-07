@@ -320,12 +320,12 @@ export default function DashboardBlank() {
         </div>
         <Space size="middle">
           <Button icon={<FlagOutlined />}
-            onClick={() => history.push('')}
+            onClick={() => history.push('/saving-goals')}
           >
             Mục tiêu mới
           </Button>
           <Button icon={<UserAddOutlined />}
-            onClick={() => history.push('')}
+            onClick={() => history.push('/shared-funds')}
           >
             Mời
           </Button>
