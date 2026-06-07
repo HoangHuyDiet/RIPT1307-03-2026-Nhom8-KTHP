@@ -15,6 +15,7 @@ import {
   Modal,
   Form,
   Select,
+  Tabs,
 } from 'antd';
 import {
   PlusOutlined,
@@ -51,7 +52,6 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState<string>('');
   
-  // Modal states
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -77,7 +77,7 @@ export default function UserManagement() {
     fetchUsers();
   }, []);
 
-  // --- Actions ---
+
 
   const handleToggleLock = (user: User) => {
     const newStatus = user.status === 'BANNED' ? 'ACTIVE' : 'BANNED';
@@ -122,7 +122,7 @@ export default function UserManagement() {
     });
   };
 
-  // --- Modal Logic ---
+
 
   const openCreateModal = () => {
     setModalMode('create');
@@ -169,14 +169,14 @@ export default function UserManagement() {
       setIsModalVisible(false);
       fetchUsers();
     } catch (error: any) {
-      if (error.errorFields) return; // Validation error
+      if (error.errorFields) return;
       message.error(error.response?.data?.message || 'Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // --- Table Configuration ---
+
 
   const handleSearch = (value: string) => {
     setSearchText(value);
@@ -265,7 +265,6 @@ export default function UserManagement() {
       key: 'action',
       width: 250,
       render: (_: any, record: User) => {
-        // Chỉ ADMIN mới có quyền CRUD
         if (!isAdmin()) {
           return <Text type="secondary">Chỉ xem</Text>;
         }
@@ -417,7 +416,6 @@ export default function UserManagement() {
         />
       </Card>
 
-      {/* CREATE / EDIT MODAL */}
       <Modal
         title={modalMode === 'create' ? 'Tạo tài khoản mới' : 'Cập nhật tài khoản'}
         open={isModalVisible}

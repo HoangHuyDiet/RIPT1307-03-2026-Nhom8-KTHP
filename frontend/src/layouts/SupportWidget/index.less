@@ -1,0 +1,244 @@
+.supportWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f1f4f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #e8eaed;
+  }
+}
+
+.supportIcon {
+  font-size: 19px;
+  color: #1f2937 !important;
+}
+
+.drawerTitleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .headerTextGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+  }
+
+  .drawerMainTitle {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.2;
+  }
+
+  .drawerSubtitle {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.1;
+  }
+}
+
+.chatLoadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chatStatusBar {
+  padding: 8px 16px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.chatBody {
+  flex: 1;
+  padding: 10px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: #f1f5f9;
+
+  /* Hide scrollbar */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.msgRow {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  margin-bottom: 2px;
+}
+
+.msgRowLeft {
+  justify-content: flex-start;
+  
+  .msgBubbleAndTime {
+    align-items: flex-start;
+  }
+}
+
+.msgRowRight {
+  justify-content: flex-end;
+  
+  .msgBubbleAndTime {
+    align-items: flex-end;
+  }
+}
+
+.msgBubbleAndTime {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.msgBubble {
+  padding: 8px 12px;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-size: 13.5px;
+  width: fit-content;
+  word-break: break-word;
+}
+
+.msgRowLeft .msgBubble {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-top-left-radius: 4px;
+}
+
+.msgRowRight .msgBubble {
+  background: #1A73E8;
+  color: #ffffff;
+  border-top-right-radius: 4px;
+}
+
+.msgTime {
+  font-size: 9.5px;
+  color: #94a3b8;
+  margin-top: 0px;
+  margin-bottom: 1px;
+  padding: 0 4px;
+}
+
+.chatFooter {
+  padding: 12px 16px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.inputArea {
+  display: flex;
+  gap: 8px;
+}
+
+.messageInput {
+  border-radius: 8px;
+}
+
+.chatResolvedOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.noChatContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+
+  .emptyIcon {
+    font-size: 48px;
+    color: #cbd5e1;
+  }
+}
+
+.floatingChatBox {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  height: 60vh;
+  min-height: 480px;
+  max-height: 700px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  .chatHeader {
+    padding: 1px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+
+  .closeChatBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f1f5f9 !important;
+    }
+  }
+
+  .chatContentArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -13,6 +13,11 @@ interface AuthState {
   isPro: () => boolean;
 }
 
+const cleanRoles = (roles: any): string[] => {
+  if (!Array.isArray(roles)) return [];
+  return roles.map(r => typeof r === 'string' ? (r.startsWith('ROLE_') ? r.slice(5) : r) : String(r));
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('token') || null,
   refreshToken: localStorage.getItem('refresh_token') || null,
@@ -25,15 +30,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   roles: (() => {
     try {
       const r = localStorage.getItem('roles');
-      return r ? JSON.parse(r) : [];
+      return r ? cleanRoles(JSON.parse(r)) : [];
     } catch { return []; }
   })(),
   setAuth: (token, user, roles = [], refreshToken) => {
     localStorage.setItem('token', token);
     if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
     if (user) localStorage.setItem('user', JSON.stringify(user));
-    if (roles.length > 0) localStorage.setItem('roles', JSON.stringify(roles));
-    set({ token, refreshToken: refreshToken || get().refreshToken, user: user || null, roles });
+    const cleaned = cleanRoles(roles);
+    if (cleaned.length > 0) {
+      localStorage.setItem('roles', JSON.stringify(cleaned));
+    }
+    set({ token, refreshToken: refreshToken || get().refreshToken, user: user || null, roles: cleaned.length > 0 ? cleaned : get().roles });
   },
   logout: () => {
     localStorage.removeItem('token');
@@ -50,5 +58,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   isPro: () => get().roles.includes('PRO'),
 }));
-
-
