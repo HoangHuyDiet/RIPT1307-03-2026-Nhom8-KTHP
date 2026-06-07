@@ -88,7 +88,7 @@ export default function AdminLayout() {
   const roleColor = 'red';
 
   return (
-    <Layout className={styles.layout}>
+    <Layout className={styles.layout} hasSider>
       <Sider
         collapsible
         collapsed={collapsed}

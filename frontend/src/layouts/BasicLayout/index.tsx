@@ -194,7 +194,7 @@ export default function BasicLayout() {
   ];
 
   return (
-    <Layout className={styles.layout}>
+    <Layout className={styles.layout} hasSider>
       <Sider
         collapsible
         collapsed={collapsed}
