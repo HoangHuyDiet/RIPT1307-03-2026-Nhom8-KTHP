@@ -1,5 +1,13 @@
 .layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mainLayout {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sider {
@@ -7,6 +15,15 @@
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   z-index: 10;
   border-right: 1px solid #f0f0f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  :global(.ant-layout-sider-children) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
 
   .logoContainer {
     height: 72px;
@@ -17,6 +34,7 @@
     border-bottom: 1px solid #f0f0f0;
     overflow: hidden;
     margin-bottom: 8px;
+    flex-shrink: 0;
 
     .logoIcon {
       display: flex;
@@ -53,6 +71,8 @@
 
   .menuSection {
     padding: 0 12px;
+    flex: 1;
+    overflow-y: auto;
 
     .menuLabel {
       padding: 0 12px;
@@ -99,6 +119,7 @@
   .siderFooter {
     padding: 12px 20px 16px;
     border-top: 1px solid #f0f0f0;
+    flex-shrink: 0;
 
     .adminBadge {
       display: flex;

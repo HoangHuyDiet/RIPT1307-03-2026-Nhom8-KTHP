@@ -188,34 +188,28 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
       amount: number;
     }>();
 
+    group.members.forEach((member) => {
+      const key = member.email || member.name;
+      contributors.set(key, {
+        id: key,
+        name: member.name || member.email || 'Thanh vien',
+        email: member.email,
+        amount: 0
+      });
+    });
+
     fundTransactions.forEach((tx) => {
       const isApproved = tx.status === 'APPROVED' || tx.is_approved === true;
       if (tx.type !== 'INCOME' || !isApproved) return;
 
-      const key = String(tx.user_id || tx.user_email || tx.user_display_name || tx.id);
-      const name = tx.user_display_name || tx.user_email || 'Khach';
-      const current = contributors.get(key) || {
-        id: key,
-        name,
-        email: tx.user_email,
-        amount: 0
-      };
-
-      current.name = current.name || name;
-      current.email = current.email || tx.user_email;
-      current.amount += Number(tx.amount || 0);
-      contributors.set(key, current);
-    });
-
-    group.members.forEach((member) => {
-      const key = member.email || member.name;
-      if (!contributors.has(key)) {
-        contributors.set(key, {
-          id: key,
-          name: member.name || member.email || 'Thanh vien',
-          email: member.email,
-          amount: 0
-        });
+      const key = String(tx.user_email || tx.user_display_name);
+      if (contributors.has(key)) {
+        contributors.get(key)!.amount += Number(tx.amount || 0);
+      } else {
+        const found = Array.from(contributors.values()).find(c => c.email === tx.user_email || c.name === tx.user_display_name);
+        if (found) {
+          found.amount += Number(tx.amount || 0);
+        }
       }
     });
 
@@ -223,7 +217,7 @@ export default function GroupDetailView({ group, onBack, onLeaveGroup, onRenameG
 
     return Array.from(contributors.values())
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3)
+      .slice(0, Math.min(3, group.members.length))
       .map((item, index) => {
         const initials = item.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
         return {

@@ -44,34 +44,35 @@ public class SharedFundServiceImpl implements SharedFundService {
     @Override
     @Transactional
     public FundInvitation inviteMember(Long fundId, InviteMemberRequest request, Long inviterUserId) {
-        log.info("inviteMember param: fundId={}, email={}", fundId, request.getEmail());
+        String requestedEmail = request.getEmail() != null ? request.getEmail().trim() : "";
+        log.info("inviteMember param: fundId={}, email={}", fundId, requestedEmail);
 
         ShareFund fund = shareFundRepository.findById(fundId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quỹ với ID: " + fundId));
 
-        User invitedUser = userRepository.findByEmail(request.getEmail())
+        User invitedUser = userRepository.findByEmail(requestedEmail)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Không tìm thấy người dùng với email: " + request.getEmail()));
+                        "Không tìm thấy người dùng với email: " + requestedEmail));
 
         boolean alreadyMember = fundMemberRepository.existsByShareFundIdAndUserId(fundId, invitedUser.getId());
         if (alreadyMember) {
-            throw new IllegalStateException("Người dùng " + request.getEmail() + " đã là thành viên của quỹ này!");
+            throw new IllegalStateException("Người dùng " + requestedEmail + " đã là thành viên của quỹ này!");
         }
 
         List<FundInvitation> pendingInvitations =
                 fundInvitationRepository.findByShareFundIdAndStatus(fundId, InvitationStatus.PENDING.name());
 
         for (FundInvitation existing : pendingInvitations) {
-            if (existing.getInvitedEmail().equalsIgnoreCase(request.getEmail())) {
+            if (existing.getInvitedEmail().equalsIgnoreCase(requestedEmail)) {
                 existing.setStatus("CANCELLED");
                 fundInvitationRepository.save(existing);
-                log.info("Đã hủy lời mời cũ (id={}) cho email: {}", existing.getId(), request.getEmail());
+                log.info("Đã hủy lời mời cũ (id={}) cho email: {}", existing.getId(), requestedEmail);
             }
         }
 
         FundInvitation invitation = FundInvitation.builder()
                 .shareFund(fund)
-                .invitedEmail(request.getEmail())
+                .invitedEmail(invitedUser.getEmail())
                 .invitationToken(UUID.randomUUID().toString())
                 .status(InvitationStatus.PENDING.name())
                 .type("MEMBER_INVITE")
@@ -107,22 +108,21 @@ public class SharedFundServiceImpl implements SharedFundService {
             log.error("Lỗi gửi thông báo in-app: {}", e.getMessage());
         }
 
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                mailService.sendFundInvitationEmail(
-                        invitedEmail,
-                        finalInvitedName,
-                        finalInviterName,
-                        finalInviterEmail,
-                        finalFundName,
-                        token,
-                        12
-                );
-                log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedEmail);
-            } catch (Exception e) {
-                log.error("Lỗi khi gửi email mời tham gia quỹ nhóm đến {}: {}", invitedEmail, e.getMessage());
-            }
-        });
+        try {
+            mailService.sendFundInvitationEmail(
+                    invitedEmail,
+                    finalInvitedName,
+                    finalInviterName,
+                    finalInviterEmail,
+                    finalFundName,
+                    token,
+                    12
+            );
+            log.info("Đã gửi email mời tham gia quỹ nhóm đến {}", invitedEmail);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email mời tham gia quỹ nhóm đến {}: {}", invitedEmail, e.getMessage(), e);
+            throw new IllegalStateException("Không gửi được email mời tham gia quỹ nhóm. Vui lòng kiểm tra cấu hình Gmail SMTP.");
+        }
 
         return saved;
     }
@@ -534,7 +534,6 @@ public class SharedFundServiceImpl implements SharedFundService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
 
-        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
         java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(userId);
         for (ShareFund existing : existingFunds) {
             if (existing.getName().trim().equalsIgnoreCase(trimmedName)) {
@@ -600,7 +599,6 @@ public class SharedFundServiceImpl implements SharedFundService {
             }
         }
 
-        // Kiểm tra trùng tên quỹ đối với cùng một người tạo
         Long creatorId = fund.getCreatedByUser().getId();
         java.util.List<ShareFund> existingFunds = shareFundRepository.findByCreatedByUserId(creatorId);
         for (ShareFund existing : existingFunds) {

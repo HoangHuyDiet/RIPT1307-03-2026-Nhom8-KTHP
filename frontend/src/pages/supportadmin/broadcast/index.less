@@ -1,0 +1,37 @@
+.broadcastSplitGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.broadcastFormCard {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.broadcastHistoryContainer {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.historyHeader {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.broadcastHistoryCard {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}

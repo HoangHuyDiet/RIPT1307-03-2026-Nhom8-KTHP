@@ -95,7 +95,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("actionUrl", invitationActionUrl(token));
 
         String htmlContent = templateEngine.process("email/fund-invitation", context);
-        sendHtmlEmailWithSender(toEmail, "Fund invitation - " + fundName, htmlContent, invitedByEmail, invitedByName);
+        sendHtmlEmailWithSender(toEmail, "Lời mời tham gia quỹ - " + fundName, htmlContent, invitedByEmail, invitedByName);
     }
 
     @Override
@@ -181,7 +181,11 @@ public class MailServiceImpl implements MailService {
         helper.setTo(toEmail);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
+        helper.setValidateAddresses(true);
+        message.saveChanges();
         mailSender.send(message);
+        log.info("SMTP accepted email: from={}, to={}, subject={}, messageId={}",
+                fromEmail, toEmail, subject, message.getMessageID());
     }
 
     private void sendHtmlEmailWithSender(String toEmail, String subject, String htmlContent, String senderEmail, String senderName)
@@ -190,9 +194,7 @@ public class MailServiceImpl implements MailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
-            // Gmail SMTP only allows sending from the authenticated account
             helper.setFrom(fromEmail, fromName);
-            // Set replyTo so replies go to the actual person
             if (senderEmail != null && !senderEmail.trim().isEmpty()) {
                 helper.setReplyTo(senderEmail);
             }
@@ -204,6 +206,10 @@ public class MailServiceImpl implements MailService {
         helper.setTo(toEmail);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
+        helper.setValidateAddresses(true);
+        message.saveChanges();
         mailSender.send(message);
+        log.info("SMTP accepted email: from={}, replyTo={}, to={}, subject={}, messageId={}",
+                fromEmail, senderEmail, toEmail, subject, message.getMessageID());
     }
 }

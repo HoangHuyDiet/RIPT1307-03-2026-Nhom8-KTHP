@@ -26,9 +26,6 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    /**
-     * Lấy danh sách tất cả user (ADMIN + SUPPORT_ADMIN)
-     */
     @GetMapping("/users")
     public ResponseEntity<Map<String, Object>> getAllUsers() {
         log.info("Admin API: GET /api/admin/users");
@@ -42,9 +39,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy chi tiết user (ADMIN + SUPPORT_ADMIN)
-     */
     @GetMapping("/users/{id}")
     public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
         log.info("Admin API: GET /api/admin/users/{}", id);
@@ -58,9 +52,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Tạo user mới (Chỉ ADMIN)
-     */
     @PostMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> createUser(@Valid @RequestBody AdminCreateUserRequest request) {
@@ -75,9 +66,6 @@ public class AdminController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    /**
-     * Cập nhật thông tin user (Chỉ ADMIN)
-     */
     @PutMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateUser(
@@ -94,9 +82,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Cập nhật trạng thái user (ACTIVE/BANNED) - Chỉ ADMIN
-     */
     @PutMapping("/users/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateUserStatus(
@@ -119,9 +104,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Xóa user (Chỉ ADMIN)
-     */
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {
@@ -135,9 +117,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Thống kê tổng quan dashboard (ADMIN + SUPPORT_ADMIN)
-     */
     @GetMapping("/dashboard/stats")
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
         log.info("Admin API: GET /api/admin/dashboard/stats");

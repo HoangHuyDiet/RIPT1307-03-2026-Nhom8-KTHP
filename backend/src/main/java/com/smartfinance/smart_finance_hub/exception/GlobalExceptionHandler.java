@@ -81,6 +81,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        log.error("handleAccessDenied: {}", ex.getMessage());
+        return new ResponseEntity<>(
+                ApiResponse.error("Access denied: " + ex.getMessage()),
+                HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSecurityException(SecurityException ex) {
+        log.error("handleSecurityException: {}", ex.getMessage());
+        return new ResponseEntity<>(
+                ApiResponse.error("Security violation: " + ex.getMessage()),
+                HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex) {
         log.error("handleGlobalException: {}", ex.getMessage(), ex);

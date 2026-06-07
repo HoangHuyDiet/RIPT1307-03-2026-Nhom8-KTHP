@@ -39,8 +39,8 @@ export default function InviteMemberModal({ isOpen, onClose, selectedGroup }: In
       } else {
         message.error(data.message || 'Lỗi khi gửi lời mời!');
       }
-    } catch {
-      message.error('Lỗi kết nối khi gửi lời mời!');
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Lỗi kết nối khi gửi lời mời!');
     }
   };
 

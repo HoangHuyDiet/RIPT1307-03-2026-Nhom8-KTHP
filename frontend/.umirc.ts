@@ -26,15 +26,28 @@ export default defineConfig({
         { path: '/saving-goals', component: '@/pages/saving-goals' },
         { path: '/transactions', component: '@/pages/transactions' },
         { path: '/categories', component: '@/pages/categories' },
+        { path: '/pricing', component: '@/pages/pricing' },
         { path: '/notifications', component: '@/pages/notifications' },
       ],
     },
 
     {
+      path: '/supportadmin',
+      component: '@/layouts/supportadminlayout',
+      routes: [
+        { path: '/supportadmin', redirect: '/supportadmin/chat' },
+        { path: '/supportadmin/chat', component: '@/pages/supportadmin/chat' },
+        { path: '/supportadmin/tickets', component: '@/pages/supportadmin/tickets' },
+        { path: '/supportadmin/accounts', component: '@/pages/supportadmin/accounts' },
+        { path: '/supportadmin/broadcast', component: '@/pages/supportadmin/broadcast' },
+      ],
+    },
+    {
       path: '/admin',
       component: '@/layouts/AdminLayout',
       routes: [
         { path: '/admin/users', component: '@/pages/admin/users' },
+        { path: '/admin/approvals', component: '@/pages/admin/approvals' },
         { path: '/admin/categories', component: '@/pages/admin/categories' },
       ],
     },

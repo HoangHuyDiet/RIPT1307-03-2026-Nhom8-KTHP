@@ -25,7 +25,7 @@ public class AdminCreateUserRequest {
     @NotBlank(message = "Tên hiển thị không được để trống")
     private String displayName;
 
-    private String status; // ACTIVE, INACTIVE, BANNED — mặc định ACTIVE
+    private String status; 
 
-    private List<String> roles; // VD: ["USER"], ["ADMIN", "USER"] — mặc định ["USER"]
+    private List<String> roles; 
 }

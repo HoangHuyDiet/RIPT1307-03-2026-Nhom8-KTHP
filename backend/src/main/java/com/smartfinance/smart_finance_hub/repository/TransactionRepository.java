@@ -67,15 +67,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
    
     List<Transaction> findByUserIdAndDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
 
-    Page<Transaction> findByUserIdAndShareFundIsNull(Long userId, Pageable pageable);
+    Page<Transaction> findByUserId(Long userId, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndType(
             Long userId, String type, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndDateBetween(
             Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
-    Page<Transaction> findByUserIdAndTypeAndDateBetweenAndShareFundIsNull(
+    Page<Transaction> findByUserIdAndTypeAndDateBetween(
             Long userId, String type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
     @Query("""
@@ -83,7 +83,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             left join t.category c
             left join t.personalFund pf
             where t.user.id = :userId
-              and t.shareFund is null
               and (:type is null or t.type = :type)
               and (:categoryId is null or c.id = :categoryId)
               and (:personalFundId is null or pf.id = :personalFundId)
@@ -107,6 +106,24 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             Long personalFundId, LocalDate startDate, LocalDate endDate);
 
     Page<Transaction> findByPersonalFundIdAndType(Long personalFundId, String type, Pageable pageable);
+
+    @Query("SELECT new com.smartfinance.smart_finance_hub.dto.response.CategoryExpenseResponse(c.name, SUM(t.amount)) " +
+           "FROM Transaction t JOIN t.category c " +
+           "WHERE t.user.id = :userId AND t.type = 'EXPENSE' AND t.isApproved = true " +
+           "AND FUNCTION('MONTH', t.date) = :month AND FUNCTION('YEAR', t.date) = :year " +
+           "GROUP BY c.name")
+    List<com.smartfinance.smart_finance_hub.dto.response.CategoryExpenseResponse> getExpenseByCategory(
+            @Param("userId") Long userId, 
+            @Param("month") int month, 
+            @Param("year") int year);
+
+    @Query("SELECT new com.smartfinance.smart_finance_hub.dto.response.CashFlowResponse(FUNCTION('MONTH', t.date), t.type, SUM(t.amount)) " +
+           "FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.isApproved = true AND FUNCTION('YEAR', t.date) = :year " +
+           "GROUP BY FUNCTION('MONTH', t.date), t.type")
+    List<com.smartfinance.smart_finance_hub.dto.response.CashFlowResponse> getCashFlowByYear(
+            @Param("userId") Long userId, 
+            @Param("year") int year);
 }
 
 

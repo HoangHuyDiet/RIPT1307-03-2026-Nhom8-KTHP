@@ -12,13 +12,13 @@
 INSERT INTO users (email, password, display_name, status, created_at, updated_at)
 VALUES (
     'admin@smartfinance.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$82bN0uV34oRqHJv5hMB6Qe3QLN7i2E9IEA27rQf5xAHWH3XzQPDWW',
     'System Admin',
     'ACTIVE',
     NOW(),
     NOW()
 )
-ON DUPLICATE KEY UPDATE display_name = display_name;
+ON DUPLICATE KEY UPDATE password = VALUES(password), display_name = VALUES(display_name);
 
 -- Gán role ADMIN
 INSERT INTO user_role (user_id, role_id, assigned_at)
@@ -37,13 +37,13 @@ WHERE u.email = 'admin@smartfinance.com'
 INSERT INTO users (email, password, display_name, status, created_at, updated_at)
 VALUES (
     'support@smartfinance.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$gw5epN.x3JNHXkNTGNRPz.bQhcfeElOdaR9zlYR7wJTd.dgzslpO2',
     'Support Admin',
     'ACTIVE',
     NOW(),
     NOW()
 )
-ON DUPLICATE KEY UPDATE display_name = display_name;
+ON DUPLICATE KEY UPDATE password = VALUES(password), display_name = VALUES(display_name);
 
 -- Gán role SUPPORT_ADMIN
 INSERT INTO user_role (user_id, role_id, assigned_at)

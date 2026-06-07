@@ -384,8 +384,9 @@ public class SharedFundController {
         data.put("invitedEmail", invitation.getInvitedEmail());
         data.put("status", invitation.getStatus());
         data.put("expiresAt", invitation.getExpiresAt().toString());
+        data.put("emailSent", true);
 
-        return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã gửi lời mời thành công đến " + request.getEmail(), data), HttpStatus.CREATED);
+        return new ResponseEntity<>(com.smartfinance.smart_finance_hub.dto.response.ApiResponse.success("Đã gửi lời mời thành công đến " + invitation.getInvitedEmail(), data), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/respond")

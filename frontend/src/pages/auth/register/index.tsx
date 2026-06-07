@@ -24,7 +24,13 @@ export default function Register() {
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
 
-        useAuthStore.getState().setAuth(data.token, data.user);
+        const loginData = data.data;
+        useAuthStore.getState().setAuth(
+          loginData.token,
+          { email: loginData.email, name: loginData.displayName },
+          loginData.roles || [],
+          loginData.refreshToken,
+        );
         history.push('/dashboard');
       } catch (error: any) {
         message.error('Đăng nhập bằng Google thất bại!');
@@ -68,8 +74,8 @@ export default function Register() {
       </div>
 
       <div className={styles.header}>
-        <Title level={3} className={styles.title}>Create an account</Title>
-        <Text type="secondary" className={styles.subtitle}>Sign up to get started with Smart Finance.</Text>
+        <Title level={3} className={styles.title}>Tạo tài khoản mới</Title>
+        <Text type="secondary" className={styles.subtitle}>Đăng ký để bắt đầu với Smart Finance.</Text>
       </div>
 
       <Form
@@ -101,7 +107,7 @@ export default function Register() {
         </Form.Item>
 
         <Form.Item
-          label={<span className={styles.inputLabel}>Password</span>}
+          label={<span className={styles.inputLabel}>Mật khẩu</span>}
           name="password"
           rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }, { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }]}
         >
@@ -135,11 +141,11 @@ export default function Register() {
 
         <Form.Item style={{ marginBottom: '24px', marginTop: '12px' }}>
           <Button type="primary" htmlType="submit" className={styles.registerButton} block loading={loading}>
-            Sign Up {!loading && <span className={styles.arrowIcon}>→</span>}
+            Đăng ký {!loading && <span className={styles.arrowIcon}>→</span>}
           </Button>
         </Form.Item>
 
-        <Divider className={styles.divider}>Or continue with</Divider>
+        <Divider className={styles.divider}>Hoặc tiếp tục với</Divider>
 
         <div className={styles.socialLogin}>
           <Button
@@ -156,7 +162,7 @@ export default function Register() {
         </div>
 
         <div className={styles.loginLink}>
-          Already have an account? <Link to="/auth/login">Sign in</Link>
+          Đã có tài khoản? <Link to="/auth/login">Đăng nhập</Link>
         </div>
       </Form>
     </div>

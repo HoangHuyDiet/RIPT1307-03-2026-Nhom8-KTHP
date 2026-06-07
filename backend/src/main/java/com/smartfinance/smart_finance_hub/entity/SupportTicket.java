@@ -42,7 +42,7 @@ public class SupportTicket {
 
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String status = "OPEN";
+    private String status = "PENDING";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -51,4 +51,7 @@ public class SupportTicket {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "supportTicket", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ChatMessage> chatMessages;
 }

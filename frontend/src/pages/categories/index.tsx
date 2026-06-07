@@ -164,22 +164,23 @@ export default function CategoriesPage() {
   ];
 
   return (
-    <div className={styles.container}>
-      <Card bordered={false} className={styles.tableCard}>
-        <div className={styles.toolbar}>
-          <div>
-            <h2 className={styles.title}>Danh mục giao dịch</h2>
-            <p className={styles.subtitle}>Quản lý các nhóm thu chi dùng trong màn hình giao dịch.</p>
-          </div>
-          <Space>
-            <Button icon={<ReloadOutlined />} onClick={fetchCategories} loading={loading}>
-              Làm mới
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
-              Thêm danh mục
-            </Button>
-          </Space>
+    <div className={styles.fundsWrapper}>
+      <div className={styles.headerSection}>
+        <div className={styles.titleInfo}>
+          <h1 className={styles.pageTitle}>Danh mục giao dịch</h1>
+          <p className={styles.pageSubtitle}>Thiết lập và quản lý danh mục thu/chi để phân loại giao dịch hiệu quả.</p>
         </div>
+        <div className={styles.headerActions}>
+          <Button icon={<ReloadOutlined />} className={styles.actionBtn} onClick={fetchCategories} loading={loading}>
+            Làm mới
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} className={styles.actionBtn} onClick={openCreateModal}>
+            Thêm danh mục
+          </Button>
+        </div>
+      </div>
+
+      <Card bordered={false} className={styles.tableCard}>
 
         <Segmented
           value={activeType}

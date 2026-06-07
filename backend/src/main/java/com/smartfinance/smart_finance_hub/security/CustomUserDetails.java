@@ -7,6 +7,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,8 +27,33 @@ public class CustomUserDetails implements UserDetails {
 
     if (user.getUserRoles() != null) {
       authorities = user.getUserRoles().stream()
+          .filter(ur -> ur.getExpiredAt() == null || ur.getExpiredAt().isAfter(LocalDateTime.now()))
           .map(ur -> new SimpleGrantedAuthority("ROLE_" + ur.getRole().getName()))
           .collect(Collectors.toList());
+    }
+
+    return new CustomUserDetails(
+        user.getId(),
+        user.getEmail(),
+        user.getPassword(),
+        authorities
+    );
+  }
+
+
+  public static CustomUserDetails build(User user, List<String> permissionNames) {
+    List<GrantedAuthority> authorities = new ArrayList<>();
+
+    if (user.getUserRoles() != null) {
+      user.getUserRoles().stream()
+          .filter(ur -> ur.getExpiredAt() == null || ur.getExpiredAt().isAfter(LocalDateTime.now()))
+          .forEach(ur -> authorities.add(new SimpleGrantedAuthority("ROLE_" + ur.getRole().getName())));
+    }
+
+    if (permissionNames != null) {
+      permissionNames.stream()
+          .distinct()
+          .forEach(name -> authorities.add(new SimpleGrantedAuthority(name)));
     }
 
     return new CustomUserDetails(

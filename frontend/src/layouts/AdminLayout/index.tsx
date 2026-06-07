@@ -23,6 +23,11 @@ const PAGE_TITLES: Record<string, { title: string; icon: React.ReactNode; subtit
     icon: <TeamOutlined />,
     subtitle: 'Danh sách & phân quyền tài khoản',
   },
+  '/admin/approvals': {
+    title: 'Phê duyệt Khóa tài khoản',
+    icon: <SafetyOutlined />,
+    subtitle: 'Xem xét & phê duyệt yêu cầu khóa tài khoản từ Support Admin',
+  },
   '/admin/categories': {
     title: 'Danh mục hệ thống',
     icon: <TagsOutlined />,
@@ -33,10 +38,10 @@ const PAGE_TITLES: Record<string, { title: string; icon: React.ReactNode; subtit
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { hasAdminAccess, isAdmin, isSupportAdmin, user, logout } = useAuthStore();
+  const { isAdmin, user, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!hasAdminAccess()) {
+    if (!isAdmin()) {
       message.error('Bạn không có quyền truy cập trang quản trị');
       history.push('/dashboard');
     }
@@ -53,6 +58,11 @@ export default function AdminLayout() {
       key: '/admin/users',
       icon: <TeamOutlined />,
       label: <Link to="/admin/users">Người dùng</Link>,
+    },
+    {
+      key: '/admin/approvals',
+      icon: <SafetyOutlined />,
+      label: <Link to="/admin/approvals">Phê duyệt khóa</Link>,
     },
     {
       key: '/admin/categories',
@@ -74,9 +84,8 @@ export default function AdminLayout() {
     history.push('/auth/login');
   };
 
-  // Xác định role hiển thị
-  const roleBadge = isAdmin() ? 'ADMIN' : isSupportAdmin() ? 'SUPPORT' : '';
-  const roleColor = isAdmin() ? 'red' : 'orange';
+  const roleBadge = 'ADMIN';
+  const roleColor = 'red';
 
   return (
     <Layout className={styles.layout}>
@@ -116,14 +125,14 @@ export default function AdminLayout() {
             <div className={styles.adminBadge}>
               <SafetyOutlined style={{ fontSize: 12 }} />
               <Text className={styles.adminBadgeText}>
-                Quyền {isAdmin() ? 'Admin' : 'Support Admin'}
+                Quyền Admin
               </Text>
             </div>
           </div>
         )}
       </Sider>
 
-      <Layout>
+      <Layout className={styles.mainLayout}>
         <Header className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.pageTitleWrapper}>
