@@ -737,6 +737,35 @@
   }
 }
 
+.aiTipList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aiTipItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fbff;
+  border: 1px solid #e1ecff;
+
+  span {
+    color: #10b981;
+    font-weight: 700;
+    line-height: 1.55;
+  }
+
+  p {
+    margin: 0;
+    color: @text-secondary;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+}
+
 .aiCardFooter {
   border-top: 1px solid #e8eaed;
   padding-top: 12px;

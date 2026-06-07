@@ -1,26 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation, history } from 'umi';
-import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Input, Badge, Popover, List, Tag, message, Modal } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Space, Input } from 'antd';
 import type { MenuProps } from 'antd';
 import {
-  AppstoreOutlined,
   AppstoreFilled,
-  BellOutlined,
-  UserOutlined,
-  LogoutOutlined,
+  AppstoreOutlined,
   BankOutlined,
-  SearchOutlined,
-  FlagOutlined,
-  FlagFilled,
+  BellOutlined,
+  CrownOutlined,
   DollarOutlined,
-  TagsOutlined,
+  FlagFilled,
+  FlagOutlined,
   LockOutlined,
+  LogoutOutlined,
+  SearchOutlined,
   SettingOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import NotificationsPopover from '../NotificationsLayout';
 import SupportWidget from '../SupportWidget';
 import { useAuthStore } from '@/store/useAuthStore';
+import AiChatbot from '@/components/AiChatbot';
 
 const { Header, Sider, Content } = Layout;
 
@@ -50,7 +51,8 @@ const PiggyBankIcon = (props: any) => (
 export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const user = useAuthStore((s) => s.user);
+  const user = useAuthStore((state) => state.user);
+  const isPro = useAuthStore((state) => state.isPro());
   const { isAdmin, isSupportAdmin } = useAuthStore();
 
   const menuItems: MenuProps['items'] = [
@@ -84,6 +86,11 @@ export default function BasicLayout() {
       icon: <BankOutlined />,
       label: <Link to="/funds">Quản lý quỹ nhóm</Link>,
     },
+    {
+      key: '/pricing',
+      icon: <CrownOutlined />,
+      label: <Link to="/pricing">Gói Pro</Link>,
+    },
     ...((isAdmin() || isSupportAdmin()) ? [
       {
         type: 'divider' as const,
@@ -112,12 +119,17 @@ export default function BasicLayout() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0' }}>
           <Avatar size={40} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 600, color: '#202124', fontSize: 14 }}>{user?.name || 'Người dùng'}</span>
+            <span style={{ fontWeight: 600, color: '#202124', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {user?.name || user?.displayName || 'Người dùng'}
+              {isPro && (
+                <CrownOutlined style={{ color: '#f59e0b', fontSize: 15 }} />
+              )}
+            </span>
             <span style={{ color: '#5f6368', fontSize: 13 }}>{user?.email || 'email@example.com'}</span>
           </div>
         </div>
       ),
-      style: { cursor: 'default', backgroundColor: 'transparent' }
+      style: { cursor: 'default', backgroundColor: 'transparent' },
     },
     {
       key: 'notifications',
@@ -133,7 +145,7 @@ export default function BasicLayout() {
       label: 'Thay đổi mật khẩu',
       onClick: () => {
         history.push('/auth/change-password');
-      }
+      },
     },
     {
       key: 'logout',
@@ -141,7 +153,7 @@ export default function BasicLayout() {
       label: <span style={{ color: '#d93025' }}>Đăng xuất</span>,
       onClick: () => {
         window.location.href = '/auth/login';
-      }
+      },
     },
   ];
 
@@ -161,7 +173,9 @@ export default function BasicLayout() {
           </div>
           {!collapsed && (
             <div className={styles.logoText}>
-              <div className={styles.brandTitle}>Smart Finance <span className={styles.brandAi}></span></div>
+              <div className={styles.brandTitle}>
+                Smart Finance <span className={styles.brandAi}></span>
+              </div>
               <div className={styles.brandSubtitle}>Precision Intelligence</div>
             </div>
           )}
@@ -193,7 +207,24 @@ export default function BasicLayout() {
             <NotificationsPopover />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Space align="center" className={styles.avatarWrapper}>
-                <Avatar size={40} className={styles.avatar} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <Avatar size={40} className={styles.avatar} src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin" />
+                  {isPro && (
+                    <CrownOutlined
+                      style={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -4,
+                        fontSize: 14,
+                        color: '#f59e0b',
+                        background: '#fff',
+                        borderRadius: '50%',
+                        padding: 2,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                      }}
+                    />
+                  )}
+                </div>
               </Space>
             </Dropdown>
           </Space>
@@ -201,6 +232,7 @@ export default function BasicLayout() {
         <Content className={styles.content}>
           <Outlet />
         </Content>
+        <AiChatbot />
       </Layout>
     </Layout>
   );

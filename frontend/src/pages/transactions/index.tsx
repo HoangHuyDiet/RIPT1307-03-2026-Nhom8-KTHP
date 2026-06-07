@@ -355,6 +355,40 @@ export default function TransactionsManager() {
     },
   ];
 
+  const transactionAiTips = useMemo(() => {
+    if (transactions.length === 0) {
+      return [
+        'Chưa có giao dịch trong bộ lọc hiện tại. Hãy thêm giao dịch và gắn đúng danh mục để nhận phân tích chính xác hơn.',
+        'Nên chọn nguồn tiền cho mỗi giao dịch để hệ thống theo dõi dòng tiền theo ví/tài khoản.',
+        'Bạn có thể lọc theo tháng hoặc danh mục để xem nhóm chi tiêu nào cần kiểm soát trước.',
+      ];
+    }
+
+    const income = transactions
+      .filter((item) => item.type === 'INCOME')
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const expense = transactions
+      .filter((item) => item.type === 'EXPENSE')
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const uncategorized = transactions.filter((item) => !item.categoryName).length;
+    const withoutFund = transactions.filter((item) => !item.personalFundName).length;
+    const topExpense = transactions
+      .filter((item) => item.type === 'EXPENSE')
+      .sort((left, right) => Number(right.amount || 0) - Number(left.amount || 0))[0];
+
+    const tips: string[] = [];
+    tips.push(`Bộ lọc hiện tại ghi nhận thu ${formatCurrency(income)} và chi ${formatCurrency(expense)}.`);
+    if (topExpense) {
+      tips.push(`Khoản chi lớn nhất là "${topExpense.description || 'Giao dịch'}" với ${formatCurrency(Number(topExpense.amount))}.`);
+    }
+    if (uncategorized > 0 || withoutFund > 0) {
+      tips.push(`Có ${uncategorized} giao dịch chưa phân loại và ${withoutFund} giao dịch chưa gắn nguồn tiền, nên bổ sung để phân tích chuẩn hơn.`);
+    } else {
+      tips.push('Danh mục và nguồn tiền đã khá đầy đủ, có thể dùng bộ lọc để soi sâu từng nhóm chi tiêu.');
+    }
+    return tips.slice(0, 3);
+  }, [transactions]);
+
   return (
     <div className={styles.premiumContainer}>
       <Row gutter={[24, 24]}>
@@ -474,6 +508,15 @@ export default function TransactionsManager() {
               <Text className={styles.aiContent}>
                 Danh mục và nguồn tiền đã được nối API, nên phân tích chi tiêu có thể tính theo nhóm giao dịch thật.
               </Text>
+              <Text className={styles.aiTipIntro}>Gợi ý miễn phí dựa trên giao dịch đang hiển thị:</Text>
+              <div className={styles.aiTipList}>
+                {transactionAiTips.map((tip) => (
+                  <div key={tip} className={styles.aiTipItem}>
+                    <span>✓</span>
+                    <p>{tip}</p>
+                  </div>
+                ))}
+              </div>
             </Card>
 
             <Card bordered={false} className={styles.patternCard}>

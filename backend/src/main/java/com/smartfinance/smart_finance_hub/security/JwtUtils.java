@@ -24,7 +24,18 @@ public class JwtUtils {
   @Value("${jwt.expiration}")
   private int jwtExpirationMs;
 
+  @Value("${jwt.refresh-expiration:604800000}")
+  private long jwtRefreshExpirationMs;
+
   public String generateToken(UserDetails userDetails) {
+    return generateToken(userDetails, jwtExpirationMs, "access");
+  }
+
+  public String generateRefreshToken(UserDetails userDetails) {
+    return generateToken(userDetails, jwtRefreshExpirationMs, "refresh");
+  }
+
+  private String generateToken(UserDetails userDetails, long expirationMs, String tokenType) {
     List<String> roles = userDetails.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .collect(Collectors.toList());
@@ -32,8 +43,9 @@ public class JwtUtils {
     return Jwts.builder()
         .setSubject(userDetails.getUsername())
         .claim("roles", roles)
+        .claim("token_type", tokenType)
         .setIssuedAt(new Date())
-        .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+        .setExpiration(new Date((new Date()).getTime() + expirationMs))
         .signWith(key(), SignatureAlgorithm.HS256)
         .compact();
   }
@@ -49,6 +61,16 @@ public class JwtUtils {
         .parseClaimsJws(token).getBody();
     List<String> roles = claims.get("roles", List.class);
     return roles != null ? roles : List.of();
+  }
+
+  public boolean isRefreshToken(String token) {
+    try {
+      Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
+          .parseClaimsJws(token).getBody();
+      return "refresh".equals(claims.get("token_type", String.class));
+    } catch (JwtException | IllegalArgumentException e) {
+      return false;
+    }
   }
 
   public boolean validateJwtToken(String authToken) {
@@ -70,4 +92,4 @@ public class JwtUtils {
   private Key key() {
     return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
   }
-}
+}

@@ -24,8 +24,15 @@ export default function Login() {
         const data = response.data;
         message.success('Đăng nhập bằng Google thành công!');
 
-        useAuthStore.getState().setAuth(data.token, data.user);
-        history.push('/dashboard');
+        const loginData = data.data;
+        const roles = loginData.roles || [];
+        useAuthStore.getState().setAuth(
+          loginData.token,
+          { email: loginData.email, name: loginData.displayName },
+          roles,
+          loginData.refreshToken,
+        );
+        history.push(roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN') ? '/admin/users' : '/dashboard');
       } catch (error: any) {
         message.error('Đăng nhập bằng Google thất bại!');
       } finally {
@@ -53,7 +60,8 @@ export default function Login() {
       useAuthStore.getState().setAuth(
         data.data.token, 
         { email: data.data.email, name: data.data.displayName },
-        roles
+        roles,
+        data.data.refreshToken,
       );
       
       if (roles.includes('ADMIN') || roles.includes('SUPPORT_ADMIN')) {

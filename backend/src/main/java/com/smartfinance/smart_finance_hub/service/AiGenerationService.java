@@ -2,7 +2,7 @@ package com.smartfinance.smart_finance_hub.service;
 
 import com.smartfinance.smart_finance_hub.enums.AiErrorCode;
 import com.smartfinance.smart_finance_hub.exception.AiException;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class AiGenerationService {
 
-    private final ChatLanguageModel chatModel;
+    private final ChatModel chatModel;
 
     private static final String CHAT_PROMPT_TEMPLATE = """
             <role>
@@ -54,7 +54,7 @@ public class AiGenerationService {
 
             Prompt prompt = promptTemplate.apply(variables);
             
-            return chatModel.generate(prompt.text());
+            return chatModel.chat(prompt.text());
 
         } catch (Exception e) {
             log.error("Lỗi khi sinh phản hồi từ AI: {}", e.getMessage());
@@ -89,7 +89,7 @@ public class AiGenerationService {
             variables.put("snapshot", financialSnapshot != null ? financialSnapshot : "{}");
             Prompt prompt = promptTemplate.apply(variables);
 
-            String jsonResponse = chatModel.generate(prompt.text());
+            String jsonResponse = chatModel.chat(prompt.text());
             
             return jsonResponse.replaceAll("```json", "").replaceAll("```", "").trim();
 

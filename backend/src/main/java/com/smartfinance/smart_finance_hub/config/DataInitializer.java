@@ -1,14 +1,20 @@
 package com.smartfinance.smart_finance_hub.config;
 
 import com.smartfinance.smart_finance_hub.entity.Category;
+import com.smartfinance.smart_finance_hub.entity.Permission;
 import com.smartfinance.smart_finance_hub.entity.Role;
+import com.smartfinance.smart_finance_hub.entity.RolePermission;
 import com.smartfinance.smart_finance_hub.repository.CategoryRepository;
+import com.smartfinance.smart_finance_hub.repository.PermissionRepository;
+import com.smartfinance.smart_finance_hub.repository.RolePermissionRepository;
 import com.smartfinance.smart_finance_hub.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +23,8 @@ public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final CategoryRepository categoryRepository;
+    private final PermissionRepository permissionRepository;
+    private final RolePermissionRepository rolePermissionRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -26,7 +34,63 @@ public class DataInitializer implements CommandLineRunner {
         createRoleIfNotExists("USER", "Người dùng thông thường");
         allowSystemCategoriesWithoutUser();
         createDefaultSystemCategories();
+
+        // Khởi tạo permissions AI/Consultation/RAG
+        initializeAiPermissions();
+
         log.info("=== DataInitializer: Đã khởi tạo dữ liệu mặc định thành công ===");
+    }
+
+    private void initializeAiPermissions() {
+        // Tạo permissions
+        createPermissionIfNotExists("CONSULTATION_VIEW_QUEUE", "Xem hàng chờ tư vấn");
+        createPermissionIfNotExists("CONSULTATION_ASSIGN_SELF", "Nhận yêu cầu tư vấn");
+        createPermissionIfNotExists("CONSULTATION_VIEW_ASSIGNED", "Xem yêu cầu đã nhận");
+        createPermissionIfNotExists("CONSULTATION_REPLY", "Phản hồi yêu cầu tư vấn");
+        createPermissionIfNotExists("CONSULTATION_COMPLETE", "Hoàn thành yêu cầu tư vấn");
+        createPermissionIfNotExists("RAG_REBUILD", "Kích hoạt rebuild Vector Store thủ công");
+        createPermissionIfNotExists("RAG_STATUS_VIEW", "Xem trạng thái RAG Vector Store");
+
+        // Gán toàn bộ cho SUPPORT_ADMIN
+        List<String> supportPermissions = List.of(
+            "CONSULTATION_VIEW_QUEUE", "CONSULTATION_ASSIGN_SELF",
+            "CONSULTATION_VIEW_ASSIGNED", "CONSULTATION_REPLY",
+            "CONSULTATION_COMPLETE", "RAG_REBUILD", "RAG_STATUS_VIEW"
+        );
+        assignPermissionsToRole("SUPPORT_ADMIN", supportPermissions);
+    }
+
+    private void createPermissionIfNotExists(String name, String description) {
+        if (!permissionRepository.existsByName(name)) {
+            permissionRepository.save(Permission.builder()
+                .name(name)
+                .description(description)
+                .build());
+            log.info("Đã tạo permission: {}", name);
+        }
+    }
+
+    private void assignPermissionsToRole(String roleName, List<String> permissionNames) {
+        Role role = roleRepository.findByName(roleName).orElse(null);
+        if (role == null) {
+            log.warn("Role {} không tồn tại, bỏ qua gán permissions", roleName);
+            return;
+        }
+
+        for (String permName : permissionNames) {
+            if (!rolePermissionRepository.existsByRoleIdAndPermissionId(
+                    role.getId(),
+                    permissionRepository.findByName(permName).map(Permission::getId).orElse(-1L))) {
+                Permission perm = permissionRepository.findByName(permName).orElse(null);
+                if (perm != null) {
+                    rolePermissionRepository.save(RolePermission.builder()
+                        .role(role)
+                        .permission(perm)
+                        .build());
+                    log.info("Đã gán permission {} cho role {}", permName, roleName);
+                }
+            }
+        }
     }
 
     private void createRoleIfNotExists(String name, String description) {
