@@ -46,11 +46,7 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
         
         log.warn("=== [DEV/RENDER WORKAROUND] MÃ OTP CỦA {} LÀ: {} ===", email, otpCode);
 
-        try {
-            mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
-        } catch (Exception e) {
-            log.error("Không thể gửi email qua SMTP (Render block port 587). Bỏ qua lỗi gửi mail để tiếp tục test: {}", e.getMessage());
-        }
+        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
 
         log.info("sendOtp success: {}", email);
     }
@@ -102,11 +98,7 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
         
         log.warn("=== [DEV/RENDER WORKAROUND] MÃ OTP CỦA {} LÀ: {} ===", email, otpCode);
 
-        try {
-            mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
-        } catch (Exception e) {
-            log.error("Không thể gửi email qua SMTP (Render block port 587). Bỏ qua lỗi gửi mail để tiếp tục test: {}", e.getMessage());
-        }
+        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
 
         log.info("resendOtp success: {}", email);
     }
