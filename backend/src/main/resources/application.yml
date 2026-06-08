@@ -77,6 +77,11 @@ app:
   mail:
     from-name: Smart Finance Hub
     from-email: ${APP_MAIL_FROM_EMAIL:hoangnv.private@gmail.com}
+    gmail-api:
+      enabled: ${APP_MAIL_GMAIL_API_ENABLED:false}
+      client-id: ${APP_MAIL_GMAIL_CLIENT_ID:}
+      client-secret: ${APP_MAIL_GMAIL_CLIENT_SECRET:}
+      refresh-token: ${APP_MAIL_GMAIL_REFRESH_TOKEN:}
     brevo-api-key: ${APP_MAIL_BREVO_API_KEY:}
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   2fa:

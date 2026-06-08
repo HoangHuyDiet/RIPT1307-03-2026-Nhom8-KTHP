@@ -166,17 +166,100 @@ public class MailServiceImpl implements MailService {
         return frontendUrl + "/funds/verify?token=" + token;
     }
 
+    @Value("${app.mail.gmail-api.enabled:false}")
+    private boolean gmailApiEnabled;
+
+    @Value("${app.mail.gmail-api.client-id:}")
+    private String gmailClientId;
+
+    @Value("${app.mail.gmail-api.client-secret:}")
+    private String gmailClientSecret;
+
+    @Value("${app.mail.gmail-api.refresh-token:}")
+    private String gmailRefreshToken;
+
     @Value("${app.mail.brevo-api-key:}")
     private String brevoApiKey;
 
+    private boolean isGmailApiConfigured() {
+        return gmailClientId != null && !gmailClientId.trim().isEmpty() &&
+               gmailClientSecret != null && !gmailClientSecret.trim().isEmpty() &&
+               gmailRefreshToken != null && !gmailRefreshToken.trim().isEmpty();
+    }
+
+    private String getGmailAccessToken() throws Exception {
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+
+        String body = "client_id=" + gmailClientId.trim()
+                + "&client_secret=" + gmailClientSecret.trim()
+                + "&refresh_token=" + gmailRefreshToken.trim()
+                + "&grant_type=refresh_token";
+
+        org.springframework.http.HttpEntity<String> request = new org.springframework.http.HttpEntity<>(body, headers);
+        
+        java.util.Map<?, ?> response = restTemplate.postForObject("https://oauth2.googleapis.com/token", request, java.util.Map.class);
+        if (response != null && response.containsKey("access_token")) {
+            return (String) response.get("access_token");
+        }
+        throw new RuntimeException("Failed to retrieve access token from Google OAuth2");
+    }
+
+    private void sendEmailViaGmailApi(String toEmail, String subject, String htmlContent, String replyToEmail, String replyToName) throws MessagingException {
+        try {
+            String accessToken = getGmailAccessToken();
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            if (replyToEmail != null && !replyToEmail.trim().isEmpty()) {
+                helper.setReplyTo(replyToEmail);
+            }
+            message.saveChanges();
+
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            message.writeTo(buffer);
+            byte[] rawBytes = buffer.toByteArray();
+            String encodedEmail = java.util.Base64.getUrlEncoder().encodeToString(rawBytes);
+
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
+            java.util.Map<String, Object> requestBody = new java.util.HashMap<>();
+            requestBody.put("raw", encodedEmail);
+
+            org.springframework.http.HttpEntity<java.util.Map<String, Object>> request = new org.springframework.http.HttpEntity<>(requestBody, headers);
+            
+            restTemplate.postForEntity("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", request, String.class);
+            log.info("Gmail API sent email successfully to: {}, subject: {}", toEmail, subject);
+        } catch (Exception e) {
+            log.error("Error sending email via Gmail REST API: {}", e.getMessage(), e);
+            throw new MessagingException("Gmail REST API error: " + e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)
             throws MessagingException {
-        sendEmailViaBrevo(toEmail, subject, htmlContent, null, null);
+        if (gmailApiEnabled && isGmailApiConfigured()) {
+            sendEmailViaGmailApi(toEmail, subject, htmlContent, null, null);
+        } else {
+            sendEmailViaBrevo(toEmail, subject, htmlContent, null, null);
+        }
     }
 
     private void sendHtmlEmailWithSender(String toEmail, String subject, String htmlContent, String senderEmail, String senderName)
             throws MessagingException {
-        sendEmailViaBrevo(toEmail, subject, htmlContent, senderEmail, senderName);
+        if (gmailApiEnabled && isGmailApiConfigured()) {
+            sendEmailViaGmailApi(toEmail, subject, htmlContent, senderEmail, senderName);
+        } else {
+            sendEmailViaBrevo(toEmail, subject, htmlContent, senderEmail, senderName);
+        }
     }
 
     private void sendEmailViaBrevo(String toEmail, String subject, String htmlContent, String replyToEmail, String replyToName) throws MessagingException {
