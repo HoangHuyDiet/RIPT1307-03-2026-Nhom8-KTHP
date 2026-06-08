@@ -80,7 +80,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   2fa:
     otp-length: 6
-    otp-expiry-seconds: 60
+    otp-expiry-seconds: 300
 
 payos:
   api-base-url: ${PAYOS_API_BASE_URL:https://api-merchant.payos.vn}
