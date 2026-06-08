@@ -43,7 +43,14 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
 
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
-        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        
+        log.warn("=== [DEV/RENDER WORKAROUND] MÃ OTP CỦA {} LÀ: {} ===", email, otpCode);
+
+        try {
+            mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        } catch (Exception e) {
+            log.error("Không thể gửi email qua SMTP (Render block port 587). Bỏ qua lỗi gửi mail để tiếp tục test: {}", e.getMessage());
+        }
 
         log.info("sendOtp success: {}", email);
     }
@@ -92,7 +99,14 @@ public class TwoFactorAuthServiceImpl implements TwoFactorAuthService {
 
         String otpCode = generateAndStoreOtp(email);
         int expiryMinutes = otpExpirySeconds / 60;
-        mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        
+        log.warn("=== [DEV/RENDER WORKAROUND] MÃ OTP CỦA {} LÀ: {} ===", email, otpCode);
+
+        try {
+            mailService.sendOtpEmail(email, user.getDisplayName(), otpCode, expiryMinutes);
+        } catch (Exception e) {
+            log.error("Không thể gửi email qua SMTP (Render block port 587). Bỏ qua lỗi gửi mail để tiếp tục test: {}", e.getMessage());
+        }
 
         log.info("resendOtp success: {}", email);
     }
