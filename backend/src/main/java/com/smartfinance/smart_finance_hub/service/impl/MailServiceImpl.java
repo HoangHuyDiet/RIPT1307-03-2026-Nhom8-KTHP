@@ -180,17 +180,22 @@ public class MailServiceImpl implements MailService {
     }
 
     private void sendEmailViaBrevo(String toEmail, String subject, String htmlContent, String replyToEmail, String replyToName) throws MessagingException {
-        if (brevoApiKey == null || brevoApiKey.trim().isEmpty()) {
+        String apiKey = brevoApiKey != null ? brevoApiKey.trim() : null;
+        if (apiKey == null || apiKey.isEmpty()) {
             log.info("Không tìm thấy cấu hình Brevo API Key, tự động chuyển về gửi qua SMTP chuẩn...");
             sendHtmlEmailSmtp(toEmail, subject, htmlContent, replyToEmail, replyToName);
             return;
+        }
+
+        if (!apiKey.startsWith("xkeysib-")) {
+            throw new MessagingException("LỖI CẤU HÌNH: Mã Brevo API Key không hợp lệ. Mã đúng phải bắt đầu bằng chữ 'xkeysib-'. Vui lòng không nhầm lẫn với mã SMTP (xsmtpsib-).");
         }
 
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
-            headers.set("api-key", brevoApiKey);
+            headers.set("api-key", apiKey);
 
             java.util.Map<String, Object> body = new java.util.HashMap<>();
             body.put("sender", java.util.Map.of("name", fromName, "email", fromEmail));
