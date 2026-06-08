@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("Đã tạo tài khoản và gửi mã OTP cho: {}", newUser.getEmail());
         } catch (MessagingException e) {
             log.error("Lỗi hệ thống khi gửi email OTP đến {}: {}", newUser.getEmail(), e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau!");
+            throw new RuntimeException("Không thể gửi email OTP: " + e.getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("Đã gửi lại mã OTP cho: {}", email);
         } catch (MessagingException e) {
             log.error("Lỗi gửi lại email OTP cho {}: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Không thể gửi lại email OTP, vui lòng thử lại sau!");
+            throw new RuntimeException("Không thể gửi lại email OTP: " + e.getMessage());
         }
     }
 

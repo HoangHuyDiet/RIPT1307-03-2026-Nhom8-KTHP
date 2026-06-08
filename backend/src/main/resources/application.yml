@@ -76,7 +76,8 @@ ai:
 app:
   mail:
     from-name: Smart Finance Hub
-    from-email: hoangnv.private@gmail.com
+    from-email: ${APP_MAIL_FROM_EMAIL:hoangnv.private@gmail.com}
+    brevo-api-key: ${APP_MAIL_BREVO_API_KEY:}
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   2fa:
     otp-length: 6
