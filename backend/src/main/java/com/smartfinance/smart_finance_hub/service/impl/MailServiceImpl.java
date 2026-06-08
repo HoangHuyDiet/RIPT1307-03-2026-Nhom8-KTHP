@@ -166,37 +166,61 @@ public class MailServiceImpl implements MailService {
         return frontendUrl + "/funds/verify?token=" + token;
     }
 
+    @Value("${app.mail.brevo-api-key:}")
+    private String brevoApiKey;
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)
             throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        try {
-            helper.setFrom(fromEmail, fromName);
-        } catch (UnsupportedEncodingException e) {
-            log.warn("setFrom fallback: {}", e.getMessage());
-            helper.setFrom(fromEmail);
-        }
-
-        helper.setTo(toEmail);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-        helper.setValidateAddresses(true);
-        message.saveChanges();
-        mailSender.send(message);
-        log.info("SMTP accepted email: from={}, to={}, subject={}, messageId={}",
-                fromEmail, toEmail, subject, message.getMessageID());
+        sendEmailViaBrevo(toEmail, subject, htmlContent, null, null);
     }
 
     private void sendHtmlEmailWithSender(String toEmail, String subject, String htmlContent, String senderEmail, String senderName)
             throws MessagingException {
+        sendEmailViaBrevo(toEmail, subject, htmlContent, senderEmail, senderName);
+    }
+
+    private void sendEmailViaBrevo(String toEmail, String subject, String htmlContent, String replyToEmail, String replyToName) throws MessagingException {
+        if (brevoApiKey == null || brevoApiKey.trim().isEmpty()) {
+            log.info("Không tìm thấy cấu hình Brevo API Key, tự động chuyển về gửi qua SMTP chuẩn...");
+            sendHtmlEmailSmtp(toEmail, subject, htmlContent, replyToEmail, replyToName);
+            return;
+        }
+
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            headers.set("api-key", brevoApiKey);
+
+            java.util.Map<String, Object> body = new java.util.HashMap<>();
+            body.put("sender", java.util.Map.of("name", fromName, "email", fromEmail));
+            body.put("to", java.util.List.of(java.util.Map.of("email", toEmail)));
+            body.put("subject", subject);
+            body.put("htmlContent", htmlContent);
+            
+            if (replyToEmail != null && !replyToEmail.trim().isEmpty()) {
+                body.put("replyTo", java.util.Map.of("email", replyToEmail, "name", replyToName != null ? replyToName : replyToEmail));
+            }
+
+            org.springframework.http.HttpEntity<java.util.Map<String, Object>> request = new org.springframework.http.HttpEntity<>(body, headers);
+            
+            restTemplate.postForEntity("https://api.brevo.com/v3/smtp/email", request, String.class);
+            log.info("Brevo API đã gửi email thành công: to={}, subject={}", toEmail, subject);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi mail qua Brevo API: {}", e.getMessage(), e);
+            throw new MessagingException("Lỗi Brevo API: " + e.getMessage());
+        }
+    }
+
+    private void sendHtmlEmailSmtp(String toEmail, String subject, String htmlContent, String replyToEmail, String replyToName)
+            throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
             helper.setFrom(fromEmail, fromName);
-            if (senderEmail != null && !senderEmail.trim().isEmpty()) {
-                helper.setReplyTo(senderEmail);
+            if (replyToEmail != null && !replyToEmail.trim().isEmpty()) {
+                helper.setReplyTo(replyToEmail);
             }
         } catch (UnsupportedEncodingException e) {
             log.warn("setFrom fallback: {}", e.getMessage());
@@ -210,6 +234,6 @@ public class MailServiceImpl implements MailService {
         message.saveChanges();
         mailSender.send(message);
         log.info("SMTP accepted email: from={}, replyTo={}, to={}, subject={}, messageId={}",
-                fromEmail, senderEmail, toEmail, subject, message.getMessageID());
+                fromEmail, replyToEmail, toEmail, subject, message.getMessageID());
     }
 }
