@@ -25,6 +25,9 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final PermissionRepository permissionRepository;
     private final RolePermissionRepository rolePermissionRepository;
+    private final com.smartfinance.smart_finance_hub.repository.UserRepository userRepository;
+    private final com.smartfinance.smart_finance_hub.repository.UserRoleRepository userRoleRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -36,8 +39,34 @@ public class DataInitializer implements CommandLineRunner {
         createDefaultSystemCategories();
 
         initializeAiPermissions();
+        
+        createDefaultUserIfNotExists("admin@smartfinance.com", "admin123", "ADMIN", "Administrator");
+        createDefaultUserIfNotExists("support@smartfinance.com", "support123", "SUPPORT_ADMIN", "Support Admin");
 
         log.info("=== DataInitializer: Đã khởi tạo dữ liệu mặc định thành công ===");
+    }
+
+    private void createDefaultUserIfNotExists(String email, String rawPassword, String roleName, String displayName) {
+        if (!userRepository.existsByEmail(email)) {
+            com.smartfinance.smart_finance_hub.entity.User user = com.smartfinance.smart_finance_hub.entity.User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(rawPassword))
+                .displayName(displayName)
+                .status(com.smartfinance.smart_finance_hub.entity.enums.UserStatus.ACTIVE)
+                .build();
+            userRepository.save(user);
+
+            Role role = roleRepository.findByName(roleName).orElse(null);
+            if (role != null) {
+                userRoleRepository.save(com.smartfinance.smart_finance_hub.entity.UserRole.builder()
+                    .user(user)
+                    .role(role)
+                    .build());
+            }
+            log.info("Đã tạo tài khoản mặc định: {} với quyền {}", email, roleName);
+        } else {
+            log.info("Tài khoản {} đã tồn tại, bỏ qua", email);
+        }
     }
 
     private void initializeAiPermissions() {
