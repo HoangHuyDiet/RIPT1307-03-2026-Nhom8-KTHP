@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
                 .displayName(displayName)
-                .status(com.smartfinance.smart_finance_hub.entity.enums.UserStatus.ACTIVE)
+                .status(com.smartfinance.smart_finance_hub.enums.UserStatus.ACTIVE)
                 .build();
             userRepository.save(user);
 
